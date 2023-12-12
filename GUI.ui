@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1762</width>
-    <height>1249</height>
+    <width>1769</width>
+    <height>1263</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -29,33 +29,23 @@
      </font>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
       <string>AcquireSetting</string>
      </attribute>
-     <widget class="QSpinBox" name="spinBox">
-      <property name="geometry">
-       <rect>
-        <x>220</x>
-        <y>40</y>
-        <width>151</width>
-        <height>61</height>
-       </rect>
-      </property>
-     </widget>
      <widget class="QToolBox" name="toolBox">
       <property name="geometry">
        <rect>
-        <x>430</x>
-        <y>40</y>
+        <x>1400</x>
+        <y>30</y>
         <width>141</width>
         <height>141</height>
        </rect>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="page">
        <property name="geometry">
@@ -97,47 +87,444 @@
        </attribute>
       </widget>
      </widget>
-     <widget class="QComboBox" name="comboBox">
+     <widget class="QComboBox" name="ACQmode">
       <property name="geometry">
        <rect>
         <x>20</x>
         <y>30</y>
-        <width>121</width>
+        <width>161</width>
         <height>41</height>
        </rect>
       </property>
       <item>
        <property name="text">
-        <string>mode1</string>
+        <string>RptAline</string>
        </property>
       </item>
       <item>
        <property name="text">
-        <string>mode2</string>
+        <string>RptBline</string>
        </property>
       </item>
+      <item>
+       <property name="text">
+        <string>SurfScan</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>SurfScan_Slicing</string>
+       </property>
+      </item>
+     </widget>
+     <widget class="QLabel" name="ACQmodeLabel">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>10</y>
+        <width>121</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Acquire mode</string>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="FFTmode">
+      <property name="geometry">
+       <rect>
+        <x>190</x>
+        <y>30</y>
+        <width>191</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <item>
+       <property name="text">
+        <string>GPU FFT Amp</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>GPU FFT Amp+Phase</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Alazar FFT</string>
+       </property>
+      </item>
+     </widget>
+     <widget class="QLabel" name="FFTmodeLabel">
+      <property name="geometry">
+       <rect>
+        <x>190</x>
+        <y>10</y>
+        <width>121</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>FFT mode</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="ChannelLabel">
+      <property name="geometry">
+       <rect>
+        <x>400</x>
+        <y>10</y>
+        <width>121</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Channel</string>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="Channel">
+      <property name="geometry">
+       <rect>
+        <x>400</x>
+        <y>30</y>
+        <width>81</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <item>
+       <property name="text">
+        <string>A</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>B</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>A+B</string>
+       </property>
+      </item>
+     </widget>
+     <widget class="QCheckBox" name="Save">
+      <property name="geometry">
+       <rect>
+        <x>30</x>
+        <y>90</y>
+        <width>91</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Save?</string>
+      </property>
+      <property name="iconSize">
+       <size>
+        <width>30</width>
+        <height>30</height>
+       </size>
+      </property>
+     </widget>
+     <widget class="QTextEdit" name="textEdit">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>160</y>
+        <width>104</width>
+        <height>71</height>
+       </rect>
+      </property>
+      <property name="html">
+       <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'SimSun'; font-size:15pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:16pt;&quot;&gt;C:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="SaveDIRLabel">
+      <property name="geometry">
+       <rect>
+        <x>30</x>
+        <y>130</y>
+        <width>81</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Save DIR</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="DepthStartLabel">
+      <property name="geometry">
+       <rect>
+        <x>190</x>
+        <y>90</y>
+        <width>141</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Depth Start</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="DepthRangeLabel">
+      <property name="geometry">
+       <rect>
+        <x>190</x>
+        <y>170</y>
+        <width>141</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Depth Range</string>
+      </property>
+     </widget>
+     <widget class="QSpinBox" name="DepthRange">
+      <property name="geometry">
+       <rect>
+        <x>190</x>
+        <y>190</y>
+        <width>101</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="whatsThis">
+       <string extracomment="bline average"/>
+      </property>
+      <property name="minimum">
+       <number>1</number>
+      </property>
+      <property name="maximum">
+       <number>1024</number>
+      </property>
+     </widget>
+     <widget class="QSpinBox" name="DepthStart">
+      <property name="geometry">
+       <rect>
+        <x>190</x>
+        <y>110</y>
+        <width>101</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="minimum">
+       <number>1</number>
+      </property>
+      <property name="maximum">
+       <number>1024</number>
+      </property>
+     </widget>
+     <widget class="QLabel" name="BlineAvgLabel">
+      <property name="geometry">
+       <rect>
+        <x>510</x>
+        <y>10</y>
+        <width>141</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Bline average</string>
+      </property>
+     </widget>
+     <widget class="QSpinBox" name="BlineAVG">
+      <property name="geometry">
+       <rect>
+        <x>510</x>
+        <y>30</y>
+        <width>101</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="whatsThis">
+       <string extracomment="bline average"/>
+      </property>
+      <property name="minimum">
+       <number>1</number>
+      </property>
      </widget>
     </widget>
     <widget class="QWidget" name="GalvoTab">
      <attribute name="title">
       <string>Galvo</string>
      </attribute>
-     <widget class="QPushButton" name="Apushbutton">
+     <widget class="QPushButton" name="CenterGalvo">
       <property name="geometry">
        <rect>
         <x>10</x>
         <y>20</y>
-        <width>131</width>
-        <height>51</height>
+        <width>121</width>
+        <height>31</height>
        </rect>
       </property>
       <property name="autoFillBackground">
        <bool>false</bool>
       </property>
       <property name="text">
-       <string>APushButton</string>
+       <string>CenterGalvo</string>
       </property>
       <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QSpinBox" name="Xsteps">
+      <property name="geometry">
+       <rect>
+        <x>200</x>
+        <y>20</y>
+        <width>101</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="wrapping">
+       <bool>false</bool>
+      </property>
+      <property name="minimum">
+       <number>1</number>
+      </property>
+      <property name="maximum">
+       <number>100000</number>
+      </property>
+      <property name="value">
+       <number>1000</number>
+      </property>
+     </widget>
+     <widget class="QLabel" name="XstepsLabel">
+      <property name="geometry">
+       <rect>
+        <x>200</x>
+        <y>0</y>
+        <width>81</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Xsteps</string>
+      </property>
+     </widget>
+     <widget class="QSpinBox" name="AlineAVG">
+      <property name="geometry">
+       <rect>
+        <x>350</x>
+        <y>20</y>
+        <width>101</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="value">
+       <number>1</number>
+      </property>
+     </widget>
+     <widget class="QLabel" name="AlineAvgLabel">
+      <property name="geometry">
+       <rect>
+        <x>350</x>
+        <y>0</y>
+        <width>141</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Aline average</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="XrangeLabel">
+      <property name="geometry">
+       <rect>
+        <x>200</x>
+        <y>160</y>
+        <width>191</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>X range(mm)：</string>
+      </property>
+     </widget>
+     <widget class="QDoubleSpinBox" name="XStepSize">
+      <property name="geometry">
+       <rect>
+        <x>200</x>
+        <y>90</y>
+        <width>101</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="value">
+       <double>2.000000000000000</double>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="Objective">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>70</y>
+        <width>151</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <item>
+       <property name="text">
+        <string>OptoSigma5X</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>OptoSigma10X</string>
+       </property>
+      </item>
+     </widget>
+     <widget class="QLabel" name="XStepsizeLabel">
+      <property name="geometry">
+       <rect>
+        <x>200</x>
+        <y>70</y>
+        <width>141</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Xstep size(um)</string>
+      </property>
+     </widget>
+     <widget class="QDoubleSpinBox" name="Bias">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>150</y>
+        <width>101</width>
+        <height>41</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="BiasLabel">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>130</y>
+        <width>81</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Bias(mm)</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="waveformLabel">
+      <property name="geometry">
+       <rect>
+        <x>800</x>
+        <y>0</y>
+        <width>881</width>
+        <height>241</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Galvo waveform</string>
+      </property>
+      <property name="scaledContents">
        <bool>true</bool>
       </property>
      </widget>
@@ -240,7 +627,7 @@
    <widget class="QPushButton" name="StopButton">
     <property name="geometry">
      <rect>
-      <x>150</x>
+      <x>1570</x>
       <y>0</y>
       <width>101</width>
       <height>41</height>
@@ -255,13 +642,31 @@
      <string>Stop</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="PauseButton">
+    <property name="geometry">
+     <rect>
+      <x>380</x>
+      <y>0</y>
+      <width>91</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>15</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Pause</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1762</width>
+     <width>1769</width>
      <height>33</height>
     </rect>
    </property>
@@ -280,7 +685,19 @@
    </widget>
    <addaction name="menumenu1"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QStatusBar" name="statusbar">
+   <property name="minimumSize">
+    <size>
+     <width>0</width>
+     <height>40</height>
+    </size>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>15</pointsize>
+    </font>
+   </property>
+  </widget>
   <action name="actionfunc1">
    <property name="text">
     <string>func1</string>

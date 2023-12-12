@@ -29,9 +29,14 @@ Created on Sun Dec 10 20:14:40 2023
 import time
 import sys
 from multiprocessing import Queue
-from GUI import Ui_MainWindow
-from PyQt5.QtWidgets import QApplication, QMainWindow
-from PyQt5.QtCore import  QThread
+from PyQt5.QtWidgets import QApplication
+from mainWindow import MainWindow
+from Actions import *
+from ThreadSave import SaveThread
+from ThreadAcq import ACQThread
+from ThreadGPU import GPUThread
+from ThreadStage import StageThread
+
 
 global XstageQueue
 global YstageQueue
@@ -45,152 +50,35 @@ AcqQueue = Queue()
 GPUQueue = Queue()
 SaveQueue = Queue()
 
-class moveto():
-    def __init__(self, direction, destination):
-        super().__init__()
-        self.action='move to'
-        self.direction=direction
-        self.destination=destination
-        
-class setSpeed():
-    def __init__(self, direction, speed):
-        super().__init__()
-        self.action='set speed'
-        self.direction=direction
-        self.speed=speed
-        
-class save():
+class GUI(MainWindow):
     def __init__(self):
         super().__init__()
-        self.action='save'
-        
-class process():
-    def __init__(self):
-        super().__init__()
-        self.action='process'
-
-class ACQ():
-    def __init__(self, mode):
-        super().__init__()
-        self.action='acquire'
-        self.mode=mode
-        
-class EXIT():
-    def __init__(self):
-        super().__init__()
-        self.action='exit'
-        
-class SaveThread(QThread):
-    def __init__(self, work):
-        super().__init__()
-        self.work = work
-        self.queue = SaveQueue
-        
-    # run 
-    def run(self):
-        self.QueueOut()
-        
-    def QueueOut(self):
-        self.item = self.queue.get()
-        while self.item.action != 'exit':
-            print('Save thread is doing ',self.item.action)
-            time.sleep(self.work)
-            self.item = self.queue.get()
-        print('Save process is exiting')
-            
-class ACQThread(QThread):
-    def __init__(self, work):
-        super().__init__()
-        self.work = work
-        self.queue = AcqQueue
-        
-    def run(self):
-        self.QueueOut()
-        
-    def QueueOut(self):
-        self.item = self.queue.get()
-        while self.item.action != 'exit':
-            print('ACQ thread is doing ',self.item.action)
-            time.sleep(self.work) 
-            self.item = self.queue.get()
-        print('ACQ process is exiting')
-            
-class GPUThread(QThread):
-    def __init__(self, work):
-        super().__init__()
-        self.work = work
-        self.queue = GPUQueue
-        
-    def run(self):
-        self.QueueOut()
-        
-    def QueueOut(self):
-        self.item = self.queue.get()
-        while self.item.action != 'exit':
-            print('GPU thread is doing ',self.item.action)
-            time.sleep(self.work)
-            self.item = self.queue.get()
-        print('GPU process is exiting')
-
-class XstageProcess(QThread):
-    def __init__(self, work):
-        super().__init__()
-        self.work = work
-        self.queue = XstageQueue
-    
-    def run(self):
-        self.QueueOut()
-        
-    def QueueOut(self):
-        self.item = self.queue.get()
-        while self.item.action != 'exit':
-            print('X stage process is doing ',self.item.action)
-            time.sleep(self.work)
-            self.item = self.queue.get()
-        print('X stage process is exiting')
-
-class YstageProcess(QThread):
-    def __init__(self, work):
-        super().__init__()
-        self.work = work
-        self.queue = YstageQueue
-        
-    def run(self):
-        self.QueueOut()
-        
-    def QueueOut(self):
-        self.item = self.queue.get()
-        while self.item.action != 'exit':
-            print('Y stage process is doing ',self.item.action)
-            time.sleep(self.work)
-            self.item = self.queue.get()
-        print('Y stage process is exiting')
-
-class mainWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.ui = Ui_MainWindow()
-        self.ui.setupUi(self)
-        self.Save_thread=SaveThread(5)
-        self.ACQ_thread=ACQThread(10)
-        self.GPU_thread=GPUThread(8)
-        self.Xstage_process = XstageProcess(0.5)
-        self.Ystage_process = YstageProcess(0.6)
+        self.Save_thread=SaveThread(5, SaveQueue)
+        self.ACQ_thread=ACQThread(10, AcqQueue)
+        self.GPU_thread=GPUThread(8, GPUQueue)
+        self.Xstage_thread = StageThread(0.5, XstageQueue)
+        self.Ystage_thread = StageThread(0.6, YstageQueue)
         self.connectActions()
     
     def connectActions(self):
         self.ui.RunButton.clicked.connect(self.run_tasks)
         self.ui.StopButton.clicked.connect(self.finish_tasks)
+        self.ui.Xsteps.valueChanged.connect(self.update_galvowaveform)
+        self.ui.XStepSize.valueChanged.connect(self.update_galvowaveform)
+        self.ui.AlineAVG.valueChanged.connect(self.update_galvowaveform)
+        self.ui.Bias.valueChanged.connect(self.update_galvowaveform)
+        self.ui.Objective.currentTextChanged.connect(self.update_galvowaveform)
+        
         
     def run_tasks(self):
         # start all threads
         self.Save_thread.start()
         self.ACQ_thread.start()
         self.GPU_thread.start()
-        self.Xstage_process.start()
-        self.Ystage_process.start()
+        self.Xstage_thread.start()
+        self.Ystage_thread.start()
         ii=0
-        while ii<5:
+        while ii<2:
             an_element=save()
             SaveQueue.put(an_element)
             time.sleep(0.001)
@@ -216,12 +104,15 @@ class mainWindow(QMainWindow):
         XstageQueue.put(exit_elment)
         YstageQueue.put(exit_elment)
         
+        if self.Save_thread.isFinished:
+            self.ui.statusbar.showMessage('Save process exited')
+        
 
         
 if __name__ == '__main__':
     # assign sleep time to each hardware thread to simulate hardware working time
     app = QApplication(sys.argv)
-    example = mainWindow()
+    example = GUI()
     example.show()
     sys.exit(app.exec_())
     
