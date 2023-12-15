@@ -30,11 +30,17 @@ class process():
         super().__init__()
         self.action='process'
 
-class ACQ():
-    def __init__(self, mode):
+class ACQaction():
+    def __init__(self, action, args):
         super().__init__()
-        self.action='acquire'
-        self.mode=mode
+        self.action=action
+        self.args=args
+        
+class Displayaction():
+    def __init__(self, action, args):
+        super().__init__()
+        self.action=action
+        self.args=args
         
 class EXIT():
     def __init__(self):

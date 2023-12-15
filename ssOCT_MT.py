@@ -36,85 +36,141 @@ from ThreadSave import SaveThread
 from ThreadAcq import ACQThread
 from ThreadGPU import GPUThread
 from ThreadStage import StageThread
+from ThreadDisplay import DSPThread
 
-
-global XstageQueue
-global YstageQueue
+global StageQueue
 global AcqQueue
 global GPUQueue
 global SaveQueue
+global DisplayQueue
 
-XstageQueue = Queue()
-YstageQueue = Queue()
+StageQueue = Queue()
 AcqQueue = Queue()
 GPUQueue = Queue()
 SaveQueue = Queue()
+DisplayQueue = Queue()
 
 class GUI(MainWindow):
     def __init__(self):
         super().__init__()
-        self.Save_thread=SaveThread(5, SaveQueue)
-        self.ACQ_thread=ACQThread(10, AcqQueue)
-        self.GPU_thread=GPUThread(8, GPUQueue)
-        self.Xstage_thread = StageThread(0.5, XstageQueue)
-        self.Ystage_thread = StageThread(0.6, YstageQueue)
-        self.connectActions()
+
+        self.Aline_frq = 100000
+        self.Init_allThreads()
+        self.ui.RunButton.clicked.connect(self.run_task)
+        # self.ui.StopButton.clicked.connect(self.Stop_task)
+        
     
-    def connectActions(self):
-        self.ui.RunButton.clicked.connect(self.run_tasks)
-        self.ui.StopButton.clicked.connect(self.finish_tasks)
-        self.ui.Xsteps.valueChanged.connect(self.update_galvowaveform)
-        self.ui.XStepSize.valueChanged.connect(self.update_galvowaveform)
-        self.ui.AlineAVG.valueChanged.connect(self.update_galvowaveform)
-        self.ui.Bias.valueChanged.connect(self.update_galvowaveform)
-        self.ui.Objective.currentTextChanged.connect(self.update_galvowaveform)
+    def Init_allThreads(self):
+        self.Save_thread=SaveThread(5, SaveQueue)
+        self.ACQ_thread=ACQThread(AcqQueue, DisplayQueue)
+        self.GPU_thread=GPUThread(8, GPUQueue)
+        self.Stage_thread = StageThread(0.5, StageQueue)
+        self.Display_thread = DSPThread(DisplayQueue, self.ui)
         
-        
-    def run_tasks(self):
-        # start all threads
         self.Save_thread.start()
         self.ACQ_thread.start()
         self.GPU_thread.start()
-        self.Xstage_thread.start()
-        self.Ystage_thread.start()
-        ii=0
-        while ii<2:
-            an_element=save()
-            SaveQueue.put(an_element)
-            time.sleep(0.001)
-            an_element=ACQ('single frame')
-            AcqQueue.put(an_element)
-            time.sleep(0.001)
-            an_element=process()
-            GPUQueue.put(an_element)
-            time.sleep(0.001)
-            an_element=moveto('up','10')
-            XstageQueue.put(an_element)
-            time.sleep(0.001)
-            an_element=setSpeed('up','10')
-            YstageQueue.put(an_element)
-            time.sleep(0.001)
-            ii+=1
+        self.Stage_thread.start()
+        self.Display_thread.start()
+    
             
-    def finish_tasks(self):
-        exit_elment=EXIT()
-        SaveQueue.put(exit_elment)
-        AcqQueue.put(exit_elment)
-        GPUQueue.put(exit_elment)
-        XstageQueue.put(exit_elment)
-        YstageQueue.put(exit_elment)
+    def Stop_allThreads(self):
+        exit_element=EXIT()
+        SaveQueue.put(exit_element)
+        AcqQueue.put(exit_element)
+        GPUQueue.put(exit_element)
+        StageQueue.put(exit_element)
+        DisplayQueue.put(exit_element)
         
-        if self.Save_thread.isFinished:
-            self.ui.statusbar.showMessage('Save process exited')
+    def run_task(self):
+        if self.ui.ACQMode.currentText() == 'RptAline':
+            # RptAline is for checking Aline profile, we don't need to capture each Aline, only display 30 Alines per second\
+            # if one wants to capture each Aline, they can set X and Y step size to be 0 and capture Cscan instead
+            self.RptAline()
+        elif self.ui.ACQMode.currentText() == 'SingleAline':
+            # Single Aline is for checking Aline profile, only capture and display one Aline
+            self.SingleAline()
+        elif self.ui.ACQMode.currentText() == 'RptBline':
+            # RptBline is for checking Bline profile, only display 30 Blines per second
+            # if one wants to capture each Bline, they can set Y stepsize to be 0 and capture Cscan instead
+            self.RptBline()
+        elif self.ui.ACQMode.currentText() == 'SingleBline':
+            # SingleBline is for checking Bline profile, only capture and display one Bline
+            self.SingleBline()
+        elif self.ui.ACQMode.currentText() == 'RptCscan':
+            # RptCscan is for acquiring Cscan at the same location repeatitively
+            self.RptCscan()
+        elif self.ui.ACQMode.currentText() == 'SingleCscan':
+            # SingleCscan is for acquiring one Cscan at the current location
+            self.SingleCscan()
+        elif self.ui.ACQMode.currentText() == 'SurfScan':
+            # SurfScan is for imaging the current surface with current stage height
+            self.SurfScan()
+        elif self.ui.ACQMode.currentText() == 'SurfScan+Slice':
+            # for serial sectioning OCT imaging
+            self.SurfScanSlice()
+        elif self.ui.ACQMode.currentText() == 'Slice':
+            # for cutting once at current stage height
+            self.Slice()
+        else:
+            self.ui.statusbar.showMessage('invalid task type! Abort action')
+        
+        
+    def RptBline(self):
+        # Init memory buffers
+        args = [self.ui.ACQMode.currentText(),\
+                self.ui.FFTsamples.value(),\
+                self.ui.Xsteps.value(), \
+                self.ui.AlineAVG.value()]
+            
+        acq_action = ACQaction('Initmemory', args)
+        AcqQueue.put(acq_action)
+        # gen DO waveform
+        args = [self.ui.ACQMode.currentText(),\
+                self.Aline_frq, \
+                self.ui.XStepSize.value(), \
+                self.ui.Xsteps.value(), \
+                self.ui.AlineAVG.value(), \
+                self.ui.XBias.value(), \
+                self.ui.Objective.currentText(), \
+                self.ui.PreClock.value(),\
+                self.ui.PostClock.value(),\
+                self.ui.YStepSize.value(),\
+                self.ui.Ysteps.value(),\
+                self.ui.BlineAVG.value()]
+        acq_action = ACQaction('GenAODO', args)
+        AcqQueue.put(acq_action)
+        # start acquiring
+        acq_action = ACQaction('StartACQ',args = self.ui.ACQMode.currentText())
+        AcqQueue.put(acq_action)
+        # ready DO for enabling trigger
+        # ready digitizer
+        # start digitizer
+        # start DO 
+        # data into memory space 1
+        # start GPU processing task
+        # display data
+        # if save data, start saving task
+        # if continuous
+            # data into memory space2
+            # start GPU processing task
+        
+    def closeEvent(self, event):
+        self.ui.statusbar.showMessage('Exiting all threads')
+        self.Stop_allThreads()
+        if self.Display_thread.isFinished:
+            event.accept()
+        else:
+            event.ignore()
         
 
-        
 if __name__ == '__main__':
     # assign sleep time to each hardware thread to simulate hardware working time
     app = QApplication(sys.argv)
     example = GUI()
     example.show()
     sys.exit(app.exec_())
+
     
     # put actions into the each queue
     
