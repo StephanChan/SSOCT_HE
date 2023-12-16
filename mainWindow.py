@@ -16,6 +16,7 @@ from Generaic_functions import *
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.Aline_frq = 100000
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.connectActions()
@@ -48,6 +49,8 @@ class MainWindow(QMainWindow):
         self.ui.SliceZDepth.valueChanged.connect(self.Calculate_SliceDepth)
         self.ui.SliceZnumber.valueChanged.connect(self.Calculate_SliceDepth)
         
+        
+        
     def update_galvoXwaveform(self):
         # calculate the total X range
         Xrange=self.ui.Xsteps.value()*self.ui.XStepSize.value()/1000
@@ -62,21 +65,10 @@ class MainWindow(QMainWindow):
                                         self.ui.PreClock.value(),\
                                         self.ui.PostClock.value())
         # show generating waveform result
+        #print(self.Xwaveform)
         self.ui.statusbar.showMessage(status)
-        if self.Xwaveform != None:
-            # clear content on plot
-            plt.cla()
-            # plot the new waveform
-            plt.plot(range(len(self.Xwaveform)),self.Xwaveform)
-            plt.ylim(-2,2)
-            plt.ylabel('voltage(V)')
-            plt.xticks(fontsize=15)
-            plt.yticks(fontsize=15)
-            plt.rcParams['savefig.dpi']=500
-            # save plot as jpeg
-            plt.savefig('galvo x waveform.jpg')
-            # load waveform image
-            pixmap = QPixmap('galvo x waveform.jpg')
+        if len(self.Xwaveform) > 0:
+            pixmap = LinePlot(self.Xwaveform)
             # clear content on the waveformLabel
             self.ui.XwaveformLabel.clear()
             # update iamge on the waveformLabel
@@ -96,19 +88,7 @@ class MainWindow(QMainWindow):
     #     # show generating waveform result
     #     self.ui.statusbar.showMessage(status)
     #     if self.Ywaveform != None:
-    #         # clear content on plot
-    #         plt.cla()
-    #         # plot the new waveform
-    #         plt.plot(range(len(self.Ywaveform)),self.Ywaveform)
-    #         plt.ylim(-2,2)
-    #         plt.ylabel('voltage(V)')
-    #         plt.xticks(fontsize=15)
-    #         plt.yticks(fontsize=15)
-    #         plt.rcParams['savefig.dpi']=500
-    #         # save plot as jpeg
-    #         plt.savefig('galvo x waveform.jpg')
-    #         # load waveform image
-    #         pixmap = QPixmap('galvo x waveform.jpg')
+    #         pixmap = LinePlot(self.Xwaveform)
     #         # clear content on the waveformLabel
     #         self.ui.YwaveformLabel.clear()
     #         # update iamge on the waveformLabel
@@ -123,19 +103,7 @@ class MainWindow(QMainWindow):
                                         self.ui.Overlap.value())
         self.ui.statusbar.showMessage(status)
         if self.Mosaic is not None:
-            # clear content on plot
-            plt.cla()
-            # plot the new waveform
-            plt.scatter(self.Mosaic[0],self.Mosaic[1])
-            # plt.ylim(-2,2)
-            # plt.ylabel('voltage(V)')
-            plt.xticks(fontsize=15)
-            plt.yticks(fontsize=15)
-            plt.rcParams['savefig.dpi']=500
-            # save plot as jpeg
-            plt.savefig('Mosaic.jpg')
-            # load waveform image
-            pixmap = QPixmap('Mosaic.jpg')
+            pixmap = ScatterPlot(self.Mosaic)
             # clear content on the waveformLabel
             self.ui.MosaicLabel.clear()
             # update iamge on the waveformLabel
@@ -145,14 +113,15 @@ class MainWindow(QMainWindow):
         self.image_depths = GenHeights(self.ui.ImageZStart.value(),\
                                        self.ui.ImageZDepth.value(),\
                                        self.ui.ImageZnumber.value())
-        print(self.image_depths)
+        #print(self.image_depths)
         #self.ui.statusbar.showMessage(self.image_depths)
             
     def Calculate_SliceDepth(self):
         self.slice_depths = GenHeights(self.ui.SliceZStart.value(),\
                                        self.ui.SliceZDepth.value(),\
                                        self.ui.SliceZnumber.value())
-        print(self.slice_depths)
+        #print(self.slice_depths)
         #self.ui.statusbar.showMessage(self.image_depths)
         
 
+        

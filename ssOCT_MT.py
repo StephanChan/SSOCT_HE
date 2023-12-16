@@ -25,24 +25,27 @@ Created on Sun Dec 10 20:14:40 2023
 # GUI input triggers in-queue action to the specified queue
 # define structure for queue element
 
+# between threads, using Queue to pass variables, variables gets duplicated in memory when passed as arguments
 
 import time
 import sys
 from multiprocessing import Queue
 from PyQt5.QtWidgets import QApplication
 from mainWindow import MainWindow
-from Actions import *
+from Actions import ACQAction, EXIT, StageAction
 from ThreadSave import SaveThread
 from ThreadAcq import ACQThread
 from ThreadGPU import GPUThread
 from ThreadStage import StageThread
 from ThreadDisplay import DSPThread
 
+
 global StageQueue
 global AcqQueue
 global GPUQueue
 global SaveQueue
 global DisplayQueue
+
 
 StageQueue = Queue()
 AcqQueue = Queue()
@@ -54,17 +57,19 @@ class GUI(MainWindow):
     def __init__(self):
         super().__init__()
 
-        self.Aline_frq = 100000
+
         self.Init_allThreads()
         self.ui.RunButton.clicked.connect(self.run_task)
         # self.ui.StopButton.clicked.connect(self.Stop_task)
-        
+        self.ui.Xmove2.clicked.connect(self.Xmove2)
+        self.ui.Ymove2.clicked.connect(self.Ymove2)
+        self.ui.Zmove2.clicked.connect(self.Zmove2)
     
     def Init_allThreads(self):
-        self.Save_thread=SaveThread(5, SaveQueue)
-        self.ACQ_thread=ACQThread(AcqQueue, DisplayQueue)
+        self.Save_thread=SaveThread(self.ui, SaveQueue)
+        self.ACQ_thread=ACQThread(self.ui, AcqQueue, DisplayQueue, SaveQueue, DisplayQueue)
         self.GPU_thread=GPUThread(8, GPUQueue)
-        self.Stage_thread = StageThread(0.5, StageQueue)
+        self.Stage_thread = StageThread(self.ui, StageQueue)
         self.Display_thread = DSPThread(DisplayQueue, self.ui)
         
         self.Save_thread.start()
@@ -83,77 +88,33 @@ class GUI(MainWindow):
         DisplayQueue.put(exit_element)
         
     def run_task(self):
-        if self.ui.ACQMode.currentText() == 'RptAline':
-            # RptAline is for checking Aline profile, we don't need to capture each Aline, only display 30 Alines per second\
+        if self.ui.ACQMode.currentText() != 'Slice':
+            # RptAline and SingleAline is for checking Aline profile, we don't need to capture each Aline, only display 30 Alines per second\
             # if one wants to capture each Aline, they can set X and Y step size to be 0 and capture Cscan instead
-            self.RptAline()
-        elif self.ui.ACQMode.currentText() == 'SingleAline':
-            # Single Aline is for checking Aline profile, only capture and display one Aline
-            self.SingleAline()
-        elif self.ui.ACQMode.currentText() == 'RptBline':
-            # RptBline is for checking Bline profile, only display 30 Blines per second
-            # if one wants to capture each Bline, they can set Y stepsize to be 0 and capture Cscan instead
-            self.RptBline()
-        elif self.ui.ACQMode.currentText() == 'SingleBline':
-            # SingleBline is for checking Bline profile, only capture and display one Bline
-            self.SingleBline()
-        elif self.ui.ACQMode.currentText() == 'RptCscan':
-            # RptCscan is for acquiring Cscan at the same location repeatitively
-            self.RptCscan()
-        elif self.ui.ACQMode.currentText() == 'SingleCscan':
-            # SingleCscan is for acquiring one Cscan at the current location
-            self.SingleCscan()
-        elif self.ui.ACQMode.currentText() == 'SurfScan':
-            # SurfScan is for imaging the current surface with current stage height
-            self.SurfScan()
-        elif self.ui.ACQMode.currentText() == 'SurfScan+Slice':
-            # for serial sectioning OCT imaging
-            self.SurfScanSlice()
-        elif self.ui.ACQMode.currentText() == 'Slice':
-            # for cutting once at current stage height
-            self.Slice()
-        else:
-            self.ui.statusbar.showMessage('invalid task type! Abort action')
-        
-        
-    def RptBline(self):
-        # Init memory buffers
-        args = [self.ui.ACQMode.currentText(),\
-                self.ui.FFTsamples.value(),\
-                self.ui.Xsteps.value(), \
-                self.ui.AlineAVG.value()]
             
-        acq_action = ACQaction('Initmemory', args)
-        AcqQueue.put(acq_action)
-        # gen DO waveform
-        args = [self.ui.ACQMode.currentText(),\
-                self.Aline_frq, \
-                self.ui.XStepSize.value(), \
-                self.ui.Xsteps.value(), \
-                self.ui.AlineAVG.value(), \
-                self.ui.XBias.value(), \
-                self.ui.Objective.currentText(), \
-                self.ui.PreClock.value(),\
-                self.ui.PostClock.value(),\
-                self.ui.YStepSize.value(),\
-                self.ui.Ysteps.value(),\
-                self.ui.BlineAVG.value()]
-        acq_action = ACQaction('GenAODO', args)
-        AcqQueue.put(acq_action)
-        # start acquiring
-        acq_action = ACQaction('StartACQ',args = self.ui.ACQMode.currentText())
-        AcqQueue.put(acq_action)
-        # ready DO for enabling trigger
-        # ready digitizer
-        # start digitizer
-        # start DO 
-        # data into memory space 1
-        # start GPU processing task
-        # display data
-        # if save data, start saving task
-        # if continuous
-            # data into memory space2
-            # start GPU processing task
+            
+            # RptBline and SingleBline is for checking Bline profile, only display 30 Blines per second
+            # if one wants to capture each Bline, they can set Y stepsize to be 0 and capture Cscan instead
+            
+            # RptCscan is for acquiring Cscan at the same location repeatitively
+            
+            an_action = ACQAction(self.ui.ACQMode.currentText())
+            AcqQueue.put(an_action)
+        else:
+            self.Slice()
+        
+    def Xmove2(self):
+        an_action = StageAction('Xmove2')
+        StageQueue.put(an_action)
+        
+    def Ymove2(self):
+        an_action = StageAction('Ymove2')
+        StageQueue.put(an_action)
+        
+    def Zmove2(self):
+        an_action = StageAction('Zmove2')
+        StageQueue.put(an_action)
+        
         
     def closeEvent(self, event):
         self.ui.statusbar.showMessage('Exiting all threads')
@@ -164,6 +125,8 @@ class GUI(MainWindow):
             event.ignore()
         
 
+                
+
 if __name__ == '__main__':
     # assign sleep time to each hardware thread to simulate hardware working time
     app = QApplication(sys.argv)
@@ -172,11 +135,3 @@ if __name__ == '__main__':
     sys.exit(app.exec_())
 
     
-    # put actions into the each queue
-    
-    
-            
-    
-
-
-# In[ ]:

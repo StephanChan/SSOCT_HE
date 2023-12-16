@@ -6,9 +6,8 @@ Created on Tue Dec 12 18:26:44 2023
 """
 
 from PyQt5.QtCore import  QThread
-from PyQt5.QtGui import QPixmap
-import time
-from matplotlib import pyplot as plt
+from Generaic_functions import ScatterPlot, LinePlot, ImagePlot
+import numpy as np
 
 class DSPThread(QThread):
     def __init__(self, DspQueue, ui):
@@ -22,41 +21,51 @@ class DSPThread(QThread):
     def QueueOut(self):
         self.item = self.queue.get()
         while self.item.action != 'exit':
+            self.ui.statusbar.showMessage('Display thread is doing ' + self.item.action)
             if self.item.action == 'Aline':
-                print('Display thread is doing ',self.item.action)
-                self.Display_aline(self.item.args)
+                
+                self.Display_aline(self.item.data)
             
             elif self.item.action == 'Bline':
-                print('Display thread is doing ',self.item.action)
-                self.Display_bline(self.item.args)
+                self.Display_bline(self.item.data)
                 
             elif self.item.action == 'Cscan':
-                print('Display thread is doing ',self.item.action)
-                self.Display_Cscan(self.item.args)
+                self.Display_Cscan(self.item.data)
                 
             else:
-                print('invalid action!')
+                self.ui.statusbar.showMessage('Display thread is doing something invalid' + self.item.action)
             
             self.item = self.queue.get()
             
-    def Display_aline(self,buffer):
-        pass
-    
-    def Display_bline(self, buffer):
-        # clear content on plot
-        plt.cla()
-        # plot the new waveform
-        plt.imshow(buffer[0:1000,0:1000])
-        # plt.ylim(-2,2)
-        # plt.ylabel('voltage(V)')
-        # plt.xticks(fontsize=15)
-        # plt.yticks(fontsize=15)
-        plt.rcParams['savefig.dpi']=500
-        # save plot as jpeg
-        plt.savefig('Bline.jpg')
-        # load waveform image
-        pixmap = QPixmap('Bline.jpg')
+
+    def Display_aline(self, data):
+        #data = ctypes.cast(data_address, ctypes.py_object).value 
+        pixmap = LinePlot(data)
         # clear content on the waveformLabel
         self.ui.XYplane.clear()
         # update iamge on the waveformLabel
         self.ui.XYplane.setPixmap(pixmap)
+    
+    def Display_bline(self, data):
+        #data = ctypes.cast(data_address, ctypes.py_object).value 
+        pixmap = ImagePlot(data)
+        # clear content on the waveformLabel
+        self.ui.XYplane.clear()
+        # update iamge on the waveformLabel
+        self.ui.XYplane.setPixmap(pixmap)
+        
+    def Display_Cscan(self, data):
+        #data = ctypes.cast(data_address, ctypes.py_object).value 
+        plane = data[:,:,1]
+        pixmap = ImagePlot(plane)
+        # clear content on the waveformLabel
+        self.ui.XYplane.clear()
+        # update iamge on the waveformLabel
+        self.ui.XYplane.setPixmap(pixmap)
+        
+        plane = data[1,:,:]
+        pixmap = ImagePlot(plane)
+        # clear content on the waveformLabel
+        self.ui.YZplane.clear()
+        # update iamge on the waveformLabel
+        self.ui.YZplane.setPixmap(pixmap)

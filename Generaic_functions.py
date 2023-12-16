@@ -249,8 +249,57 @@ def GenMosaic(Xmin, Xmax, Ymin, Ymax, FOV, overlap=10):
 def GenHeights(start, depth, Nplanes):
     return np.arange(start, start+Nplanes*depth/1000+0.01, depth/1000)
 
+from PyQt5.QtGui import QPixmap, QImage
 
+from matplotlib import pyplot as plt
+
+def LinePlot(waveform):
+    # clear content on plot
+    plt.cla()
+    # plot the new waveform
+    plt.plot(range(len(waveform)),waveform)
+    # plt.ylim(-2,2)
+    #plt.ylabel('voltage(V)')
+    plt.xticks(fontsize=15)
+    plt.yticks(fontsize=15)
+    plt.rcParams['savefig.dpi']=500
+    # save plot as jpeg
+    plt.savefig('lineplot.jpg')
+    # load waveform image
+    pixmap = QPixmap('lineplot.jpg')
+    return pixmap
+
+def ScatterPlot(mosaic):
+    # clear content on plot
+    plt.cla()
+    # plot the new waveform
+    plt.scatter(mosaic[0],mosaic[1])
+    # plt.ylim(-2,2)
+    # plt.ylabel('voltage(V)')
+    plt.xticks(fontsize=15)
+    plt.yticks(fontsize=15)
+    plt.rcParams['savefig.dpi']=500
+    # save plot as jpeg
+    plt.savefig('scatter.jpg')
+    # load waveform image
+    pixmap = QPixmap('scatter.jpg')
+    return pixmap
     
-    
-    
+def ImagePlot(matrix):
+    # # clear content on plot
+    # plt.cla()
+    # # plot the new waveform
+    # plt.imshow(matrix)
+    # # plt.ylim(-2,2)
+    # # plt.ylabel('voltage(V)')
+    # plt.xticks(fontsize=15)
+    # plt.yticks(fontsize=15)
+    # plt.rcParams['savefig.dpi']=500
+    # # save plot as jpeg
+    # plt.savefig('Image.jpg')
+    # # load waveform image
+    # pixmap = QPixmap('Image.jpg')
+    im = QImage(matrix.data, matrix.shape[1], matrix.shape[0], matrix.shape[1]*1, QImage.Format_Grayscale8)
+    pixmap = QPixmap(im)
+    return pixmap
     

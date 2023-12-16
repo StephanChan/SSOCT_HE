@@ -9,9 +9,9 @@ from PyQt5.QtCore import  QThread
 import time
 
 class SaveThread(QThread):
-    def __init__(self, work, SaveQueue):
+    def __init__(self, ui, SaveQueue):
         super().__init__()
-        self.work = work
+        self.ui = ui
         self.queue = SaveQueue
         
     # overwrite run function to de-queue
@@ -22,11 +22,17 @@ class SaveThread(QThread):
     def QueueOut(self):
         self.item = self.queue.get()
         while self.item.action != 'exit':
-            print('Save thread is doing ',self.item.action, '\n')
-            time.sleep(self.work)
+            if self.item.action == 'Save':
+                self.ui.statusbar.showMessage('Save thread is doing '+self.item.action)
+                start = time.time()
+                self.WriteData(self.item.data, self.item.filename)
+                self.ui.statusbar.showMessage('saving took '+str(time.time()-start)+' seconds')
             self.item = self.queue.get()
             
-    def WriteData(self, filePath, data):
+    def WriteData(self, data, filename):
+        filePath = self.ui.DIR.toPlainText()
+        filePath = filePath + "\\" + filename
+        # print(filePath)
         with open(filePath, "wb") as file:
             file.write(data)
             file.close()

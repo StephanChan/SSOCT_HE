@@ -6,41 +6,34 @@ Created on Tue Dec 12 16:43:51 2023
 """
 # here defines all the legitimate actions that can be put into a queue
 
-class moveto():
-    def __init__(self, direction, destination):
+class StageAction():
+    def __init__(self, action):
         super().__init__()
-        self.action='move to'
-        self.direction=direction
-        self.destination=destination
-        
-class setSpeed():
-    def __init__(self, direction, speed):
-        super().__init__()
-        self.action='set speed'
-        self.direction=direction
-        self.speed=speed
-        
-class save():
-    def __init__(self):
-        super().__init__()
-        self.action='save'
-        
-class process():
-    def __init__(self):
-        super().__init__()
-        self.action='process'
+        self.action=action
 
-class ACQaction():
-    def __init__(self, action, args):
-        super().__init__()
-        self.action=action
-        self.args=args
         
-class Displayaction():
-    def __init__(self, action, args):
+class SaveAction():
+    def __init__(self, action, data, filename):
         super().__init__()
         self.action=action
-        self.args=args
+        self.data = data
+        self.filename = filename
+        
+class GPUAction():
+    def __init__(self, action):
+        super().__init__()
+        self.action=action
+
+class ACQAction():
+    def __init__(self, action):
+        super().__init__()
+        self.action = action
+        
+class DisplayAction():
+    def __init__(self, action, data):
+        super().__init__()
+        self.action=action
+        self.data = data
         
 class EXIT():
     def __init__(self):
