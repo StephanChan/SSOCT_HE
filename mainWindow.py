@@ -27,7 +27,8 @@ class MainWindow(QMainWindow):
         self.ui.AlineAVG.valueChanged.connect(self.update_galvoXwaveform)
         self.ui.XBias.valueChanged.connect(self.update_galvoXwaveform)
         self.ui.Objective.currentTextChanged.connect(self.update_galvoXwaveform)
-        
+        self.ui.PreClock.valueChanged.connect(self.update_galvoXwaveform)
+        self.ui.PostClock.valueChanged.connect(self.update_galvoXwaveform)
         # self.ui.Ysteps.valueChanged.connect(self.update_galvoYwaveform)
         # self.ui.YStepSize.valueChanged.connect(self.update_galvoYwaveform)
         # self.ui.BlineAVG.valueChanged.connect(self.update_galvoYwaveform)

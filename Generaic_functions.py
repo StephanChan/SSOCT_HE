@@ -231,7 +231,7 @@ def GenMosaic(Xmin, Xmax, Ymin, Ymax, FOV, overlap=10):
     stopX = Xmax+(actualX-(Xmax-Xmin))/2+0.01
     # generate X positions
     Xpositions = np.arange(startX, stopX, stepsize)
-    print(Xpositions)
+    #print(Xpositions)
     
     Ysteps = np.ceil((Ymax-Ymin)/stepsize)
     actualY=Ysteps*stepsize
@@ -286,20 +286,7 @@ def ScatterPlot(mosaic):
     return pixmap
     
 def ImagePlot(matrix):
-    # # clear content on plot
-    # plt.cla()
-    # # plot the new waveform
-    # plt.imshow(matrix)
-    # # plt.ylim(-2,2)
-    # # plt.ylabel('voltage(V)')
-    # plt.xticks(fontsize=15)
-    # plt.yticks(fontsize=15)
-    # plt.rcParams['savefig.dpi']=500
-    # # save plot as jpeg
-    # plt.savefig('Image.jpg')
-    # # load waveform image
-    # pixmap = QPixmap('Image.jpg')
-    im = QImage(matrix.data, matrix.shape[1], matrix.shape[0], matrix.shape[1]*1, QImage.Format_Grayscale8)
+    im = QImage(matrix.data, matrix.shape[1], matrix.shape[0], QImage.Format_Grayscale8)
     pixmap = QPixmap(im)
     return pixmap
     

@@ -56,14 +56,14 @@ class DSPThread(QThread):
         
     def Display_Cscan(self, data):
         #data = ctypes.cast(data_address, ctypes.py_object).value 
-        plane = data[:,:,1]
+        plane = data[1,:,:] # has to be first index, otherwise the memory space is not continuous
         pixmap = ImagePlot(plane)
         # clear content on the waveformLabel
         self.ui.XYplane.clear()
         # update iamge on the waveformLabel
         self.ui.XYplane.setPixmap(pixmap)
         
-        plane = data[1,:,:]
+        plane = np.copy(data[:,:,1])
         pixmap = ImagePlot(plane)
         # clear content on the waveformLabel
         self.ui.YZplane.clear()

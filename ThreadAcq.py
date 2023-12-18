@@ -54,7 +54,7 @@ class ACQThread(QThread):
         # start digitizer
         # start DO 
         
-        buffer = np.random.random([1000,1000]).astype(np.uint16)
+        buffer = np.random.randint(0, 255, [1000, 1000], np.uint8)
         # need to pass pointer, otherwise the buffer gets duplicated
         an_action = DisplayAction('Bline', data = buffer)
         self.displayQueue.put(an_action)
@@ -67,7 +67,7 @@ class ACQThread(QThread):
         # start digitizer
         # start DO 
         
-        buffer = np.random.random(1000).astype(np.uint16)
+        buffer = np.random.randint(0, 255, [1, 1000], np.uint8)
         # need to pass pointer, otherwise the buffer gets duplicated
         an_action = DisplayAction('Aline',data = buffer)
         self.displayQueue.put(an_action)
@@ -78,7 +78,7 @@ class ACQThread(QThread):
         # start digitizer
         # start DO 
         
-        buffer = np.random.random([1000, 1000, 1000]).astype(np.uint16)
+        buffer = np.random.randint(0, 255, [1000, 1000, 1000], np.uint8)
         # need to pass pointer, otherwise the buffer gets duplicated
         an_action = DisplayAction('Cscan', data = buffer)
         self.displayQueue.put(an_action)
