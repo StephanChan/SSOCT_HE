@@ -258,7 +258,8 @@ def LinePlot(waveform):
     plt.cla()
     # plot the new waveform
     plt.plot(range(len(waveform)),waveform)
-    # plt.ylim(-2,2)
+    
+    plt.ylim(np.min(waveform),np.max(waveform))
     #plt.ylabel('voltage(V)')
     plt.xticks(fontsize=15)
     plt.yticks(fontsize=15)

@@ -33,25 +33,21 @@ from multiprocessing import Queue
 from PyQt5.QtWidgets import QApplication
 from mainWindow import MainWindow
 from Actions import ACQAction, EXIT, StageAction
-from ThreadSave import SaveThread
 from ThreadAcq import ACQThread
-from ThreadGPU import GPUThread
 from ThreadStage import StageThread
 from ThreadDisplay import DSPThread
 
 
 global StageQueue
 global AcqQueue
-global GPUQueue
-global SaveQueue
 global DisplayQueue
+global PauseQueue
 
 
 StageQueue = Queue()
 AcqQueue = Queue()
-GPUQueue = Queue()
-SaveQueue = Queue()
 DisplayQueue = Queue()
+PauseQueue = Queue()
 
 class GUI(MainWindow):
     def __init__(self):
@@ -60,30 +56,25 @@ class GUI(MainWindow):
 
         self.Init_allThreads()
         self.ui.RunButton.clicked.connect(self.run_task)
-        # self.ui.StopButton.clicked.connect(self.Stop_task)
+        self.ui.StopButton.clicked.connect(self.Stop_task)
+        self.ui.PauseButton.clicked.connect(self.Pause_task)
         self.ui.Xmove2.clicked.connect(self.Xmove2)
         self.ui.Ymove2.clicked.connect(self.Ymove2)
         self.ui.Zmove2.clicked.connect(self.Zmove2)
     
     def Init_allThreads(self):
-        self.Save_thread=SaveThread(self.ui, SaveQueue)
-        self.ACQ_thread=ACQThread(self.ui, AcqQueue, DisplayQueue, SaveQueue, DisplayQueue)
-        self.GPU_thread=GPUThread(8, GPUQueue)
-        self.Stage_thread = StageThread(self.ui, StageQueue)
+        self.ACQ_thread=ACQThread(self.ui, AcqQueue, DisplayQueue, StageQueue, PauseQueue)
+        self.Stage_thread = StageThread(self.ui, StageQueue, PauseQueue)
         self.Display_thread = DSPThread(DisplayQueue, self.ui)
         
-        self.Save_thread.start()
         self.ACQ_thread.start()
-        self.GPU_thread.start()
         self.Stage_thread.start()
         self.Display_thread.start()
     
             
     def Stop_allThreads(self):
         exit_element=EXIT()
-        SaveQueue.put(exit_element)
         AcqQueue.put(exit_element)
-        GPUQueue.put(exit_element)
         StageQueue.put(exit_element)
         DisplayQueue.put(exit_element)
         
@@ -115,6 +106,17 @@ class GUI(MainWindow):
         an_action = StageAction('Zmove2')
         StageQueue.put(an_action)
         
+    def Pause_task(self):
+        if self.ui.PauseButton.isChecked():
+            PauseQueue.put('Pause')
+            self.ui.statusbar.showMessage('acquisition paused...')
+        else:
+            PauseQueue.put('unPause')
+            self.ui.statusbar.showMessage('acquisition unpaused...')
+      
+    def Stop_task(self):
+        PauseQueue.put('Stop')
+        self.ui.statusbar.showMessage('acquisition stopped...')
         
     def closeEvent(self, event):
         self.ui.statusbar.showMessage('Exiting all threads')

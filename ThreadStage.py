@@ -7,10 +7,11 @@ Created on Tue Dec 12 16:51:20 2023
 from PyQt5.QtCore import  QThread
 
 class StageThread(QThread):
-    def __init__(self, ui, stageQueue):
+    def __init__(self, ui, stageQueue, PauseQueue):
         super().__init__()
         self.ui = ui
         self.queue = stageQueue
+        self.pauseQueue = PauseQueue
     
     def run(self):
         self.QueueOut()

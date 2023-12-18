@@ -8,16 +8,19 @@ from PyQt5.QtCore import  QThread
 import time
 import numpy as np
 from Generaic_functions import *
-from Actions import DisplayAction, SaveAction, GPUAction
+from Actions import DisplayAction, StageAction
 
 class ACQThread(QThread):
-    def __init__(self, ui, AcqQueue, DisplayQueue, SaveQueue, GPUQueue):
+    def __init__(self, ui, AcqQueue, DisplayQueue, StageQueue, PauseQueue):
         super().__init__()
         self.ui = ui
         self.queue = AcqQueue
         self.displayQueue = DisplayQueue
-        self.SaveQueue = SaveQueue
-        self.GPUQueue = GPUQueue
+        self.StageQueue = StageQueue
+        self.pauseQueue = PauseQueue
+        self.sliceNum = 0
+        self.tileNum = 0
+        self.mosaic = None
         
     def run(self):
         self.QueueOut()
@@ -43,6 +46,9 @@ class ACQThread(QThread):
             elif self.item.action == 'SingleCscan':
                 self.RptCscan()
                 
+            elif self.item.action == 'SurfScan':
+                self.SurfScan()
+                
             else:
                 self.ui.statusbar.showMessage('ACQ thread is doing something invalid: '+self.item.action)
             
@@ -56,10 +62,10 @@ class ACQThread(QThread):
         
         buffer = np.random.randint(0, 255, [1000, 1000], np.uint8)
         # need to pass pointer, otherwise the buffer gets duplicated
-        an_action = DisplayAction('Bline', data = buffer)
+        an_action = DisplayAction('Bline', buffer)
         self.displayQueue.put(an_action)
-        an_action = SaveAction('Save', data = buffer, filename = 'data.dat')
-        self.SaveQueue.put(an_action)
+        if self.ui.Save.isChecked():
+            self.WriteData(buffer, self.NextFilename())
         
     def RptAline(self):
         # ready DO for enabling trigger
@@ -67,9 +73,9 @@ class ACQThread(QThread):
         # start digitizer
         # start DO 
         
-        buffer = np.random.randint(0, 255, [1, 1000], np.uint8)
+        buffer = np.random.randint(0, 255, 1000, np.uint8)
         # need to pass pointer, otherwise the buffer gets duplicated
-        an_action = DisplayAction('Aline',data = buffer)
+        an_action = DisplayAction('Aline',buffer)
         self.displayQueue.put(an_action)
         
     def RptCscan(self):
@@ -78,11 +84,58 @@ class ACQThread(QThread):
         # start digitizer
         # start DO 
         
-        buffer = np.random.randint(0, 255, [1000, 1000, 1000], np.uint8)
+        buffer = np.random.randint(0, 255, [100, 1000, 1000], np.uint8)
         # need to pass pointer, otherwise the buffer gets duplicated
-        an_action = DisplayAction('Cscan', data = buffer)
+        an_action = DisplayAction('Cscan', buffer)
         self.displayQueue.put(an_action)
-        an_action = SaveAction('Save', data = buffer, filename = 'data.dat')
-        self.SaveQueue.put(an_action)
+        if self.ui.Save.isChecked():
+            self.WriteData(buffer, self.NextFilename())
             
-                
+    def WriteData(self, data, filename):
+        filePath = self.ui.DIR.toPlainText()
+        filePath = filePath + "\\" + filename
+        # print(filePath)
+        with open(filePath, "wb") as file:
+            file.write(data)
+            file.close()
+            
+    def SurfScan(self):
+        interupt = None
+        # generate Mosaic pattern
+        self.Mosaic, status = GenMosaic(self.ui.XStart.value(),\
+                                        self.ui.XStop.value(),\
+                                        self.ui.YStart.value(),\
+                                        self.ui.YStop.value(),\
+                                        self.ui.FOV.value(),\
+                                        self.ui.Overlap.value())
+        self.Mosaic = self.Mosaic[0]
+        # ready DO for enabling trigger
+        # ready digitizer
+        # start digitizer
+        # start DO 
+        while np.any(self.Mosaic):
+            try:
+               interupt = self.pauseQueue.get(timeout=0.01)  # time out 0.01 s
+            except:
+                # normally, acquiring next Cscan
+                buffer = np.random.randint(0, 255, [100, 1000, 1000], np.uint8)
+                # need to pass pointer, otherwise the buffer gets duplicated
+                an_action = DisplayAction('Cscan', buffer)
+                self.displayQueue.put(an_action)
+                if self.ui.Save.isChecked():
+                    self.WriteData(buffer, self.NextFilename())
+                self.Mosaic = self.Mosaic[1:]
+            if interupt == 'Pause':
+                while interupt == 'Pause':
+                    time.sleep(1)
+                    try:
+                        interupt = self.pauseQueue.get(timeout=0.01)  # time out 0.01 s
+                    except:
+                        pass
+            if interupt == 'Stop':
+                # stop while loop
+                self.Mosaic = []
+            
+    def NextFilename(self):
+        return 'slice-'+str(self.sliceNum)+'tile-'+str(self.tileNum)+'.dat'
+        
