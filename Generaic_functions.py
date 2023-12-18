@@ -263,7 +263,7 @@ def LinePlot(waveform):
     #plt.ylabel('voltage(V)')
     plt.xticks(fontsize=15)
     plt.yticks(fontsize=15)
-    plt.rcParams['savefig.dpi']=500
+    plt.rcParams['savefig.dpi']=150
     # save plot as jpeg
     plt.savefig('lineplot.jpg')
     # load waveform image

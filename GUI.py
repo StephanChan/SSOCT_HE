@@ -50,7 +50,7 @@ class Ui_MainWindow(object):
         font = QtGui.QFont()
         font.setPointSize(25)
         self.XYplane.setFont(font)
-        self.XYplane.setScaledContents(True)
+        self.XYplane.setScaledContents(False)
         self.XYplane.setObjectName("XYplane")
         self.horizontalLayout.addWidget(self.XYplane)
         self.YZplane = QtWidgets.QLabel(self.layoutWidget)

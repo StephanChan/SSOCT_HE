@@ -63,7 +63,8 @@ class DSPThread(QThread):
         # update iamge on the waveformLabel
         self.ui.XYplane.setPixmap(pixmap)
         
-        plane = np.copy(data[:,:,1])
+        # plane1 = data[:,:,1].T
+        plane = np.transpose(data[:,:,1]).copy()
         pixmap = ImagePlot(plane)
         # clear content on the waveformLabel
         self.ui.YZplane.clear()
