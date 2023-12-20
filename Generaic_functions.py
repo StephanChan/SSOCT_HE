@@ -209,8 +209,8 @@ def GenAODO(mode, Aline_frq = 100000, XStepSize = 1, XSteps = 1000, AVG = 1, bia
         status = 'invalid task type! Abort action'
         return None, None, status
     
-    
-def GenMosaic(Xmin, Xmax, Ymin, Ymax, FOV, overlap=10):
+
+def GenMosaic_XYGalvo(Xmin, Xmax, Ymin, Ymax, FOV, overlap=10):
     # all arguments are with units mm
     # overlap is with unit %
     if Xmin > Xmax:
@@ -244,6 +244,42 @@ def GenMosaic(Xmin, Xmax, Ymin, Ymax, FOV, overlap=10):
     Positions = np.meshgrid(Xpositions, Ypositions)
     status = 'Mosaic Generation success'
     return Positions, status
+
+class MOSAIC():
+    def __init__(self, x, ystart, ystop):
+        super().__init__()
+        self.x = x
+        self.ystart = ystart
+        self.ystop = ystop
+        
+def GenMosaic_XGalvo(Xmin, Xmax, Ymin, Ymax, FOV, overlap=10):
+    # all arguments are with units mm
+    # overlap is with unit %
+    if Xmin > Xmax:
+        status = 'Xmin is larger than Xmax, Mosaic generation failed'
+        return None, status
+    if Ymin > Ymax:
+        status = 'Y min is larger than Ymax, Mosaic generation failed'
+        return None, status
+    # get FOV step size
+    stepsize = FOV*(1-overlap/100)
+    # get how many FOVs in X direction
+    Xsteps = np.ceil((Xmax-Xmin)/stepsize)
+    # get actual X range
+    actualX=Xsteps*stepsize
+    # generate start and stop position in X direction
+    # add or subtract a small number to avoid precision loss
+    startX=Xmin-(actualX-(Xmax-Xmin))/2
+    stopX = Xmax+(actualX-(Xmax-Xmin))/2+0.01
+    # generate X positions
+    pos = np.arange(startX, stopX, stepsize)
+    #print(Xpositions)
+    mosaic = []
+    for ii, element in enumerate(pos):
+        mosaic = np.append(mosaic, MOSAIC(element, Ymin, Ymax))
+
+    status = 'Mosaic Generation success'
+    return mosaic, status
     
     
 def GenHeights(start, depth, Nplanes):
@@ -260,7 +296,7 @@ def LinePlot(waveform):
     plt.plot(range(len(waveform)),waveform)
     
     plt.ylim(np.min(waveform),np.max(waveform))
-    #plt.ylabel('voltage(V)')
+
     plt.xticks(fontsize=15)
     plt.yticks(fontsize=15)
     plt.rcParams['savefig.dpi']=150
@@ -275,11 +311,13 @@ def ScatterPlot(mosaic):
     plt.cla()
     # plot the new waveform
     plt.scatter(mosaic[0],mosaic[1])
+    plt.plot(mosaic[0],mosaic[1])
     # plt.ylim(-2,2)
-    # plt.ylabel('voltage(V)')
+    plt.ylabel('Y stage',fontsize=15)
+    plt.xlabel('X stage',fontsize=15)
     plt.xticks(fontsize=15)
     plt.yticks(fontsize=15)
-    plt.rcParams['savefig.dpi']=500
+    plt.rcParams['savefig.dpi']=150
     # save plot as jpeg
     plt.savefig('scatter.jpg')
     # load waveform image

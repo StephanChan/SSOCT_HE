@@ -36,16 +36,19 @@ from Actions import ACQAction, EXIT, StageAction
 from ThreadAcq import ACQThread
 from ThreadStage import StageThread
 from ThreadDisplay import DSPThread
+from ThreadSave import SaveThread
 
 
 global StageQueue
 global AcqQueue
 global DisplayQueue
 global PauseQueue
+global SaveQueue
 
 
 StageQueue = Queue()
 AcqQueue = Queue()
+SaveQueue = Queue()
 DisplayQueue = Queue()
 PauseQueue = Queue()
 
@@ -56,43 +59,55 @@ class GUI(MainWindow):
 
         self.Init_allThreads()
         self.ui.RunButton.clicked.connect(self.run_task)
-        self.ui.StopButton.clicked.connect(self.Stop_task)
         self.ui.PauseButton.clicked.connect(self.Pause_task)
         self.ui.Xmove2.clicked.connect(self.Xmove2)
         self.ui.Ymove2.clicked.connect(self.Ymove2)
         self.ui.Zmove2.clicked.connect(self.Zmove2)
     
     def Init_allThreads(self):
-        self.ACQ_thread=ACQThread(self.ui, AcqQueue, DisplayQueue, StageQueue, PauseQueue)
+        self.ACQ_thread=ACQThread(self.ui, AcqQueue, DisplayQueue, StageQueue, PauseQueue, SaveQueue,self.ui.Ynum.value())
         self.Stage_thread = StageThread(self.ui, StageQueue, PauseQueue)
-        self.Display_thread = DSPThread(DisplayQueue, self.ui)
+        self.Display_thread = DSPThread(self.ui, DisplayQueue)
+        self.Save_thread = SaveThread(self.ui, SaveQueue)
         
         self.ACQ_thread.start()
         self.Stage_thread.start()
         self.Display_thread.start()
-    
+        self.Save_thread.start()
             
     def Stop_allThreads(self):
         exit_element=EXIT()
         AcqQueue.put(exit_element)
         StageQueue.put(exit_element)
         DisplayQueue.put(exit_element)
+        SaveQueue.put(exit_element)
         
     def run_task(self):
-        if self.ui.ACQMode.currentText() != 'Slice':
-            # RptAline and SingleAline is for checking Aline profile, we don't need to capture each Aline, only display 30 Alines per second\
-            # if one wants to capture each Aline, they can set X and Y step size to be 0 and capture Cscan instead
-            
-            
-            # RptBline and SingleBline is for checking Bline profile, only display 30 Blines per second
-            # if one wants to capture each Bline, they can set Y stepsize to be 0 and capture Cscan instead
-            
-            # RptCscan is for acquiring Cscan at the same location repeatitively
-            
+        # RptAline and SingleAline is for checking Aline profile, we don't need to capture each Aline, only display 30 Alines per second\
+        # if one wants to capture each Aline, they can set X and Y step size to be 0 and capture Cscan instead
+        
+        
+        # RptBline and SingleBline is for checking Bline profile, only display 30 Blines per second
+        # if one wants to capture each Bline, they can set Y stepsize to be 0 and capture Cscan instead
+        
+        # RptCscan is for acquiring Cscan at the same location repeatitively
+
+        if self.ui.ACQMode.currentText() in ['RptAline','RptBline','RptCscan','SurfScan','SurfScan+Slice']:
+            if self.ui.RunButton.isChecked():
+                self.ui.RunButton.setText('Stop')
+                an_action = ACQAction(self.ui.ACQMode.currentText())
+                AcqQueue.put(an_action)
+            else:
+                self.ui.RunButton.setText('Run')
+                self.Stop_task()
+        elif self.ui.ACQMode.currentText() in ['SingleAline','SingleBline','SingleCscan']:
             an_action = ACQAction(self.ui.ACQMode.currentText())
             AcqQueue.put(an_action)
+            self.ui.RunButton.setChecked(False)
+            self.ui.RunButton.setText('Run')
         else:
             self.Slice()
+
         
     def Xmove2(self):
         an_action = StageAction('Xmove2')

@@ -6,6 +6,8 @@ Created on Tue Dec 12 16:43:51 2023
 """
 # here defines all the legitimate actions that can be put into a queue
 
+import numpy as np
+
 class StageAction():
     def __init__(self, action):
         super().__init__()
@@ -19,10 +21,6 @@ class SaveAction():
         self.data = data
         self.filename = filename
         
-class GPUAction():
-    def __init__(self, action):
-        super().__init__()
-        self.action=action
 
 class ACQAction():
     def __init__(self, action):
@@ -30,10 +28,12 @@ class ACQAction():
         self.action = action
         
 class DisplayAction():
-    def __init__(self, action, data):
+    def __init__(self, action, data=[], args = []):
         super().__init__()
         self.action=action
         self.data = data
+        self.args = args
+
         
 class EXIT():
     def __init__(self):

@@ -16,11 +16,18 @@ from Generaic_functions import *
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.Aline_frq = 100000
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        if self.ui.Laser.currentText() == 'Axsun100k':
+            self.Aline_frq = 100000
+        elif self.ui.Laser.currentText() == 'Thorlabs200k':
+            self.Aline_frq = 200000
+        else:
+            self.ui.statusbar.showMessage('Laser invalid!!!')
         self.connectActions()
-    
+        self.update_galvoXwaveform()
+        self.update_Mosaic()
+        
     def connectActions(self):
         self.ui.Xsteps.valueChanged.connect(self.update_galvoXwaveform)
         self.ui.XStepSize.valueChanged.connect(self.update_galvoXwaveform)
@@ -39,8 +46,8 @@ class MainWindow(QMainWindow):
         self.ui.XStop.valueChanged.connect(self.update_Mosaic)
         self.ui.YStart.valueChanged.connect(self.update_Mosaic)
         self.ui.YStop.valueChanged.connect(self.update_Mosaic)
-        self.ui.FOV.valueChanged.connect(self.update_Mosaic)
         self.ui.Overlap.valueChanged.connect(self.update_Mosaic)
+        self.ui.FOV.textChanged.connect(self.update_Mosaic)
         
         self.ui.ImageZStart.valueChanged.connect(self.Calculate_ImageDepth)
         self.ui.ImageZDepth.valueChanged.connect(self.Calculate_ImageDepth)
@@ -57,6 +64,7 @@ class MainWindow(QMainWindow):
         Xrange=self.ui.Xsteps.value()*self.ui.XStepSize.value()/1000
         # update X range in lable
         self.ui.XrangeLabel.setText('X range(mm): '+str(Xrange))
+        self.ui.FOV.setText('XFOV(mm): '+str(Xrange))
         # generate waveform
         self.Xwaveform, status = GenGalvoWave(self.ui.XStepSize.value(),\
                                         self.ui.Xsteps.value(),\
@@ -96,15 +104,22 @@ class MainWindow(QMainWindow):
     #         self.ui.YwaveformLabel.setPixmap(pixmap)
         
     def update_Mosaic(self):
-        self.Mosaic, status = GenMosaic(self.ui.XStart.value(),\
+        self.Mosaic, status = GenMosaic_XGalvo(self.ui.XStart.value(),\
                                         self.ui.XStop.value(),\
                                         self.ui.YStart.value(),\
                                         self.ui.YStop.value(),\
-                                        self.ui.FOV.value(),\
+                                        self.ui.Xsteps.value()*self.ui.XStepSize.value()/1000,\
                                         self.ui.Overlap.value())
         self.ui.statusbar.showMessage(status)
         if self.Mosaic is not None:
-            pixmap = ScatterPlot(self.Mosaic)
+            mosaic=np.zeros([2,len(self.Mosaic)*2])
+            for ii, element in enumerate(self.Mosaic):
+                mosaic[0,ii*2] = element.x
+                mosaic[1,ii*2] = element.ystart
+                mosaic[0,ii*2+1] = element.x
+                mosaic[1,ii*2+1] = element.ystop
+                
+            pixmap = ScatterPlot(mosaic)
             # clear content on the waveformLabel
             self.ui.MosaicLabel.clear()
             # update iamge on the waveformLabel
