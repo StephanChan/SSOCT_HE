@@ -8,7 +8,7 @@ Created on Tue Dec 12 16:43:51 2023
 
 import numpy as np
 
-class StageAction():
+class AODOAction():
     def __init__(self, action):
         super().__init__()
         self.action=action

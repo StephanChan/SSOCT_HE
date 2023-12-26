@@ -32,21 +32,21 @@ import sys
 from multiprocessing import Queue
 from PyQt5.QtWidgets import QApplication
 from mainWindow import MainWindow
-from Actions import ACQAction, EXIT, StageAction
+from Actions import ACQAction, EXIT, AODOAction
 from ThreadAcq import ACQThread
-from ThreadStage import StageThread
+from ThreadAODO import AODOThread
 from ThreadDisplay import DSPThread
 from ThreadSave import SaveThread
 
 
-global StageQueue
+global AODOQueue
 global AcqQueue
 global DisplayQueue
 global PauseQueue
 global SaveQueue
 
 
-StageQueue = Queue()
+AODOQueue = Queue()
 AcqQueue = Queue()
 SaveQueue = Queue()
 DisplayQueue = Queue()
@@ -65,8 +65,8 @@ class GUI(MainWindow):
         self.ui.Zmove2.clicked.connect(self.Zmove2)
     
     def Init_allThreads(self):
-        self.ACQ_thread=ACQThread(self.ui, AcqQueue, DisplayQueue, StageQueue, PauseQueue, SaveQueue,self.ui.Ynum.value())
-        self.Stage_thread = StageThread(self.ui, StageQueue, PauseQueue)
+        self.ACQ_thread=ACQThread(self.ui, AcqQueue, DisplayQueue, AODOQueue, PauseQueue, SaveQueue,self.ui.Ynum.value())
+        self.AODO_thread = AODOThread(self.ui, AODOQueue, PauseQueue)
         self.Display_thread = DSPThread(self.ui, DisplayQueue)
         self.Save_thread = SaveThread(self.ui, SaveQueue)
         
@@ -78,7 +78,7 @@ class GUI(MainWindow):
     def Stop_allThreads(self):
         exit_element=EXIT()
         AcqQueue.put(exit_element)
-        StageQueue.put(exit_element)
+        AODOQueue.put(exit_element)
         DisplayQueue.put(exit_element)
         SaveQueue.put(exit_element)
         
@@ -110,16 +110,16 @@ class GUI(MainWindow):
 
         
     def Xmove2(self):
-        an_action = StageAction('Xmove2')
-        StageQueue.put(an_action)
+        an_action = AODOAction('Xmove2')
+        AODOQueue.put(an_action)
         
     def Ymove2(self):
-        an_action = StageAction('Ymove2')
-        StageQueue.put(an_action)
+        an_action = AODOAction('Ymove2')
+        AODOQueue.put(an_action)
         
     def Zmove2(self):
-        an_action = StageAction('Zmove2')
-        StageQueue.put(an_action)
+        an_action = AODOAction('Zmove2')
+        AODOQueue.put(an_action)
         
     def Pause_task(self):
         if self.ui.PauseButton.isChecked():
