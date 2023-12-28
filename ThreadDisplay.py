@@ -15,6 +15,9 @@ class DSPThread(QThread):
         self.queue = DspQueue
         self.ui = ui
         self.surf = []
+        self.sliceNum = 1
+        self.tileNum = 1
+        self.totalTiles = 0
         
     def run(self):
         self.QueueOut()
@@ -59,6 +62,8 @@ class DSPThread(QThread):
         self.ui.XYplane.clear()
         # update iamge on the waveformLabel
         self.ui.XYplane.setPixmap(pixmap)
+        if self.ui.Save.isChecked():
+            self.WriteData(data, self.NextFilename())
         
     def Display_Cscan(self, data):
         plane = np.transpose(data[:,1,:]).copy()
@@ -82,6 +87,8 @@ class DSPThread(QThread):
         self.ui.XYplane.clear()
         # update iamge on the waveformLabel
         self.ui.XYplane.setPixmap(pixmap)
+        if self.ui.Save.isChecked():
+            self.WriteData(data, self.NextFilename())
         
     def Display_SurfScan(self, data, args):
 
@@ -129,6 +136,23 @@ class DSPThread(QThread):
                 self.ui.SampleMosaic.clear()
                 # update iamge on the waveformLabel
                 self.ui.SampleMosaic.setPixmap(pixmap)
+        if self.ui.Save.isChecked():
+            self.WriteData(data, self.NextFilename())
             
+    def NextFilename(self):
+        if self.tileNum <= self.totalTiles:
+            filename = 'slice-'+str(self.sliceNum)+'-tile-'+str(self.tileNum)+'.dat'
+            self.tileNum = self.tileNum + 1
+        else:
+            self.sliceNum = self.sliceNum + 1
+            self.tileNum = 1
+            filename = 'slice-'+str(self.sliceNum)+'-tile-'+str(self.tileNum)+'.dat'
+        return filename
         
-        
+    def WriteData(self, data, filename):
+        filePath = self.ui.DIR.toPlainText()
+        filePath = filePath + "\\" + filename
+        # print(filePath)
+        with open(filePath, "wb") as file:
+            file.write(data)
+            file.close()

@@ -694,35 +694,6 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;XFOV(mm): &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
-         <widget class="QSpinBox" name="Ynum">
-          <property name="geometry">
-           <rect>
-            <x>260</x>
-            <y>170</y>
-            <width>101</width>
-            <height>41</height>
-           </rect>
-          </property>
-          <property name="maximum">
-           <number>10000</number>
-          </property>
-          <property name="value">
-           <number>200</number>
-          </property>
-         </widget>
-         <widget class="QLabel" name="YnumLabel">
-          <property name="geometry">
-           <rect>
-            <x>90</x>
-            <y>180</y>
-            <width>171</width>
-            <height>21</height>
-           </rect>
-          </property>
-          <property name="text">
-           <string>Blines per Cscan:</string>
-          </property>
-         </widget>
         </widget>
         <widget class="QLabel" name="MosaicLabel">
          <property name="geometry">
@@ -989,9 +960,9 @@ p, li { white-space: pre-wrap; }
          </widget>
         </widget>
        </widget>
-       <widget class="QWidget" name="GalvoTab">
+       <widget class="QWidget" name="FOVTab">
         <attribute name="title">
-         <string>Galvo</string>
+         <string>FOV</string>
         </attribute>
         <widget class="QPushButton" name="CenterGalvo">
          <property name="geometry">
@@ -1050,11 +1021,14 @@ p, li { white-space: pre-wrap; }
         <widget class="QSpinBox" name="AlineAVG">
          <property name="geometry">
           <rect>
-           <x>450</x>
-           <y>30</y>
+           <x>610</x>
+           <y>170</y>
            <width>101</width>
            <height>41</height>
           </rect>
+         </property>
+         <property name="maximum">
+          <number>1000</number>
          </property>
          <property name="value">
           <number>1</number>
@@ -1063,8 +1037,8 @@ p, li { white-space: pre-wrap; }
         <widget class="QLabel" name="AlineAvgLabel">
          <property name="geometry">
           <rect>
-           <x>450</x>
-           <y>10</y>
+           <x>610</x>
+           <y>150</y>
            <width>141</width>
            <height>21</height>
           </rect>
@@ -1076,8 +1050,8 @@ p, li { white-space: pre-wrap; }
         <widget class="QLabel" name="XrangeLabel">
          <property name="geometry">
           <rect>
-           <x>610</x>
-           <y>150</y>
+           <x>10</x>
+           <y>170</y>
            <width>191</width>
            <height>31</height>
           </rect>
@@ -1158,9 +1132,9 @@ p, li { white-space: pre-wrap; }
         <widget class="QLabel" name="XwaveformLabel">
          <property name="geometry">
           <rect>
-           <x>1050</x>
+           <x>870</x>
            <y>0</y>
-           <width>460</width>
+           <width>861</width>
            <height>240</height>
           </rect>
          </property>
@@ -1172,7 +1146,7 @@ p, li { white-space: pre-wrap; }
          </property>
          <property name="maximumSize">
           <size>
-           <width>460</width>
+           <width>900</width>
            <height>240</height>
           </size>
          </property>
@@ -1187,7 +1161,7 @@ p, li { white-space: pre-wrap; }
          <property name="geometry">
           <rect>
            <x>450</x>
-           <y>100</y>
+           <y>170</y>
            <width>101</width>
            <height>41</height>
           </rect>
@@ -1198,12 +1172,15 @@ p, li { white-space: pre-wrap; }
          <property name="minimum">
           <number>1</number>
          </property>
+         <property name="maximum">
+          <number>1000</number>
+         </property>
         </widget>
         <widget class="QLabel" name="BlineAvgLabel">
          <property name="geometry">
           <rect>
            <x>450</x>
-           <y>80</y>
+           <y>150</y>
            <width>141</width>
            <height>21</height>
           </rect>
@@ -1216,7 +1193,7 @@ p, li { white-space: pre-wrap; }
          <property name="geometry">
           <rect>
            <x>450</x>
-           <y>150</y>
+           <y>80</y>
            <width>141</width>
            <height>21</height>
           </rect>
@@ -1229,7 +1206,7 @@ p, li { white-space: pre-wrap; }
          <property name="geometry">
           <rect>
            <x>450</x>
-           <y>170</y>
+           <y>100</y>
            <width>101</width>
            <height>41</height>
           </rect>
@@ -1261,7 +1238,7 @@ p, li { white-space: pre-wrap; }
           </rect>
          </property>
          <property name="maximum">
-          <number>1000</number>
+          <number>10000</number>
          </property>
          <property name="value">
           <number>50</number>
@@ -1277,7 +1254,7 @@ p, li { white-space: pre-wrap; }
           </rect>
          </property>
          <property name="maximum">
-          <number>1000</number>
+          <number>10000</number>
          </property>
          <property name="value">
           <number>200</number>
@@ -1373,6 +1350,41 @@ p, li { white-space: pre-wrap; }
          </property>
          <property name="text">
           <string>Clock Terminal</string>
+         </property>
+        </widget>
+        <widget class="QSpinBox" name="Ysteps">
+         <property name="geometry">
+          <rect>
+           <x>450</x>
+           <y>30</y>
+           <width>101</width>
+           <height>41</height>
+          </rect>
+         </property>
+         <property name="wrapping">
+          <bool>false</bool>
+         </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>100000</number>
+         </property>
+         <property name="value">
+          <number>200</number>
+         </property>
+        </widget>
+        <widget class="QLabel" name="YstepsLabel">
+         <property name="geometry">
+          <rect>
+           <x>450</x>
+           <y>10</y>
+           <width>81</width>
+           <height>21</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Ysteps</string>
          </property>
         </widget>
        </widget>

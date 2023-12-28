@@ -8,22 +8,20 @@ from PyQt5.QtCore import  QThread
 import time
 import numpy as np
 from Generaic_functions import *
-from Actions import DisplayAction, StageAction, SaveAction
+from Actions import DisplayAction, AODOAction, SaveAction
 
 class ACQThread(QThread):
-    def __init__(self, ui, AcqQueue, DisplayQueue, StageQueue, PauseQueue, SaveQueue, Ynum):
+    def __init__(self, ui, AcqQueue, DisplayQueue, AODOQueue, PauseQueue):
         super().__init__()
         self.ui = ui
         self.queue = AcqQueue
         self.displayQueue = DisplayQueue
-        self.StageQueue = StageQueue
+        self.AODOQueue = AODOQueue
         self.pauseQueue = PauseQueue
-        self.SaveQueue = SaveQueue
-        self.sliceNum = 1
-        self.tileNum = 1
+
         self.mosaic = None
-        self.Ynum = Ynum
-        self.totalTiles = 0
+        self.Ynum = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
+
         
     def run(self):
         self.QueueOut()
@@ -61,26 +59,36 @@ class ACQThread(QThread):
             self.item = self.queue.get()
             
     def SingleBline(self):
-        buffer = np.random.randint(0, 255, [500, 1000], np.uint8)
-        # need to pass pointer, otherwise the buffer gets duplicated
+        # ready digitizer for 1 bline measurement
+        # ready AODO for 1 bline measurement and start
+        an_action = AODOAction('ConfigAODO')
+        self.AODOQueue.put(an_action)
+        an_action = AODOAction('StartOnce')
+        self.AODOQueue.put(an_action)
+        # collect data from digitizer
+        buffer = np.random.randint(0, 255, [1000,200], np.uint8)
         an_action = DisplayAction('Bline', buffer)
         self.displayQueue.put(an_action)
-        if self.ui.Save.isChecked():
-            an_action = SaveAction('Save', buffer, 'Bline.dat')
-            self.SaveQueue.put(an_action)
             
     def RptBline(self):
         # ready DO for enabling trigger
         # ready digitizer
         # start digitizer
         # start DO 
+        an_action = AODOAction('ConfigAODO')
+        self.AODOQueue.put(an_action)
+        an_action = AODOAction('StartContinuous')
+        self.AODOQueue.put(an_action)
         interrupt = None
         while True:
             try:
                interrupt = self.pauseQueue.get(timeout=0.01)  # time out 0.01 s
             except:
-                self.SingleBline()
+                # collect data from digitizer
+                pass
             if interrupt == 'Pause':
+                an_action = AODOAction('StopContinuous')
+                self.AODOQueue.put(an_action)
                 while interrupt == 'Pause':
                     time.sleep(0.2)
                     try:
@@ -89,7 +97,12 @@ class ACQThread(QThread):
                         pass
             if interrupt == 'Stop':
                 # stop while loop
+                an_action = AODOAction('CloseTask')
+                self.AODOQueue.put(an_action)
                 break
+            if interrupt == 'Unpause':
+                an_action = AODOAction('StartContinuous')
+                self.AODOQueue.put(an_action)
        
     def SingleAline(self):
         buffer = np.random.randint(0, 255, 1000, np.uint8)
@@ -225,12 +238,3 @@ class ACQThread(QThread):
         self.ui.RunButton.setChecked(False)
         self.ui.RunButton.setText('Run')
         
-    def NextFilename(self):
-        if self.tileNum <= self.totalTiles:
-            filename = 'slice-'+str(self.sliceNum)+'-tile-'+str(self.tileNum)+'.dat'
-            self.tileNum = self.tileNum + 1
-        else:
-            self.sliceNum = self.sliceNum + 1
-            self.tileNum = 1
-            filename = 'slice-'+str(self.sliceNum)+'-tile-'+str(self.tileNum)+'.dat'
-        return filename

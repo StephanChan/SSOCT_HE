@@ -55,155 +55,69 @@ def GenStageWave(one_cycle_samples, stageSpeed):
     # generate DO waveforms for moving stage
     return None
 
-def GenAODO(mode, Aline_frq = 100000, XStepSize = 1, XSteps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma5X',\
-            preclocks = 50, postclocks = 200, YStepSize = 1, YSteps = 1000, BVG = 1):
+def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma5X',\
+            preclocks = 50, postclocks = 200, YStepSize = 1, YSteps = 200, BVG = 1):
     # DO clock is swept source A-line trigger at 100kHz
-    if mode == 'RptAline':
+    # DO configure: port0 line 0 for X stage, port0 line 1 for Y stage, port 0 line 2 for Z stage, port 0 line 3 for Digitizer enable
+    if mode == 'RptAline' or mode == 'SingleAline':
         # RptAline is for checking Aline profile, we don't need to capture each Aline, only display 30 Alines per second\
         # if one wants to capture each Aline, they can set X and Y step size to be 0 and capture Cscan instead
         # 33 frames per second, how many samples for each frame
         one_cycle_samples = Aline_frq*0.03
         # trigger enbale waveform generation
-        DOwaveform = np.append(np.zeros(one_cycle_samples-1000), np.ones(1000))
+        DOwaveform = np.append(np.zeros(one_cycle_samples-1000), pow(2,3)*np.ones(1000))
         status = 'waveform updated'
-        return DOwaveform, None, status
+        return np.uint32(DOwaveform), np.uint32(np.zeros(len(DOwaveform))), status
     
-    elif mode == 'SingleAline':
-        # Single Aline is for checking Aline profile, only capture and display one Aline
-        # 33 frames per second, how many samples for each frame
-        one_cycle_samples = Aline_frq*0.03
-        # trigger enbale waveform generation
-        DOwaveform = np.append(np.zeros(one_cycle_samples-1000), np.ones(1000))
-        status = 'waveform updated'
-        return DOwaveform, None, status
-    
-    elif mode == 'RptBline':
+    elif mode == 'RptBline' or mode == 'SingleBline':
         # RptBline is for checking Bline profile, only display 30 Blines per second
         # if one wants to capture each Bline, they can set Y stepsize to be 0 and capture Cscan instead
         # generate AO waveform for Galvo control
         AOwaveform, status = GenGalvoWave(XStepSize, XSteps, AVG, bias, obj, preclocks, postclocks)
+        
         # total number of Alines
         one_cycle_samples = XSteps*AVG
         # generate trigger waveforms
-        DOwaveform = np.append(np.zeros(preclocks), np.ones(one_cycle_samples))
+        DOwaveform = np.append(np.zeros(preclocks), pow(2,3)*np.ones(one_cycle_samples))
         DOwaveform = np.append(DOwaveform, np.zeros(preclocks+postclocks))
         status = 'waveform updated'
-        return DOwaveform, AOwaveform, status
+        return np.uint32(DOwaveform), np.uint32(AOwaveform), status
     
-    elif mode == 'SingleBline':
-        # SingleBline is for checking Bline profile, only capture and display one Bline
-        # generate AO waveform for Galvo control
-        AOwaveform, status = GenGalvoWave(XStepSize, XSteps, AVG, bias, obj, preclocks, postclocks)
-        # total number of Alines
-        one_cycle_samples = XSteps*AVG
-        # generate trigger waveforms
-        DOwaveform = np.append(np.zeros(preclocks), np.ones(one_cycle_samples))
-        DOwaveform = np.append(DOwaveform, np.zeros(preclocks+postclocks))
-        status = 'waveform updated'
-        return DOwaveform, AOwaveform, status
     
-    elif mode == 'RptCscan':
+    elif mode in ['RptCscan','SingleCscan','SurfScan','SurfScan+Slice']:
         # RptCscan is for acquiring Cscan at the same location repeatitively
-        # generate AO waveform for Galvo control
+        # generate AO waveform for Galvo control for one Bline
         AOwaveform, status = GenGalvoWave(XStepSize, XSteps, AVG, bias, obj, preclocks, postclocks)
         # total number of Alines
         one_cycle_samples = XSteps * AVG
         # generate trigger waveforms
-        DOwaveform = np.append(np.zeros(preclocks), np.ones(one_cycle_samples))
+        DOwaveform = np.append(np.zeros(preclocks), pow(2,3)*np.ones(one_cycle_samples))
         DOwaveform = np.append(DOwaveform, np.zeros(preclocks+postclocks))
         # calculate stage speed for Cscan
-        stageSpeed=YStepSize/1000/(one_cycle_samples/Aline_frq) # unit: mm/s
-        # generate stage control waveforms
+        stageSpeed=YStepSize/1000/(len(AOwaveform)/Aline_frq) # unit: mm/s
+        # generate stage control waveforms for one step
         stagewaveform = GenStageWave(one_cycle_samples, stageSpeed)
         # append preclocks and postclocks
         stagewaveform = np.apped(np.zeros(preclocks), stagewaveform)
         stagewaveform = np.append(stagewaveform, np.zeros(preclocks+postclocks))
-        # reshape into 1xN array shape
-        DOwaveform = np.reshape(DOwaveform, [1,len(DOwaveform)])
-        stagewaveform = np.reshape(stagewaveform, [1,len(stagewaveform)])
-        # apped stagewaveform to trigger enable waveform 
-        DOwaveform = np.append(DOwaveform, stagewaveform, axis= 0)
+        # add stagewaveform with trigger enable waveform for DOwaveform
+        DOwaveform = DOwaveform + stagewaveform
+        # repeat the waveform for whole Cscan
+        CscanAO = np.zeros(YSteps*BVG)
+        CscanDO = np.zeros(YSteps*BVG)
+        for ii in range(YSteps*BVG):
+            CscanAO[ii*len(AOwaveform):(ii+1)*len(AOwaveform)] = AOwaveform
+            CscanDO[ii*len(AOwaveform):(ii+1)*len(AOwaveform)] = DOwaveform
         status = 'waveform updated'
-        return DOwaveform, AOwaveform, status
-    
-    elif mode == 'SingleCscan':
-        # SingleCscan is for acquiring one Cscan at the current location
-        # generate AO waveform for Galvo control
-        AOwaveform, status = GenGalvoWave(XStepSize, XSteps, AVG, bias, obj, preclocks, postclocks)
-        # total number of Alines
-        one_cycle_samples = XSteps * AVG
-        # generate trigger waveforms
-        DOwaveform = np.append(np.zeros(preclocks), np.ones(one_cycle_samples))
-        DOwaveform = np.append(DOwaveform, np.zeros(preclocks+postclocks))
-        # calculate stage speed for Cscan
-        stageSpeed=YStepSize/1000/(one_cycle_samples/Aline_frq) # unit: mm/s
-        # generate stage control waveforms
-        stagewaveform = GenStageWave(one_cycle_samples, stageSpeed)
-        # append preclocks and postclocks
-        stagewaveform = np.apped(np.zeros(preclocks), stagewaveform)
-        stagewaveform = np.append(stagewaveform, np.zeros(preclocks+postclocks))
-        # reshape into 1xN array shape
-        DOwaveform = np.reshape(DOwaveform, [1,len(DOwaveform)])
-        stagewaveform = np.reshape(stagewaveform, [1,len(stagewaveform)])
-        # apped stagewaveform to trigger enable waveform 
-        DOwaveform = np.append(DOwaveform, stagewaveform, axis= 0)
-        status = 'waveform updated'
-        return DOwaveform, AOwaveform, status
-    
-    elif mode == 'SurfScan':
-        # SurfScan is for imaging the current surface with current stage height
-        # generate AO waveform for Galvo control
-        AOwaveform, status = GenGalvoWave(XStepSize, XSteps, AVG, bias, obj, preclocks, postclocks)
-        # total number of Alines
-        one_cycle_samples = XSteps * AVG
-        # generate trigger waveforms
-        DOwaveform = np.append(np.zeros(preclocks), np.ones(one_cycle_samples))
-        DOwaveform = np.append(DOwaveform, np.zeros(preclocks+postclocks))
-        # calculate stage speed for Cscan
-        stageSpeed=YStepSize/1000/(one_cycle_samples/Aline_frq) # unit: mm/s
-        # generate stage control waveforms
-        stagewaveform = GenStageWave(one_cycle_samples, stageSpeed)
-        # append preclocks and postclocks
-        stagewaveform = np.apped(np.zeros(preclocks), stagewaveform)
-        stagewaveform = np.append(stagewaveform, np.zeros(preclocks+postclocks))
-        # reshape into 1xN array shape
-        DOwaveform = np.reshape(DOwaveform, [1,len(DOwaveform)])
-        stagewaveform = np.reshape(stagewaveform, [1,len(stagewaveform)])
-        # apped stagewaveform to trigger enable waveform 
-        DOwaveform = np.append(DOwaveform, stagewaveform, axis= 0)
-        status = 'waveform updated'
-        return DOwaveform, AOwaveform, status
-    
-    elif mode == 'SurfScan+Slice':
-        # for serial sectioning OCT imaging
-        # generate AO waveform for Galvo control
-        AOwaveform, status = GenGalvoWave(XStepSize, XSteps, AVG, bias, obj, preclocks, postclocks)
-        # total number of Alines
-        one_cycle_samples = XSteps * AVG
-        # generate trigger waveforms
-        DOwaveform = np.append(np.zeros(preclocks), np.ones(one_cycle_samples))
-        DOwaveform = np.append(DOwaveform, np.zeros(preclocks+postclocks))
-        # calculate stage speed for Cscan
-        stageSpeed=YStepSize/1000/(one_cycle_samples/Aline_frq) # unit: mm/s
-        # generate stage control waveforms
-        stagewaveform = GenStageWave(one_cycle_samples, stageSpeed)
-        # append preclocks and postclocks
-        stagewaveform = np.apped(np.zeros(preclocks), stagewaveform)
-        stagewaveform = np.append(stagewaveform, np.zeros(preclocks+postclocks))
-        # reshape into 1xN array shape
-        DOwaveform = np.reshape(DOwaveform, [1,len(DOwaveform)])
-        stagewaveform = np.reshape(stagewaveform, [1,len(stagewaveform)])
-        # apped stagewaveform to trigger enable waveform 
-        DOwaveform = np.append(DOwaveform, stagewaveform, axis= 0)
-        status = 'waveform updated'
-        return DOwaveform, AOwaveform, status
+        return np.uint32(CscanDO), np.uint32(CscanAO), status
+
     
     elif mode == 'Slice':
         # for cutting once at current stage height
         
         DOwaveform, status = GenStageWave(one_cycle_samples, stageSpeed)
         status = 'waveform updated'
-        return DOwaveform, None, status
+        return np.uint32(DOwaveform), None, status
     
     else:
         status = 'invalid task type! Abort action'
@@ -293,7 +207,7 @@ def LinePlot(waveform):
     # clear content on plot
     plt.cla()
     # plot the new waveform
-    plt.plot(range(len(waveform)),waveform)
+    plt.plot(range(len(waveform)),waveform,linewidth=2)
     
     plt.ylim(np.min(waveform),np.max(waveform))
 

@@ -36,19 +36,16 @@ from Actions import ACQAction, EXIT, AODOAction
 from ThreadAcq import ACQThread
 from ThreadAODO import AODOThread
 from ThreadDisplay import DSPThread
-from ThreadSave import SaveThread
 
 
 global AODOQueue
 global AcqQueue
 global DisplayQueue
 global PauseQueue
-global SaveQueue
 
 
 AODOQueue = Queue()
 AcqQueue = Queue()
-SaveQueue = Queue()
 DisplayQueue = Queue()
 PauseQueue = Queue()
 
@@ -65,22 +62,19 @@ class GUI(MainWindow):
         self.ui.Zmove2.clicked.connect(self.Zmove2)
     
     def Init_allThreads(self):
-        self.ACQ_thread=ACQThread(self.ui, AcqQueue, DisplayQueue, AODOQueue, PauseQueue, SaveQueue,self.ui.Ynum.value())
+        self.ACQ_thread=ACQThread(self.ui, AcqQueue, DisplayQueue, AODOQueue, PauseQueue)
         self.AODO_thread = AODOThread(self.ui, AODOQueue, PauseQueue)
         self.Display_thread = DSPThread(self.ui, DisplayQueue)
-        self.Save_thread = SaveThread(self.ui, SaveQueue)
         
         self.ACQ_thread.start()
-        self.Stage_thread.start()
+        self.AODO_thread.start()
         self.Display_thread.start()
-        self.Save_thread.start()
             
     def Stop_allThreads(self):
         exit_element=EXIT()
         AcqQueue.put(exit_element)
         AODOQueue.put(exit_element)
         DisplayQueue.put(exit_element)
-        SaveQueue.put(exit_element)
         
     def run_task(self):
         # RptAline and SingleAline is for checking Aline profile, we don't need to capture each Aline, only display 30 Alines per second\

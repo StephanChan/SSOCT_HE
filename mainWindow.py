@@ -66,7 +66,7 @@ class MainWindow(QMainWindow):
         self.ui.XrangeLabel.setText('X range(mm): '+str(Xrange))
         self.ui.FOV.setText('XFOV(mm): '+str(Xrange))
         # generate waveform
-        self.Xwaveform, status = GenGalvoWave(self.ui.XStepSize.value(),\
+        Xwaveform, status = GenGalvoWave(self.ui.XStepSize.value(),\
                                         self.ui.Xsteps.value(),\
                                         self.ui.AlineAVG.value(),\
                                         self.ui.XBias.value(),\
@@ -76,8 +76,13 @@ class MainWindow(QMainWindow):
         # show generating waveform result
         #print(self.Xwaveform)
         self.ui.statusbar.showMessage(status)
-        if len(self.Xwaveform) > 0:
-            pixmap = LinePlot(self.Xwaveform)
+        if len(Xwaveform) > 0:
+            # Ysteps = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
+            # self.Xwaveform = np.zeros(len(Xwaveform)*Ysteps)
+            # for ii in range(Ysteps):
+            #     self.Xwaveform[ii*len(Xwaveform):(ii+1)*len(Xwaveform)] = Xwaveform
+                
+            pixmap = LinePlot(Xwaveform)
             # clear content on the waveformLabel
             self.ui.XwaveformLabel.clear()
             # update iamge on the waveformLabel
