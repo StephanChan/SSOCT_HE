@@ -60,25 +60,7 @@ class AODOThread(QThread):
             self.Aline_freq = 100000
         else:
             return 'Laser invalid!'
-        if self.AOtask is not None:
-            self.CloseTask()
-            
-        self.AOtask = ni.Task('AO task')
-        self.DOtask = ni.Task('DO task')
-        # Configure Analog output task for Galvo control
-        self.AOtask.ao_channels.add_ao_voltage_chan(physical_channel='AODO/ao0', \
-                                              min_val=- 5.0, max_val=5.0, \
-                                              units=ni.constants.VoltageUnits.VOLTS)
-        if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline']:
-            self.AOtask.timing.cfg_samp_clk_timing(rate=self.Aline_freq, \
-                                            source=self.ui.ClockTerm.toPlainText(), \
-                                              sample_mode=Atype.CONTINUOUS)
-        else:
-            self.AOtask.timing.cfg_samp_clk_timing(rate=self.Aline_freq, \
-                                            source=self.ui.ClockTerm.toPlainText(), \
-                                              sample_mode=Atype.FINITE)
-                
-        self.AOtask.triggers.sync_type.MASTER = True
+        # self.CloseTask()
         DOwaveform,AOwaveform,status = GenAODO(mode=self.ui.ACQMode.currentText(), \
                                                Aline_frq = self.Aline_freq, \
                                                XStepSize = self.ui.XStepSize.value(), \
@@ -91,35 +73,57 @@ class AODOThread(QThread):
                                                YStepSize = self.ui.YStepSize.value(), \
                                                YSteps =  self.ui.Ysteps.value(), \
                                                BVG = self.ui.BlineAVG.value())
+        self.AOtask = ni.Task('AO task')
+        self.DOtask = ni.Task('DO task')
+        # Configure Analog output task for Galvo control
+        self.AOtask.ao_channels.add_ao_voltage_chan(physical_channel='AODO/ao0', \
+                                              min_val=- 5.0, max_val=5.0, \
+                                              units=ni.constants.VoltageUnits.VOLTS)
+        if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline','RptCscan']:
+            self.AOtask.timing.cfg_samp_clk_timing(rate=self.Aline_freq, \
+                                            source=self.ui.ClockTerm.toPlainText(), \
+                                              sample_mode=Atype.CONTINUOUS,samps_per_chan=len(AOwaveform))
+        else:
+            self.AOtask.timing.cfg_samp_clk_timing(rate=self.Aline_freq, \
+                                            source=self.ui.ClockTerm.toPlainText(), \
+                                              sample_mode=Atype.FINITE,samps_per_chan=len(AOwaveform))
+                
+        self.AOtask.triggers.sync_type.MASTER = True
+
+        # print(len(DOwaveform))
             
         self.AOtask.write(AOwaveform, auto_start = False)
         # Confiture Digital output task for stage control and digitizer trigger enabling
          
         self.DOtask.do_channels.add_do_chan(lines='AODO/port0/line0:3')
-        if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline']:
+        if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline','RptCscan']:
             self.DOtask.timing.cfg_samp_clk_timing(rate=self.Aline_freq, \
                                             source=self.ui.ClockTerm.toPlainText(), \
-                                              sample_mode=Atype.CONTINUOUS)
+                                              sample_mode=Atype.CONTINUOUS,samps_per_chan=len(DOwaveform))
         else:
             self.DOtask.timing.cfg_samp_clk_timing(rate=self.Aline_freq, \
                                             source=self.ui.ClockTerm.toPlainText(), \
-                                              sample_mode=Atype.FINITE)
+                                              sample_mode=Atype.FINITE,samps_per_chan=len(DOwaveform))
        
         self.DOtask.triggers.sync_type.SLAVE = True
         
         self.DOtask.write(DOwaveform, auto_start = False)
-        return 'AODO configuration done'
+        return 'AODO configuration success'
             
     def StartOnce(self):
         self.DOtask.start()
         self.AOtask.start()
         self.AOtask.wait_until_done(timeout = 60)
+        # print('AODO write task done')
         self.AOtask.stop()
         self.DOtask.stop()
             
     def StartContinuous(self):
-        self.DOtask.start()
-        self.AOtask.start()
+        if self.AOtask.is_task_done():
+            self.DOtask.start()
+            self.AOtask.start()
+        else:
+            pass
 
     def StopContinuous(self):
         self.AOtask.stop()
@@ -127,11 +131,13 @@ class AODOThread(QThread):
         
     def CloseTask(self):
         try:
+            while not self.AOtask.is_task_done():
+                time.sleep(0.5)
             self.DOtask.close()
-        except:
-            pass
-        try:
             self.AOtask.close()
         except:
-            pass
+            self.DOtask.close()
+            self.AOtask.close()
+        return 'AODO write task done'
+                
             

@@ -121,7 +121,7 @@ class GUI(MainWindow):
             self.ui.statusbar.showMessage('acquisition paused...')
         else:
             PauseQueue.put('unPause')
-            self.ui.statusbar.showMessage('acquisition unpaused...')
+            self.ui.statusbar.showMessage('acquisition resumed...')
       
     def Stop_task(self):
         PauseQueue.put('Stop')

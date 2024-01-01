@@ -66,23 +66,20 @@ class MainWindow(QMainWindow):
         self.ui.XrangeLabel.setText('X range(mm): '+str(Xrange))
         self.ui.FOV.setText('XFOV(mm): '+str(Xrange))
         # generate waveform
-        Xwaveform, status = GenGalvoWave(self.ui.XStepSize.value(),\
-                                        self.ui.Xsteps.value(),\
-                                        self.ui.AlineAVG.value(),\
-                                        self.ui.XBias.value(),\
-                                        self.ui.Objective.currentText(),\
-                                        self.ui.PreClock.value(),\
-                                        self.ui.PostClock.value())
+        DOwaveform, AOwaveform, status = GenAODO(mode='RptBline', \
+                                                 Aline_frq = self.Aline_frq, \
+                                                 XStepSize = self.ui.XStepSize.value(), \
+                                                 XSteps = self.ui.Xsteps.value(), \
+                                                 AVG = self.ui.AlineAVG.value(), \
+                                                 bias = self.ui.XBias.value(), \
+                                                 obj = self.ui.Objective.currentText(),\
+                                                 preclocks = self.ui.PreClock.value(),\
+                                                 postclocks = self.ui.PostClock.value())
         # show generating waveform result
         #print(self.Xwaveform)
         self.ui.statusbar.showMessage(status)
-        if len(Xwaveform) > 0:
-            # Ysteps = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
-            # self.Xwaveform = np.zeros(len(Xwaveform)*Ysteps)
-            # for ii in range(Ysteps):
-            #     self.Xwaveform[ii*len(Xwaveform):(ii+1)*len(Xwaveform)] = Xwaveform
-                
-            pixmap = LinePlot(Xwaveform)
+        if len(AOwaveform) > 0:
+            pixmap = LinePlot(AOwaveform, DOwaveform)
             # clear content on the waveformLabel
             self.ui.XwaveformLabel.clear()
             # update iamge on the waveformLabel

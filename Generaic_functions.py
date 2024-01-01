@@ -14,7 +14,6 @@ import numpy as np
 def GenGalvoWave(StepSize = 1, Steps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma5X', preclocks = 50, postclocks = 200):
 
     # total number of steps is the product of steps and aline average number
-    Steps = Steps*AVG
     # use different angle to mm ratio for different objective
     if obj == 'OptoSigma5X':
         angle2mmratio = 2.094/1.5
@@ -30,17 +29,17 @@ def GenGalvoWave(StepSize = 1, Steps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma
     Vmax = (Xrange/2+bias)/angle2mmratio/2
     Vmin = (-Xrange/2+bias)/angle2mmratio/2
     # step size of voltage
-    stepsize = (Vmax-Vmin)/Steps
+    stepsize = (Vmax-Vmin)/Steps/AVG
     # ramping up and down time in unit of clocks, i.e., A-lines
     steps1=preclocks
     # fly-back time in unit of clocks
     steps2=postclocks
     # linear waveform
-    waveform=np.arange(Vmin, Vmax, (Vmax-Vmin)/Steps)
+    waveform=np.arange(Vmin, Vmax, stepsize)
     # ramping up  waveform, change amplitude to match the slop with linear waveform
-    Prewave = stepsize*steps1/np.pi*np.cos(np.arange(np.pi,3*np.pi/2,np.pi/steps1))+Vmin
+    Prewave = stepsize*steps1/np.pi*np.cos(np.arange(np.pi,3*np.pi/2,np.pi/2/steps1))+Vmin
     # ramping down wavefor, change amplitude to match the slop with linear waveform
-    Postwave1 = stepsize*steps1/np.pi*np.sin(np.arange(0,np.pi/2,np.pi/steps1))+Vmax
+    Postwave1 = stepsize*steps1/np.pi*np.sin(np.arange(0,np.pi/2,np.pi/2/steps1))+Vmax
     # fly-back waveform
     Postwave2 = (Vmax-Vmin+stepsize*steps1*2/np.pi)/2*np.cos(np.arange(0,np.pi,np.pi/steps2))+(Vmax+Vmin)/2
     # append all waveforms together
@@ -53,7 +52,7 @@ def GenGalvoWave(StepSize = 1, Steps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma
 
 def GenStageWave(one_cycle_samples, stageSpeed):
     # generate DO waveforms for moving stage
-    return None
+    return np.ones(one_cycle_samples)
 
 def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma5X',\
             preclocks = 50, postclocks = 200, YStepSize = 1, YSteps = 200, BVG = 1):
@@ -63,11 +62,11 @@ def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, A
         # RptAline is for checking Aline profile, we don't need to capture each Aline, only display 30 Alines per second\
         # if one wants to capture each Aline, they can set X and Y step size to be 0 and capture Cscan instead
         # 33 frames per second, how many samples for each frame
-        one_cycle_samples = Aline_frq*0.03
+        one_cycle_samples = np.int32(Aline_frq*0.03)
         # trigger enbale waveform generation
         DOwaveform = np.append(np.zeros(one_cycle_samples-1000), pow(2,3)*np.ones(1000))
         status = 'waveform updated'
-        return np.uint32(DOwaveform), np.uint32(np.zeros(len(DOwaveform))), status
+        return np.uint32(DOwaveform), np.zeros(len(DOwaveform)), status
     
     elif mode == 'RptBline' or mode == 'SingleBline':
         # RptBline is for checking Bline profile, only display 30 Blines per second
@@ -81,7 +80,7 @@ def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, A
         DOwaveform = np.append(np.zeros(preclocks), pow(2,3)*np.ones(one_cycle_samples))
         DOwaveform = np.append(DOwaveform, np.zeros(preclocks+postclocks))
         status = 'waveform updated'
-        return np.uint32(DOwaveform), np.uint32(AOwaveform), status
+        return np.uint32(DOwaveform), AOwaveform, status
     
     
     elif mode in ['RptCscan','SingleCscan','SurfScan','SurfScan+Slice']:
@@ -98,18 +97,18 @@ def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, A
         # generate stage control waveforms for one step
         stagewaveform = GenStageWave(one_cycle_samples, stageSpeed)
         # append preclocks and postclocks
-        stagewaveform = np.apped(np.zeros(preclocks), stagewaveform)
+        stagewaveform = np.append(np.zeros(preclocks), pow(2,0)*stagewaveform)
         stagewaveform = np.append(stagewaveform, np.zeros(preclocks+postclocks))
         # add stagewaveform with trigger enable waveform for DOwaveform
         DOwaveform = DOwaveform + stagewaveform
         # repeat the waveform for whole Cscan
-        CscanAO = np.zeros(YSteps*BVG)
-        CscanDO = np.zeros(YSteps*BVG)
+        CscanAO = np.zeros(YSteps*BVG*len(AOwaveform))
+        CscanDO = np.zeros(YSteps*BVG*len(DOwaveform))
         for ii in range(YSteps*BVG):
             CscanAO[ii*len(AOwaveform):(ii+1)*len(AOwaveform)] = AOwaveform
             CscanDO[ii*len(AOwaveform):(ii+1)*len(AOwaveform)] = DOwaveform
         status = 'waveform updated'
-        return np.uint32(CscanDO), np.uint32(CscanAO), status
+        return np.uint32(CscanDO), CscanAO, status
 
     
     elif mode == 'Slice':
@@ -160,6 +159,7 @@ def GenMosaic_XYGalvo(Xmin, Xmax, Ymin, Ymax, FOV, overlap=10):
     return Positions, status
 
 class MOSAIC():
+    # assume scanning direction is Y axis
     def __init__(self, x, ystart, ystop):
         super().__init__()
         self.x = x
@@ -182,15 +182,15 @@ def GenMosaic_XGalvo(Xmin, Xmax, Ymin, Ymax, FOV, overlap=10):
     # get actual X range
     actualX=Xsteps*stepsize
     # generate start and stop position in X direction
-    # add or subtract a small number to avoid precision loss
+    # add or subtract a small number to avoid precision-induced error
     startX=Xmin-(actualX-(Xmax-Xmin))/2
     stopX = Xmax+(actualX-(Xmax-Xmin))/2+0.01
     # generate X positions
     pos = np.arange(startX, stopX, stepsize)
     #print(Xpositions)
     mosaic = []
-    for ii, element in enumerate(pos):
-        mosaic = np.append(mosaic, MOSAIC(element, Ymin, Ymax))
+    for ii, xpos in enumerate(pos):
+        mosaic = np.append(mosaic, MOSAIC(xpos, Ymin, Ymax))
 
     status = 'Mosaic Generation success'
     return mosaic, status
@@ -203,13 +203,14 @@ from PyQt5.QtGui import QPixmap, QImage
 
 from matplotlib import pyplot as plt
 
-def LinePlot(waveform):
+def LinePlot(AOwaveform, DOwaveform = None):
     # clear content on plot
     plt.cla()
     # plot the new waveform
-    plt.plot(range(len(waveform)),waveform,linewidth=2)
-    
-    plt.ylim(np.min(waveform),np.max(waveform))
+    plt.plot(range(len(AOwaveform)),AOwaveform,linewidth=2)
+    if np.any(DOwaveform):
+        plt.plot(range(len(DOwaveform)),(DOwaveform>>3)*np.max(AOwaveform),linewidth=2)
+    plt.ylim(np.min(AOwaveform)-0.2,np.max(AOwaveform)+0.2)
 
     plt.xticks(fontsize=15)
     plt.yticks(fontsize=15)
