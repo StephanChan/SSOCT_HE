@@ -34,6 +34,23 @@ class DisplayAction():
         self.data = data
         self.args = args
 
+class GPUAction():
+    def __init__(self, action, mode, memoryLoc, args=[]):
+        super().__init__()
+        self.action = action
+        self.mode = mode
+        self.memoryLoc = memoryLoc
+        self.args = args
+        
+class BoardAction():
+    def __init__(self, action):
+        super().__init__()
+        self.action = action 
+        
+class Board2ACQAction():
+    def __init__(self, action):
+        super().__init__()
+        self.action = action 
         
 class EXIT():
     def __init__(self):

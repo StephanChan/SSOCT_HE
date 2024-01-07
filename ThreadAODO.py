@@ -46,6 +46,8 @@ class AODOThread(QThread):
                 self.StartOnce()
             elif self.item.action == 'StartContinuous':
                 self.StartContinuous()
+            elif self.item.action == 'WaitDone':
+                self.WaitDone()
             elif self.item.action == 'StopContinuous':
                 self.StopContinuous()
             elif self.item.action == 'CloseTask':
@@ -53,14 +55,14 @@ class AODOThread(QThread):
             else:
                 self.ui.statusbar.showMessage('AODO thread is doing something undefined: '+self.item.action)
             self.item = self.queue.get()
-            
+        print('AODO thread successfully exited')
 
     def ConfigAODO(self):
         if self.ui.Laser.currentText() == 'Axsun100k':
             self.Aline_freq = 100000
         else:
             return 'Laser invalid!'
-        # self.CloseTask()
+        self.CloseTask()
         DOwaveform,AOwaveform,status = GenAODO(mode=self.ui.ACQMode.currentText(), \
                                                Aline_frq = self.Aline_freq, \
                                                XStepSize = self.ui.XStepSize.value(), \
@@ -113,10 +115,14 @@ class AODOThread(QThread):
     def StartOnce(self):
         self.DOtask.start()
         self.AOtask.start()
-        self.AOtask.wait_until_done(timeout = 60)
+        try:
+            self.AOtask.wait_until_done(timeout = 60)
+            self.AOtask.stop()
+            self.DOtask.stop()
+        except:
+            self.CloseTask()
         # print('AODO write task done')
-        self.AOtask.stop()
-        self.DOtask.stop()
+        
             
     def StartContinuous(self):
         if self.AOtask.is_task_done():
@@ -124,7 +130,10 @@ class AODOThread(QThread):
             self.AOtask.start()
         else:
             pass
-
+        
+    def WaitDone(self):
+        self.AOtask.wait_until_done()
+        
     def StopContinuous(self):
         self.AOtask.stop()
         self.DOtask.stop()
@@ -136,8 +145,7 @@ class AODOThread(QThread):
             self.DOtask.close()
             self.AOtask.close()
         except:
-            self.DOtask.close()
-            self.AOtask.close()
+            pass
         return 'AODO write task done'
                 
             

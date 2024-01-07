@@ -64,9 +64,13 @@ def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, A
         # 33 frames per second, how many samples for each frame
         one_cycle_samples = np.int32(Aline_frq*0.03)
         # trigger enbale waveform generation
-        DOwaveform = np.append(np.zeros(one_cycle_samples-1000), pow(2,3)*np.ones(1000))
+        DOwaveform = np.append(np.zeros(one_cycle_samples-100), pow(2,3)*np.ones(100))
+        CscanAO = np.zeros(BVG*len(DOwaveform))
+        CscanDO = np.zeros(BVG*len(DOwaveform))
+        for ii in range(BVG):
+            CscanDO[ii*len(DOwaveform):(ii+1)*len(DOwaveform)] = DOwaveform
         status = 'waveform updated'
-        return np.uint32(DOwaveform), np.zeros(len(DOwaveform)), status
+        return np.uint32(CscanDO), CscanAO, status
     
     elif mode == 'RptBline' or mode == 'SingleBline':
         # RptBline is for checking Bline profile, only display 30 Blines per second
@@ -79,8 +83,13 @@ def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, A
         # generate trigger waveforms
         DOwaveform = np.append(np.zeros(preclocks), pow(2,3)*np.ones(one_cycle_samples))
         DOwaveform = np.append(DOwaveform, np.zeros(preclocks+postclocks))
+        CscanAO = np.zeros(BVG*len(AOwaveform))
+        CscanDO = np.zeros(BVG*len(DOwaveform))
+        for ii in range(BVG):
+            CscanAO[ii*len(AOwaveform):(ii+1)*len(AOwaveform)] = AOwaveform
+            CscanDO[ii*len(AOwaveform):(ii+1)*len(AOwaveform)] = DOwaveform
         status = 'waveform updated'
-        return np.uint32(DOwaveform), AOwaveform, status
+        return np.uint32(CscanDO), CscanAO, status
     
     
     elif mode in ['RptCscan','SingleCscan','SurfScan','SurfScan+Slice']:

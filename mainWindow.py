@@ -63,7 +63,7 @@ class MainWindow(QMainWindow):
         # calculate the total X range
         Xrange=self.ui.Xsteps.value()*self.ui.XStepSize.value()/1000
         # update X range in lable
-        self.ui.XrangeLabel.setText('X range(mm): '+str(Xrange))
+        self.ui.XrangeLabel.setText('X(mm): '+str(Xrange))
         self.ui.FOV.setText('XFOV(mm): '+str(Xrange))
         # generate waveform
         DOwaveform, AOwaveform, status = GenAODO(mode='RptBline', \
