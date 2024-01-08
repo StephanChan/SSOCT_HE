@@ -39,15 +39,18 @@ class ATS9350(QThread):
     def QueueOut(self):
         self.item = self.queue.get()
         while self.item.action != 'exit':
-            if self.item.action == 'ConfigureBoard':
-                self.ConfigureBoard()
-            elif self.item.action == 'StartAcquire':
-                self.StartAcquire()
-            elif self.item.action == 'StopAcquire':
-                self.StopAcquire()
-                
-            else:
-                self.ui.statusbar.showMessage('Board thread is doing something invalid: '+self.item.action)
+            try:
+                if self.item.action == 'ConfigureBoard':
+                    self.ConfigureBoard()
+                elif self.item.action == 'StartAcquire':
+                    self.StartAcquire()
+                elif self.item.action == 'StopAcquire':
+                    self.StopAcquire()
+                    
+                else:
+                    self.ui.statusbar.showMessage('Board thread is doing something invalid: '+self.item.action)
+            except Exception as error:
+                print("An error occurred:", error,' skip the Board action')
             self.item = self.queue.get()
         print(self.test_message)
             

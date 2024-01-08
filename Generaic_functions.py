@@ -208,7 +208,7 @@ def GenMosaic_XGalvo(Xmin, Xmax, Ymin, Ymax, FOV, overlap=10):
 def GenHeights(start, depth, Nplanes):
     return np.arange(start, start+Nplanes*depth/1000+0.01, depth/1000)
 
-from PyQt5.QtGui import QPixmap, QImage
+from PyQt5.QtGui import QPixmap
 
 from matplotlib import pyplot as plt
 
@@ -247,9 +247,18 @@ def ScatterPlot(mosaic):
     # load waveform image
     pixmap = QPixmap('scatter.jpg')
     return pixmap
-    
+
+import qimage2ndarray as qpy
 def ImagePlot(matrix):
-    im = QImage(matrix.data, matrix.shape[1], matrix.shape[0], QImage.Format_Grayscale8)
+    # select image brightness level
+    M=np.max(matrix)
+    level = -6
+    while M > pow(10,level):
+        level +=1
+    # im = QImage(matrix, matrix.shape[1], matrix.shape[0], QImage.Format_Grayscale8)
+    # adjust image brightness
+    data = np.uint8(matrix/pow(10,level)*255.0*2)
+    im = qpy.gray2qimage(data)
     pixmap = QPixmap(im)
     return pixmap
     

@@ -297,33 +297,33 @@
          <property name="title">
           <string/>
          </property>
-         <widget class="QComboBox" name="FFTmode">
+         <widget class="QComboBox" name="FFTDevice">
           <property name="geometry">
            <rect>
             <x>0</x>
             <y>90</y>
-            <width>231</width>
+            <width>81</width>
             <height>31</height>
            </rect>
           </property>
           <item>
            <property name="text">
-            <string>GPU FFT Amp</string>
+            <string>GPU</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>GPU FFT Amp+Phase</string>
+            <string>CPU</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>Alazar FFT</string>
+            <string>Alazar</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>Simulate</string>
+            <string>None</string>
            </property>
           </item>
          </widget>
@@ -340,7 +340,7 @@
            <string>Acquire mode</string>
           </property>
          </widget>
-         <widget class="QLabel" name="FFTmodeLabel">
+         <widget class="QLabel" name="FFTDeviceLabel">
           <property name="geometry">
            <rect>
             <x>0</x>
@@ -350,7 +350,7 @@
            </rect>
           </property>
           <property name="text">
-           <string>FFT mode</string>
+           <string>FFT Device</string>
           </property>
          </widget>
          <widget class="QComboBox" name="ACQMode">
@@ -364,12 +364,7 @@
           </property>
           <item>
            <property name="text">
-            <string>RptAline</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>SingleAline</string>
+            <string>SingleBline</string>
            </property>
           </item>
           <item>
@@ -379,17 +374,22 @@
           </item>
           <item>
            <property name="text">
-            <string>SingleBline</string>
+            <string>SingleAline</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>RptCscan</string>
+            <string>RptAline</string>
            </property>
           </item>
           <item>
            <property name="text">
             <string>SingleCscan</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>RptCscan</string>
            </property>
           </item>
           <item>
@@ -439,6 +439,52 @@
           </property>
           <property name="text">
            <string>Objective</string>
+          </property>
+         </widget>
+         <widget class="QComboBox" name="FFTresults">
+          <property name="geometry">
+           <rect>
+            <x>120</x>
+            <y>90</y>
+            <width>81</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <item>
+           <property name="text">
+            <string>AMP</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>AMP+PHASE</string>
+           </property>
+          </item>
+         </widget>
+         <widget class="QLabel" name="FFTResultsLabel">
+          <property name="geometry">
+           <rect>
+            <x>120</x>
+            <y>60</y>
+            <width>121</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>FFT results</string>
+          </property>
+         </widget>
+         <widget class="QCheckBox" name="SimulateBox">
+          <property name="geometry">
+           <rect>
+            <x>170</x>
+            <y>30</y>
+            <width>61</width>
+            <height>32</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Sim</string>
           </property>
          </widget>
         </widget>
@@ -538,13 +584,13 @@
            <string extracomment="bline average"/>
           </property>
           <property name="minimum">
-           <number>1</number>
+           <number>0</number>
           </property>
           <property name="maximum">
-           <number>1024</number>
+           <number>10000</number>
           </property>
           <property name="value">
-           <number>100</number>
+           <number>200</number>
           </property>
          </widget>
          <widget class="QLabel" name="DepthStartLabel">
@@ -570,10 +616,10 @@
            </rect>
           </property>
           <property name="minimum">
-           <number>1</number>
+           <number>0</number>
           </property>
           <property name="maximum">
-           <number>1024</number>
+           <number>10000</number>
           </property>
          </widget>
          <widget class="QLabel" name="DepthRangeLabel">
@@ -618,7 +664,7 @@
            <number>1</number>
           </property>
           <property name="maximum">
-           <number>1000</number>
+           <number>10000</number>
           </property>
          </widget>
          <widget class="QSpinBox" name="Ysteps">
@@ -691,6 +737,9 @@
             <height>31</height>
            </rect>
           </property>
+          <property name="maximum">
+           <double>10000.000000000000000</double>
+          </property>
           <property name="value">
            <double>2.000000000000000</double>
           </property>
@@ -705,7 +754,7 @@
            </rect>
           </property>
           <property name="maximum">
-           <number>1000</number>
+           <number>10000</number>
           </property>
           <property name="value">
            <number>1</number>
@@ -732,6 +781,9 @@
             <width>101</width>
             <height>31</height>
            </rect>
+          </property>
+          <property name="maximum">
+           <double>10000.000000000000000</double>
           </property>
           <property name="value">
            <double>2.000000000000000</double>
@@ -884,7 +936,7 @@
            <number>1</number>
           </property>
           <property name="maximum">
-           <double>300.000000000000000</double>
+           <double>150.000000000000000</double>
           </property>
           <property name="value">
            <double>50.000000000000000</double>
@@ -922,7 +974,7 @@
            <number>1</number>
           </property>
           <property name="maximum">
-           <double>300.000000000000000</double>
+           <double>150.000000000000000</double>
           </property>
           <property name="value">
            <double>60.000000000000000</double>
@@ -973,10 +1025,10 @@
            <number>1</number>
           </property>
           <property name="maximum">
-           <double>150.000000000000000</double>
+           <double>50.000000000000000</double>
           </property>
           <property name="value">
-           <double>50.000000000000000</double>
+           <double>10.000000000000000</double>
           </property>
          </widget>
          <widget class="QDoubleSpinBox" name="YStop">
@@ -992,10 +1044,10 @@
            <number>1</number>
           </property>
           <property name="maximum">
-           <double>150.000000000000000</double>
+           <double>50.000000000000000</double>
           </property>
           <property name="value">
-           <double>60.000000000000000</double>
+           <double>40.000000000000000</double>
           </property>
          </widget>
          <widget class="QLabel" name="OverlapLabel">
@@ -1104,7 +1156,7 @@ p, li { white-space: pre-wrap; }
            <number>1</number>
           </property>
           <property name="maximum">
-           <double>1000.000000000000000</double>
+           <double>10000.000000000000000</double>
           </property>
           <property name="value">
            <double>100.000000000000000</double>
@@ -1155,7 +1207,7 @@ p, li { white-space: pre-wrap; }
            <number>1</number>
           </property>
           <property name="maximum">
-           <double>30.000000000000000</double>
+           <double>50.000000000000000</double>
           </property>
           <property name="value">
            <double>10.000000000000000</double>
@@ -1190,7 +1242,7 @@ p, li { white-space: pre-wrap; }
            </rect>
           </property>
           <property name="maximum">
-           <number>200</number>
+           <number>10000</number>
           </property>
           <property name="value">
            <number>10</number>
@@ -1222,7 +1274,7 @@ p, li { white-space: pre-wrap; }
            <number>1</number>
           </property>
           <property name="maximum">
-           <double>1000.000000000000000</double>
+           <double>10000.000000000000000</double>
           </property>
           <property name="value">
            <double>100.000000000000000</double>
@@ -1273,7 +1325,7 @@ p, li { white-space: pre-wrap; }
            <number>1</number>
           </property>
           <property name="maximum">
-           <double>30.000000000000000</double>
+           <double>50.000000000000000</double>
           </property>
           <property name="value">
            <double>10.000000000000000</double>
@@ -1308,7 +1360,7 @@ p, li { white-space: pre-wrap; }
            </rect>
           </property>
           <property name="maximum">
-           <number>200</number>
+           <number>10000</number>
           </property>
           <property name="value">
            <number>10</number>
@@ -1370,17 +1422,17 @@ p, li { white-space: pre-wrap; }
            </property>
            <item>
             <property name="text">
+             <string>400mV</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
              <string>2V</string>
             </property>
            </item>
            <item>
             <property name="text">
              <string>1V</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>400mV</string>
             </property>
            </item>
            <item>
@@ -1884,7 +1936,7 @@ p, li { white-space: pre-wrap; }
            <number>10000</number>
           </property>
           <property name="value">
-           <number>2048</number>
+           <number>1024</number>
           </property>
          </widget>
          <widget class="QLabel" name="PreSampleLabel">
@@ -2221,7 +2273,7 @@ p, li { white-space: pre-wrap; }
            </rect>
           </property>
           <property name="maximum">
-           <double>300.000000000000000</double>
+           <double>150.000000000000000</double>
           </property>
           <property name="value">
            <double>50.000000000000000</double>
@@ -2328,10 +2380,10 @@ p, li { white-space: pre-wrap; }
            </rect>
           </property>
           <property name="maximum">
-           <double>150.000000000000000</double>
+           <double>50.000000000000000</double>
           </property>
           <property name="value">
-           <double>50.000000000000000</double>
+           <double>20.000000000000000</double>
           </property>
          </widget>
          <widget class="QLabel" name="YPositionLabel">
@@ -2493,7 +2545,7 @@ p, li { white-space: pre-wrap; }
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Microsoft YaHei UI'; font-size:15pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'SimSun';&quot;&gt;D:\SSOCT_HE&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;D:\SSOCT_HE\data&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </widget>

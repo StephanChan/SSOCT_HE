@@ -78,13 +78,17 @@ class GUI(MainWindow):
         
     def run_task(self):
         # RptAline and SingleAline is for checking Aline profile, we don't need to capture each Aline, only display 30 Alines per second\
-        # if one wants to capture each Aline, they can set X and Y step size to be 0 and capture Cscan instead
         
-        
-        # RptBline and SingleBline is for checking Bline profile, only display 30 Blines per second
-        # if one wants to capture each Bline, they can set Y stepsize to be 0 and capture Cscan instead
+        # RptBline and SingleBline will collect each Bline, but FFT will be slow in this mode. To check image quality, recommend using Alazar FFT.
+        # To capture and save each Bline, recommend increasing the Bline average, or using Cscan mode but set Y stepsize to 0
         
         # RptCscan is for acquiring Cscan at the same location repeatitively
+        
+        # SurfScan is for imaging the sample surface
+        
+        # SurfScan + Slice is for serial sectioning imaging
+        
+        # Slice is for cut one slice only
 
         if self.ui.ACQMode.currentText() in ['RptAline','RptBline','RptCscan','SurfScan','SurfScan+Slice']:
             if self.ui.RunButton.isChecked():
@@ -139,7 +143,6 @@ class GUI(MainWindow):
                 
 
 if __name__ == '__main__':
-    # assign sleep time to each hardware thread to simulate hardware working time
     app = QApplication(sys.argv)
     example = GUI()
     example.show()

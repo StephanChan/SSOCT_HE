@@ -30,30 +30,33 @@ class AODOThread(QThread):
     def QueueOut(self):
         self.item = self.queue.get()
         while self.item.action != 'exit':
-            if self.item.action == 'Xmove2':
-                #print('X stage thread is doing ',self.item.action)
-                self.ui.statusbar.showMessage('X stage moving to position: '+ str(self.ui.XPosition.value()))
-            elif self.item.action == 'Ymove2':
-                #print('Y stage thread is doing ',self.item.action)
-                self.ui.statusbar.showMessage('Y stage moving to position: '+ str(self.ui.YPosition.value()))
-            elif self.item.action == 'Zmove2':
-                #print('Z stage thread is doing ',self.item.action)
-                self.ui.statusbar.showMessage('Z stage moving to position: '+ str(self.ui.ZPosition.value()))
-                
-            elif self.item.action == 'ConfigAODO':
-                self.ui.statusbar.showMessage(self.ConfigAODO())
-            elif self.item.action == 'StartOnce':
-                self.StartOnce()
-            elif self.item.action == 'StartContinuous':
-                self.StartContinuous()
-            elif self.item.action == 'WaitDone':
-                self.WaitDone()
-            elif self.item.action == 'StopContinuous':
-                self.StopContinuous()
-            elif self.item.action == 'CloseTask':
-                self.CloseTask()
-            else:
-                self.ui.statusbar.showMessage('AODO thread is doing something undefined: '+self.item.action)
+            try:
+                if self.item.action == 'Xmove2':
+                    #print('X stage thread is doing ',self.item.action)
+                    self.ui.statusbar.showMessage('X stage moving to position: '+ str(self.ui.XPosition.value()))
+                elif self.item.action == 'Ymove2':
+                    #print('Y stage thread is doing ',self.item.action)
+                    self.ui.statusbar.showMessage('Y stage moving to position: '+ str(self.ui.YPosition.value()))
+                elif self.item.action == 'Zmove2':
+                    #print('Z stage thread is doing ',self.item.action)
+                    self.ui.statusbar.showMessage('Z stage moving to position: '+ str(self.ui.ZPosition.value()))
+                    
+                elif self.item.action == 'ConfigAODO':
+                    self.ui.statusbar.showMessage(self.ConfigAODO())
+                elif self.item.action == 'StartOnce':
+                    self.StartOnce()
+                elif self.item.action == 'StartContinuous':
+                    self.StartContinuous()
+                elif self.item.action == 'WaitDone':
+                    self.WaitDone()
+                elif self.item.action == 'StopContinuous':
+                    self.StopContinuous()
+                elif self.item.action == 'CloseTask':
+                    self.CloseTask()
+                else:
+                    self.ui.statusbar.showMessage('AODO thread is doing something undefined: '+self.item.action)
+            except Exception as error:
+                print("An error occurred:", error,' skip the AODO action')
             self.item = self.queue.get()
         print('AODO thread successfully exited')
 
@@ -75,8 +78,8 @@ class AODOThread(QThread):
                                                YStepSize = self.ui.YStepSize.value(), \
                                                YSteps =  self.ui.Ysteps.value(), \
                                                BVG = self.ui.BlineAVG.value())
-        self.AOtask = ni.Task('AO task')
-        self.DOtask = ni.Task('DO task')
+        self.AOtask = ni.Task()
+        self.DOtask = ni.Task()
         # Configure Analog output task for Galvo control
         self.AOtask.ao_channels.add_ao_voltage_chan(physical_channel='AODO/ao0', \
                                               min_val=- 5.0, max_val=5.0, \
