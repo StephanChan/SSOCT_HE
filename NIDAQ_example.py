@@ -37,19 +37,11 @@ with ni.Task('AO task') as AOtask, ni.Task('DO task') as DOtask:
     
     DOtask.start()
     AOtask.start()
-    time.sleep(4)
+    time.sleep(40)
     # AOtask.wait_until_done()
         
     AOtask.stop()
     DOtask.stop()
     
-    time.sleep(0.5)
     
-    DOtask.start()
-    AOtask.start()
-    time.sleep(4)
-    # AOtask.wait_until_done()
-        
-    AOtask.stop()
-    DOtask.stop()
     

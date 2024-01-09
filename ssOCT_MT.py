@@ -60,6 +60,7 @@ class GUI(MainWindow):
         self.ui.Xmove2.clicked.connect(self.Xmove2)
         self.ui.Ymove2.clicked.connect(self.Ymove2)
         self.ui.Zmove2.clicked.connect(self.Zmove2)
+        self.ui.CenterGalvo.clicked.connect(self.CenterGalvo)
     
     def Init_allThreads(self):
         self.ACQ_thread=ACQThread(self.ui, AcqQueue, DisplayQueue, AODOQueue, PauseQueue)
@@ -117,6 +118,10 @@ class GUI(MainWindow):
         
     def Zmove2(self):
         an_action = AODOAction('Zmove2')
+        AODOQueue.put(an_action)
+        
+    def CenterGalvo(self):
+        an_action = AODOAction('centergalvo')
         AODOQueue.put(an_action)
         
     def Pause_task(self):

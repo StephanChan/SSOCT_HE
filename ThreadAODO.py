@@ -53,6 +53,8 @@ class AODOThread(QThread):
                     self.StopContinuous()
                 elif self.item.action == 'CloseTask':
                     self.CloseTask()
+                elif self.item.action == 'centergalvo':
+                    self.centergalvo()
                 else:
                     self.ui.statusbar.showMessage('AODO thread is doing something undefined: '+self.item.action)
             except Exception as error:
@@ -78,8 +80,8 @@ class AODOThread(QThread):
                                                YStepSize = self.ui.YStepSize.value(), \
                                                YSteps =  self.ui.Ysteps.value(), \
                                                BVG = self.ui.BlineAVG.value())
-        self.AOtask = ni.Task()
-        self.DOtask = ni.Task()
+        self.AOtask = ni.Task('AOtask')
+        self.DOtask = ni.Task('DOtask')
         # Configure Analog output task for Galvo control
         self.AOtask.ao_channels.add_ao_voltage_chan(physical_channel='AODO/ao0', \
                                               min_val=- 5.0, max_val=5.0, \
@@ -151,4 +153,13 @@ class AODOThread(QThread):
             pass
         return 'AODO write task done'
                 
+    def centergalvo(self):
+        with ni.Task('AO task') as AOtask, ni.Task('DO task') as DOtask:
+            AOtask.ao_channels.add_ao_voltage_chan(physical_channel='AODO/ao0', \
+                                                  min_val=- 10.0, max_val=10.0, \
+                                                  units=ni.constants.VoltageUnits.VOLTS)
+            AOtask.write(0, auto_start = True)
+            DOtask.do_channels.add_do_chan(lines='AODO/port0/line0:7')
+            DOtask.write(0, auto_start = True)
+            # AOtask.close()
             
