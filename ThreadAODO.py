@@ -13,7 +13,7 @@ from nidaqmx.constants import AcquisitionType as Atype
 from Generaic_functions import GenAODO
 import time
 import numpy as np
-
+import traceback
 
 class AODOThread(QThread):
     def __init__(self, ui, AODOQueue, PauseQueue):
@@ -58,7 +58,8 @@ class AODOThread(QThread):
                 else:
                     self.ui.statusbar.showMessage('AODO thread is doing something undefined: '+self.item.action)
             except Exception as error:
-                print("An error occurred:", error,' skip the AODO action')
+                print("\nAn error occurred:", error,' skip the AODO action\n')
+                print(traceback.format_exc())
             self.item = self.queue.get()
         print('AODO thread successfully exited')
 

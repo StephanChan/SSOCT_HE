@@ -10,6 +10,7 @@ import cupy
 import numpy as np
 from Actions import DisplayAction
 import os
+import traceback
 
 class GPUThread(QThread):
     def __init__(self):
@@ -50,7 +51,8 @@ class GPUThread(QThread):
                     self.ui.statusbar.showMessage('GPU thread is doing something invalid '+self.item.action)
                 print('an FFT action took ',time.time()-start,' seconds\n')
             except Exception as error:
-                print("An error occurred:", error,' skip the FFT action')
+                print("An error occurred:", error,' skip the FFT action\n')
+                print(traceback.format_exc())
             self.item = self.queue.get()
         print(self.test_message)
 

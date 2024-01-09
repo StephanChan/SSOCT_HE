@@ -13,6 +13,7 @@ import numpy as np
 sys.path.append('c:\\alazartech\\ats-sdk\\7.2.3\\samples_python\\ats9350\\npt\\../..\\Library')
 import atsapi as ats
 from Actions import Board2ACQAction
+import traceback
 
 class ATS9350(QThread):
     def __init__(self):
@@ -50,7 +51,8 @@ class ATS9350(QThread):
                 else:
                     self.ui.statusbar.showMessage('Board thread is doing something invalid: '+self.item.action)
             except Exception as error:
-                print("An error occurred:", error,' skip the Board action')
+                print("\nAn error occurred:", error,' skip the Board action\n')
+                print(traceback.format_exc())
             self.item = self.queue.get()
         print(self.test_message)
             

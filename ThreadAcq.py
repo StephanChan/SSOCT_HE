@@ -10,7 +10,7 @@ import numpy as np
 from Generaic_functions import *
 from Actions import DisplayAction, AODOAction, GPUAction, BoardAction
 from multiprocessing import Queue
-
+import traceback
 
 
 global memoryCount
@@ -90,8 +90,9 @@ class ACQThread(QThread):
                 else:
                     self.ui.statusbar.showMessage('ACQ thread is doing something invalid: '+self.item.action)
             except Exception as error:
-                print("An error occurred:", error,'\n skip the acquisition action')
-                
+                print("An error occurred:", error,'\n skip the acquisition action\n')
+
+                print(traceback.format_exc())
             self.item = self.queue.get()
         # stop GPU and board thread before exit
         an_action = GPUAction('exit', '', 0)

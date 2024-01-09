@@ -5,11 +5,11 @@ Created on Sun Dec 10 20:14:40 2023
 @author: Shuaibin Chang
 """
 
-# using QThread of PYQT to do multithreading control of acquiring, processing and saving
+# using QThread of PYQT to do multithreading control of acquiring, processing and saving and synchonize numerous hardwares
 # multithreading is more appropriate only when not using PyQt, in other words, not GUI applications
-# subclass QThread and overwrite run() with a while loop to wait for user import
+# subclass QThread and overwrite run() with a while loop to wait for Queued actions
 
-# using Queue to init hardware threads
+# using Queue to initiate hardware actions
 
 # Queue functions:
 # maxsize – Number of items allowed in the queue.
@@ -23,7 +23,6 @@ Created on Sun Dec 10 20:14:40 2023
 
 # '__main__' using the main thread, every hardware has its own thread
 # GUI input triggers in-queue action to the specified queue
-# define structure for queue element
 
 # between threads, using Queue to pass variables, variables gets duplicated in memory when passed as arguments
 

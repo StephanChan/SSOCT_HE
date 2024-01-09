@@ -8,6 +8,7 @@ Created on Tue Dec 12 18:26:44 2023
 from PyQt5.QtCore import  QThread
 from Generaic_functions import LinePlot, ImagePlot
 import numpy as np
+import traceback
 
 class DSPThread(QThread):
     def __init__(self, ui, DspQueue):
@@ -47,7 +48,8 @@ class DSPThread(QThread):
                 else:
                     self.ui.statusbar.showMessage('Display thread is doing something invalid' + self.item.action)
             except Exception as error:
-                print("An error occurred:", error,' skip the display action')
+                print("\nAn error occurred:", error,' skip the display action\n')
+                print(traceback.format_exc())
             self.item = self.queue.get()
         print('Display Thread successfully exited')
             
