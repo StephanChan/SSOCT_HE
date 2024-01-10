@@ -8,39 +8,39 @@ import numpy as np
 import time
 from time import process_time
 import cupy as cp
-
 import matplotlib.pyplot as plt
 
+# define number of samples per FFT and total number of FFTs
 nSamp = 1024
-nAline = 30000
-
+nFFT = 30000
+# init raw data
 data = np.sin(2*np.pi*np.random.randint(10,90)*np.arange(nSamp)/nSamp)
-data = np.float32(np.tile(data,[nAline,1]))
+data = np.float32(np.tile(data,[nFFT,1]))
 window = np.float32(np.hanning(nSamp))
-print('\nstart fft')
-fftAxis = 1
-# calculate and time NumPy FFT
-t1 = time.time()
-dataFft     = np.fft.fft(data, axis=fftAxis)
-t2 = time.time()
-print('\nCPU NumPy time is: ',t2-t1)
-
-# calculate and time GPU FFT
+# define CUDA kernel that calculate the product of two arrays
 winfunc = cp.ElementwiseKernel(
     'float32 x, float32 y',
     'float32 z',
     'z=x*y',
     'winfunc')
 
+fftAxis = 1
+
+# calculate and time NumPy FFT, i.e., performming FFT using CPU
+t1 = time.time()
+data_cpu     = np.fft.fft(data, axis=fftAxis)
+t2 = time.time()
+print('\n CPU NumPy time is: ',t2-t1)
+
+# calculate and time GPU FFT
 start = time.time()
 # t1 = process_time()
 # transfer input data to Device
-
 # mempool= cp.get_default_memory_pool()
-data_t_gpu  = cp.array(data)
+data_gpu  = cp.array(data)
 window_gpu = cp.array(window)
-
-data_t_gpu = winfunc(data_t_gpu, window_gpu)
+# calculate array product
+data_gpu = winfunc(data_gpu, window_gpu)
 # data_o_gpu = cp.ndarray([data.shape[0], data.shape[1]], dtype=np.complex64)
 # data_o_gpu2 = cp.ndarray([data.shape[0], 200], dtype=np.complex64)
 # data_o_gpu3 = cp.ndarray([data.shape[0], 200], dtype=np.float32)
@@ -48,37 +48,29 @@ data_t_gpu = winfunc(data_t_gpu, window_gpu)
 
 # cache = cp.fft.config.get_plan_cache()
 # cache.set_size(4)
-# cp.cuda.set_allocator(None)
 # t2 = process_time()
 # print('\n host to device time is: ',(t2-t1)/1.0)
-
-# data_o1_gpu  = cp.fft.fft(data_t_gpu, axis=fftAxis)
-# cp.cuda.Device().synchronize()
 # t3 = process_time()
 
+# performing FFT on GPU
 try:
-    data_t_gpu  = cp.fft.fft(data_t_gpu, axis=fftAxis)
+    data_gpu  = cp.fft.fft(data_gpu, axis=fftAxis)
 except:
     print('memory overflow, restart program')
-# data_o_gpu2 = data_o_gpu[:,0:200]
-# data_o_gpu3 = cp.absolute(data_o_gpu2)
-# data_o_gpu3 = cp.absolute(data_o_gpu[:,0:200])
-data_t_gpu = cp.absolute(data_t_gpu[:,0:200])
+# calculate absolute value of the complex FFT results, and only save the first 200 elements
+data_gpu = cp.absolute(data_gpu[:,0:200])
 # data_o_gpu.astype(cp.float32)
 
 # t4 = process_time()
 # print('\n fft time is: ',(t4-t3)/1.0)
 # cp.cuda.Device().synchronize()
 # t5 = process_time()
-
-results = cp.asnumpy(data_t_gpu)
+# transfer data back from GPU to CPU
+results = cp.asnumpy(data_gpu)
 # t6 = process_time()
 # print('\n device to host time is: ',(t6-t5)/1.0)
-    # data_t_gpu = cp.ndarray([])
-    # data_o_gpu = cp.ndarray([])
-    # mempool.free_all_blocks()
 # cache.clear()
-print('\n total time is: ',time.time()-start)
+print('\n GPU total time is: ',time.time()-start)
 # plt.figure()
-# plt.plot(results[1][:])
+plt.plot(results[1][:])
 # print(mempool.used_bytes())
