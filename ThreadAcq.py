@@ -319,6 +319,7 @@ class ACQThread(QThread):
             # start AODO for one Cscan acquisition
             an_action = AODOAction('StartOnce')
             self.AODOQueue.put(an_action)
+            print('start acquiring\n')
             ############################################################  iterate through Cscans in one stripe
             while files < CscansPerStripe and interrupt != 'Stop': 
                 ###################################### collecting data
@@ -363,6 +364,8 @@ class ACQThread(QThread):
                    interrupt = self.pauseQueue.get(timeout=0.001)  # time out 0.001 s
                    ##################################### if Pause button is clicked
                    if interrupt == 'Pause':
+                       self.ui.PauseButton.setChecked(True)
+                       self.ui.PauseButton.setText('unPause')
                        # wait until unpause button or stop button is clicked
                        interrupt = self.pauseQueue.get()  # never time out
                    # if unpause button is clicked        
@@ -380,12 +383,14 @@ class ACQThread(QThread):
                            self.AODOQueue.put(an_action)
                 except:
                     # acquisition not paused, start next Cscan
-                    if not self.ui.SimulateBox.isChecked():
-                        an_action = BoardAction('StartAcquire')
-                        self.BoardQueue.put(an_action)
-                        time.sleep(0.1) # wait 0.1 seconds to make sure board started before AODO start
-                    an_action = AODOAction('StartOnce')
-                    self.AODOQueue.put(an_action)
+                    if files < CscansPerStripe: 
+                        if not self.ui.SimulateBox.isChecked():
+                            an_action = BoardAction('StartAcquire')
+                            self.BoardQueue.put(an_action)
+                            time.sleep(0.1) # wait 0.1 seconds to make sure board started before AODO start
+                        an_action = AODOAction('StartOnce')
+                        self.AODOQueue.put(an_action)
+                        print('start acquiring\n')
                 
             # finishing this stripe, delete one MOSAIC object from the mosaic pattern
             self.Mosaic = np.delete(self.Mosaic, 0)

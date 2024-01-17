@@ -39,8 +39,6 @@ class GUI(MainWindow):
     def __init__(self):
         super().__init__()
 
-
-        
         self.ui.RunButton.clicked.connect(self.run_task)
         self.ui.PauseButton.clicked.connect(self.Pause_task)
         self.ui.Xmove2.clicked.connect(self.Xmove2)

@@ -6,6 +6,7 @@ Created on Tue Dec 26 10:40:19 2023
 """
 import nidaqmx as ni
 from nidaqmx.constants import AcquisitionType as Atype
+from nidaqmx.constants import Edge
 # from nidaqmx.constants import RegenerationMode as Rmode
 # from nidaqmx.constants import Edge as Edge
 # from nidaqmx.errors import DaqWarning as warnings
@@ -13,15 +14,15 @@ import time
 import numpy as np
 
 with ni.Task('AO task') as AOtask, ni.Task('DO task') as DOtask:
-    AOwaveform1 = np.arange(-1,1,0.0003)
-    AOwaveform2 = np.arange(1,-1,0.0003)
+    AOwaveform1 = np.arange(0,1,0.0001)
+    AOwaveform2 = np.arange(1,0,0.0001)
     AOwaveform = np.append(AOwaveform1,AOwaveform2)
-    AOtask.ao_channels.add_ao_voltage_chan(physical_channel='AODO/ao0', \
+    AOtask.ao_channels.add_ao_voltage_chan(physical_channel='AODO/ao1', \
                                           min_val=- 10.0, max_val=10.0, \
                                           units=ni.constants.VoltageUnits.VOLTS)
-        
     AOtask.timing.cfg_samp_clk_timing(rate=100000, \
                                     source='/AODO/PFI0', \
+                                        active_edge= Edge.FALLING,\
                                       sample_mode=Atype.CONTINUOUS,samps_per_chan=len(AOwaveform))
     AOtask.triggers.sync_type.MASTER = True
 
@@ -31,9 +32,11 @@ with ni.Task('AO task') as AOtask, ni.Task('DO task') as DOtask:
     DOtask.do_channels.add_do_chan(lines='AODO/port0/line0:7')
     DOtask.timing.cfg_samp_clk_timing(rate=100000, \
                                     source='/AODO/PFI0', \
+                                        active_edge= Edge.FALLING,\
                                       sample_mode=Atype.CONTINUOUS,samps_per_chan=len(AOwaveform))
     DOtask.triggers.sync_type.SLAVE = True
-    DOwaveform = np.uint32(np.append(np.zeros(np.int32(len(AOwaveform)/2)),8*np.ones(np.int32(len(AOwaveform)/2))))
+    # DOwaveform = np.uint32(np.append(np.zeros(np.int32(len(AOwaveform)/2)),8*np.ones(np.int32(len(AOwaveform)/2))))
+    DOwaveform = [0,0,0,0,0,0,0,0,0,0,8,8,8,8,8,8,8,8,8]
     DOtask.write(DOwaveform, auto_start = False)
     
     DOtask.start()

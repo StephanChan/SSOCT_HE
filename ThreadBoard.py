@@ -317,10 +317,10 @@ class ATS9350(QThread):
 
             buffer = self.buffers[buffersCompleted % len(self.buffers)]
             try:
-                self.board.waitAsyncBufferComplete(buffer.addr, timeout_ms=3000) 
+                self.board.waitAsyncBufferComplete(buffer.addr, timeout_ms=500) 
             except Exception as error:
                 # TODO: if timeout, break this inner while loop
-                print(error, 'stopping acquisition for board\n')
+                print(buffersCompleted, self.buffersPerAcquisition,'\n',error, '\nstopping acquisition for board\n')
                 break
             
             # bytesTransferred += buffer.size_bytes
@@ -329,7 +329,7 @@ class ATS9350(QThread):
             buffersCompleted += 1
             # print(buffersCompleted, NACQ)
             if buffersCompleted % NACQ ==0:
-                # print('sending data back')
+                print('sending data back')
                 an_action = Board2ACQAction(self.MemoryLoc)
                 self.Board2ACQQueue.put(an_action)
                 self.MemoryLoc = (self.MemoryLoc+1) % 2

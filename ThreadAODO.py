@@ -7,6 +7,7 @@ Created on Tue Dec 12 16:51:20 2023
 from PyQt5.QtCore import  QThread
 import nidaqmx as ni
 from nidaqmx.constants import AcquisitionType as Atype
+from nidaqmx.constants import Edge
 # from nidaqmx.constants import RegenerationMode as Rmode
 # from nidaqmx.constants import Edge as Edge
 # from nidaqmx.errors import DaqWarning as warnings
@@ -92,6 +93,7 @@ class AODOThread(QThread):
         if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline','RptCscan']:
             self.AOtask.timing.cfg_samp_clk_timing(rate=self.Aline_freq, \
                                             source=self.ui.ClockTerm.toPlainText(), \
+                                                active_edge= Edge.FALLING,\
                                               sample_mode=Atype.CONTINUOUS,samps_per_chan=len(AOwaveform))
         else:
             self.AOtask.timing.cfg_samp_clk_timing(rate=self.Aline_freq, \
@@ -109,6 +111,7 @@ class AODOThread(QThread):
         if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline','RptCscan']:
             self.DOtask.timing.cfg_samp_clk_timing(rate=self.Aline_freq, \
                                             source=self.ui.ClockTerm.toPlainText(), \
+                                                active_edge= Edge.FALLING,\
                                               sample_mode=Atype.CONTINUOUS,samps_per_chan=len(DOwaveform))
         else:
             self.DOtask.timing.cfg_samp_clk_timing(rate=self.Aline_freq, \

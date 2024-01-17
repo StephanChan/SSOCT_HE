@@ -46,7 +46,8 @@ class GPUThread(QThread):
                     self.update_window()
                 else:
                     self.ui.statusbar.showMessage('GPU thread is doing something invalid '+self.item.action)
-                # print('an FFT action took ',time.time()-start,' seconds\n')
+                if time.time()-start > 1:
+                    print('an FFT action took ',time.time()-start,' seconds\n')
             except Exception as error:
                 print("An error occurred:", error,' skip the FFT action\n')
                 print(traceback.format_exc())
