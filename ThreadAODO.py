@@ -14,6 +14,8 @@ from Generaic_functions import GenAODO
 import time
 import numpy as np
 import traceback
+global Galvo_bias
+Galvo_bias = 3
 
 class AODOThread(QThread):
     def __init__(self, ui, AODOQueue, PauseQueue):
@@ -121,12 +123,12 @@ class AODOThread(QThread):
     def StartOnce(self):
         self.DOtask.start()
         self.AOtask.start()
-        try:
-            self.AOtask.wait_until_done(timeout = 60)
-            self.AOtask.stop()
-            self.DOtask.stop()
-        except:
-            self.CloseTask()
+        # try:
+        self.AOtask.wait_until_done(timeout = 60)
+        self.AOtask.stop()
+        self.DOtask.stop()
+        # except:
+
         # print('AODO write task done')
         
             
@@ -150,8 +152,8 @@ class AODOThread(QThread):
                 time.sleep(0.5)
             self.DOtask.close()
             self.AOtask.close()
-        except:
-            pass
+        except Exception as error:
+            pass#print(traceback.format_exc())
         return 'AODO write task done'
                 
     def centergalvo(self):
@@ -159,7 +161,7 @@ class AODOThread(QThread):
             AOtask.ao_channels.add_ao_voltage_chan(physical_channel='AODO/ao0', \
                                                   min_val=- 10.0, max_val=10.0, \
                                                   units=ni.constants.VoltageUnits.VOLTS)
-            AOtask.write(0, auto_start = True)
+            AOtask.write(Galvo_bias, auto_start = True)
             DOtask.do_channels.add_do_chan(lines='AODO/port0/line0:7')
             DOtask.write(0, auto_start = True)
             # AOtask.close()

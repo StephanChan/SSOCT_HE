@@ -32,7 +32,7 @@ class DSPThread(QThread):
             try:
                 if self.item.action in ['SingleAline','RptAline']:
                     
-                    self.Display_aline(self.item.data)
+                    self.Display_aline(self.item.data, self.item.args)
                 
                 elif self.item.action in ['SingleBline','RptBline']:
                     self.Display_bline(self.item.data)
@@ -54,17 +54,24 @@ class DSPThread(QThread):
         print('Display Thread successfully exited')
             
 
-    def Display_aline(self, data):
+    def Display_aline(self, data, raw = False):
         #data = ctypes.cast(data_address, ctypes.py_object).value 
         # TODO: make sure fft is shifted
-        Zpixels = self.ui.DepthRange.value()
+        if not raw:
+            Zpixels = self.ui.DepthRange.value()
+        else:
+            Zpixels = self.ui.PreSamples.value() + self.ui.PostSamples.value()
         Xpixels = 100
         Yrpt = self.ui.BlineAVG.value()
         data = data.reshape([Yrpt,Xpixels,Zpixels])
         
         data = np.mean(data,0)
         data = data[0,:]
-        pixmap = LinePlot(data)
+        if not raw:
+            data=np.log10(data)
+        else:
+            data = data/pow(2,16)
+        pixmap = LinePlot(data, [], self.ui.MinContrast.value(), self.ui.MaxContrast.value())
         # clear content on the waveformLabel
         self.ui.XYplane.clear()
         # update iamge on the waveformLabel
@@ -81,7 +88,10 @@ class DSPThread(QThread):
         
         # data = data[0,:,:]
         data = np.transpose(data).copy()
-        pixmap = ImagePlot(data)
+        # print(data.shape)
+        # print(data[0,0])
+        
+        pixmap = ImagePlot(data, self.ui.MinContrast.value(), self.ui.MaxContrast.value())
         # clear content on the waveformLabel
         self.ui.XYplane.clear()
         # update iamge on the waveformLabel
@@ -96,14 +106,14 @@ class DSPThread(QThread):
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
         data = data.reshape([Ypixels,Xpixels,Zpixels])
         plane = (data[:,1,:]).copy()
-        pixmap = ImagePlot(plane)
+        pixmap = ImagePlot(plane, self.ui.MinContrast.value(), self.ui.MaxContrast.value())
         # clear content on the waveformLabel
         self.ui.YZplane.clear()
         # update iamge on the waveformLabel
         self.ui.YZplane.setPixmap(pixmap)
         
         plane = np.transpose(data[1,:,:]).copy()
-        pixmap = ImagePlot(plane)
+        pixmap = ImagePlot(plane, self.ui.MinContrast.value(), self.ui.MaxContrast.value())
         # clear content on the waveformLabel
         self.ui.XZplane.clear()
         # update iamge on the waveformLabel
@@ -111,7 +121,7 @@ class DSPThread(QThread):
         
         #data = ctypes.cast(data_address, ctypes.py_object).value 
         plane = np.mean(data,2)# has to be first index, otherwise the memory space is not continuous
-        pixmap = ImagePlot(plane)
+        pixmap = ImagePlot(plane, self.ui.MinContrast.value(), self.ui.MaxContrast.value()/4)
         # clear content on the waveformLabel
         self.ui.XYplane.clear()
         # update image on the waveformLabel
@@ -126,14 +136,14 @@ class DSPThread(QThread):
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
         data = data.reshape([Ypixels,Xpixels,Zpixels])
         plane = (data[:,1,:]).copy()
-        pixmap = ImagePlot(plane)
+        pixmap = ImagePlot(plane, self.ui.MinContrast.value(), self.ui.MaxContrast.value())
         # clear content on the waveformLabel
         self.ui.YZplane.clear()
         # update iamge on the waveformLabel
         self.ui.YZplane.setPixmap(pixmap)
         
         plane = np.transpose(data[1,:,:]).copy()
-        pixmap = ImagePlot(plane)
+        pixmap = ImagePlot(plane, self.ui.MinContrast.value(), self.ui.MaxContrast.value())
         # clear content on the waveformLabel
         self.ui.XZplane.clear()
         # update iamge on the waveformLabel
@@ -141,7 +151,7 @@ class DSPThread(QThread):
         
         #data = ctypes.cast(data_address, ctypes.py_object).value 
         plane = np.mean(data,2)
-        pixmap = ImagePlot(plane)
+        pixmap = ImagePlot(plane, self.ui.MinContrast.value(), self.ui.MaxContrast.value()/4)
         # clear content on the waveformLabel
         self.ui.XYplane.clear()
         # update iamge on the waveformLabel
@@ -158,7 +168,7 @@ class DSPThread(QThread):
             self.surf = np.zeros([ surfX*Ypixels,surfY*Xpixels],dtype = np.float32)
             
         self.surf[Ypixels*fileX:Ypixels*(fileX+1),Xpixels*fileY:Xpixels*(fileY+1)] = np.resize(plane,[Ypixels,Xpixels])
-        pixmap = ImagePlot(self.surf)
+        pixmap = ImagePlot(self.surf, self.ui.MinContrast.value(), self.ui.MaxContrast.value()/10)
         # clear content on the waveformLabel
         self.ui.SampleMosaic.clear()
         # update iamge on the waveformLabel

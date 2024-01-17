@@ -26,7 +26,6 @@ Created on Sun Dec 10 20:14:40 2023
 
 # between threads, using Queue to pass variables, variables gets duplicated in memory when passed as arguments
 
-import time
 import sys
 from multiprocessing import Queue
 from PyQt5.QtWidgets import QApplication
@@ -36,35 +35,30 @@ from ThreadAcq import ACQThread
 from ThreadAODO import AODOThread
 from ThreadDisplay import DSPThread
 
-
-global AODOQueue
-global AcqQueue
-global DisplayQueue
-global PauseQueue
-
-
-AODOQueue = Queue()
-AcqQueue = Queue()
-DisplayQueue = Queue()
-PauseQueue = Queue()
-
 class GUI(MainWindow):
     def __init__(self):
         super().__init__()
 
 
-        self.Init_allThreads()
+        
         self.ui.RunButton.clicked.connect(self.run_task)
         self.ui.PauseButton.clicked.connect(self.Pause_task)
         self.ui.Xmove2.clicked.connect(self.Xmove2)
         self.ui.Ymove2.clicked.connect(self.Ymove2)
         self.ui.Zmove2.clicked.connect(self.Zmove2)
         self.ui.CenterGalvo.clicked.connect(self.CenterGalvo)
-    
+        
+        self.AODOQueue = Queue()
+        self.AcqQueue = Queue()
+        self.DisplayQueue = Queue()
+        self.PauseQueue = Queue()
+        
+        self.Init_allThreads()
+        
     def Init_allThreads(self):
-        self.ACQ_thread=ACQThread(self.ui, AcqQueue, DisplayQueue, AODOQueue, PauseQueue)
-        self.AODO_thread = AODOThread(self.ui, AODOQueue, PauseQueue)
-        self.Display_thread = DSPThread(self.ui, DisplayQueue)
+        self.ACQ_thread=ACQThread(self.ui, self.AcqQueue, self.DisplayQueue, self.AODOQueue, self.PauseQueue)
+        self.AODO_thread = AODOThread(self.ui, self.AODOQueue, self.PauseQueue)
+        self.Display_thread = DSPThread(self.ui, self.DisplayQueue)
         
         self.ACQ_thread.start()
         self.AODO_thread.start()
@@ -72,9 +66,9 @@ class GUI(MainWindow):
             
     def Stop_allThreads(self):
         exit_element=EXIT()
-        AcqQueue.put(exit_element)
-        AODOQueue.put(exit_element)
-        DisplayQueue.put(exit_element)
+        self.AcqQueue.put(exit_element)
+        self.AODOQueue.put(exit_element)
+        self.DisplayQueue.put(exit_element)
         
     def run_task(self):
         # RptAline and SingleAline is for checking Aline profile, we don't need to capture each Aline, only display 30 Alines per second\
@@ -94,13 +88,13 @@ class GUI(MainWindow):
             if self.ui.RunButton.isChecked():
                 self.ui.RunButton.setText('Stop')
                 an_action = ACQAction(self.ui.ACQMode.currentText())
-                AcqQueue.put(an_action)
+                self.AcqQueue.put(an_action)
             else:
                 self.ui.RunButton.setText('Run')
                 self.Stop_task()
         elif self.ui.ACQMode.currentText() in ['SingleAline','SingleBline','SingleCscan']:
             an_action = ACQAction(self.ui.ACQMode.currentText())
-            AcqQueue.put(an_action)
+            self.AcqQueue.put(an_action)
             self.ui.RunButton.setChecked(False)
             self.ui.RunButton.setText('Run')
         else:
@@ -109,30 +103,30 @@ class GUI(MainWindow):
         
     def Xmove2(self):
         an_action = AODOAction('Xmove2')
-        AODOQueue.put(an_action)
+        self.AODOQueue.put(an_action)
         
     def Ymove2(self):
         an_action = AODOAction('Ymove2')
-        AODOQueue.put(an_action)
+        self.AODOQueue.put(an_action)
         
     def Zmove2(self):
         an_action = AODOAction('Zmove2')
-        AODOQueue.put(an_action)
+        self.AODOQueue.put(an_action)
         
     def CenterGalvo(self):
         an_action = AODOAction('centergalvo')
-        AODOQueue.put(an_action)
+        self.AODOQueue.put(an_action)
         
     def Pause_task(self):
         if self.ui.PauseButton.isChecked():
-            PauseQueue.put('Pause')
+            self.PauseQueue.put('Pause')
             self.ui.statusbar.showMessage('acquisition paused...')
         else:
-            PauseQueue.put('unPause')
+            self.PauseQueue.put('unPause')
             self.ui.statusbar.showMessage('acquisition resumed...')
       
     def Stop_task(self):
-        PauseQueue.put('Stop')
+        self.PauseQueue.put('Stop')
         self.ui.statusbar.showMessage('acquisition stopped...')
         
     def closeEvent(self, event):

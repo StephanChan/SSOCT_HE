@@ -14,6 +14,11 @@ sys.path.append('c:\\alazartech\\ats-sdk\\7.2.3\\samples_python\\ats9350\\npt\\.
 import atsapi as ats
 from Actions import Board2ACQAction
 import traceback
+from matplotlib import pyplot as plt
+
+global CONTINUOUS
+
+CONTINUOUS = 0x7FFFFFFF
 
 class ATS9350(QThread):
     def __init__(self):
@@ -214,24 +219,34 @@ class ATS9350(QThread):
         # TODO: Select the number of records per DMA buffer.
         # how many X pixels in one Bline
         if self.ui.ACQMode.currentText() in ['RptAline','SingleAline']:
-            self.recordsPerBuffer = 3000
+            self.recordsPerBuffer = 100
         else:
             self.recordsPerBuffer = self.ui.Xsteps.value() * self.ui.AlineAVG.value()
-    
+        # print(self.recordsPerBuffer)
         # TODO: Select the number of buffers per acquisition.
         # how many Blines per Acquisition
-        if self.ui.ACQMode.currentText() in ['RptAline','SingleAline']:
+        if self.ui.ACQMode.currentText() in ['SingleAline', 'SingleBline']:
             self.buffersPerAcquisition = self.ui.BlineAVG.value()
-        elif self.ui.ACQMode.currentText() in ['RptBline','SingleBline']:
-            self.buffersPerAcquisition = self.ui.BlineAVG.value()
-        elif self.ui.ACQMode.currentText() in ['RptCscan','SingleCscan', 'SurfScan','SurfScan+Slice']:
+        elif self.ui.ACQMode.currentText() in ['RptAline', 'RptBline']:
+            self.buffersPerAcquisition = CONTINUOUS # endless acquisition
+
+        elif self.ui.ACQMode.currentText() in ['SingleCscan', 'SurfScan','SurfScan+Slice']:
             self.buffersPerAcquisition = self.ui.Ysteps.value() * self.ui.BlineAVG.value()
-        
+        # print(self.buffersPerAcquisition)
         # TODO: Select the active channels.
-        self.channels = ats.CHANNEL_A | ats.CHANNEL_B
-        self.channelCount = 0
-        for c in ats.channels:
-            self.channelCount += (c & self.channels == c)
+        # self.channels = ats.CHANNEL_A | ats.CHANNEL_B
+        if self.ui.Aenable.currentText() == 'Enable':
+            if self.ui.Benable.currentText() == 'Enable':
+                self.channels = ats.CHANNEL_A | ats.CHANNEL_B # 3
+                self.channelCount = 2
+            else:
+                self.channels = ats.CHANNEL_A # 1
+                self.channelCount = 1
+        elif self.ui.Benable.currentText() == 'Enable':
+            self.channels = ats.CHANNEL_B # 2
+            self.channelCount = 1
+        # for c in ats.channels:
+        #     self.channelCount += (c & self.channels == c)
     
         # TODO: Should data be saved to file?
         # saveData = False
@@ -246,11 +261,15 @@ class ATS9350(QThread):
         self.samplesPerRecord = self.preTriggerSamples + self.postTriggerSamples
         self.bytesPerRecord = bytesPerSample * self.samplesPerRecord
         self.bytesPerBuffer = self.bytesPerRecord * self.recordsPerBuffer * self.channelCount
-    
+        self.samplesPerBuffer = self.samplesPerRecord * self.recordsPerBuffer * self.channelCount
+        # print(self.samplesPerBuffer)
         # Init Cscan memory buffers for temporary copying Blines
-        self.memoryCount = 2
-        for ii in range(self.memoryCount):
-            self.Memory[ii]=np.zeros([self.buffersPerAcquisition,self.bytesPerBuffer], dtype = np.uint16)
+
+        for ii in range(2):
+             if self.buffersPerAcquisition == CONTINUOUS:
+                 self.Memory[ii]=np.zeros([self.ui.BlineAVG.value(),self.samplesPerBuffer], dtype = np.uint16)
+             else:
+                 self.Memory[ii]=np.zeros([self.buffersPerAcquisition,self.samplesPerBuffer], dtype = np.uint16)
             
         self.MemoryLoc = 0
         # Allocate DMA buffers
@@ -265,11 +284,16 @@ class ATS9350(QThread):
         self.buffers = []
         for i in range(self.bufferCount):
             self.buffers.append(ats.DMABuffer(self.board.handle, self.sample_type, self.bytesPerBuffer))
-        
+        # print(self.bytesPerBuffer)
         # Set the record size
         self.board.setRecordSize(self.preTriggerSamples, self.postTriggerSamples)
     
-        recordsPerAcquisition = self.recordsPerBuffer * self.buffersPerAcquisition
+        
+    
+    def StartAcquire(self):
+        
+        recordsPerAcquisition = self.recordsPerBuffer * self.buffersPerAcquisition \
+            if self.buffersPerAcquisition != CONTINUOUS else self.buffersPerAcquisition
     
         # Configure the board to make an NPT AutoDMA acquisition
         self.board.beforeAsyncRead(self.channels,
@@ -284,55 +308,45 @@ class ATS9350(QThread):
         # Post DMA buffers to board
         for buffer in self.buffers:
             self.board.postAsyncBuffer(buffer.addr, buffer.size_bytes)
-    
-        self.NAcquisitions = 1
-    
-    def StartAcquire(self):
-        self.board.startCapture() # Start the acquisition
-        
-
-
-        buffersCompleted = 0
-        # bytesTransferred = 0
-        nacqusition = 0
-        # TODO: how to pause and stop acquisition for continuous mode?
-        while nacqusition < self.NAcquisitions:
-            while (buffersCompleted < self.buffersPerAcquisition): # and not ats.enter_pressed()):
-                   
-                # Wait for the buffer at the head of the list of available
-                # buffers to be filled by the board.
-                buffer = self.buffers[buffersCompleted % len(self.buffers)]
-                try:
-                    self.board.waitAsyncBufferComplete(buffer.addr, timeout_ms=200) 
-                except:
-                    # TODO: if timeout, break this inner while loop
-                    break
-                
-
-                
-                # bytesTransferred += buffer.size_bytes
-    
-                #TODO: select which way to do FFT
-                # 1. run GPU FFT for each buffer, one buffer can take 100ms to acquire
-                # --inplausible, processing takes longer time, need at least 200k Alines to be twice speed of acquisition
-                # 2. copy each buffer to a memory location, queue in memory location to a thread, then perform FFT on one memory for a time
-                # -- copy is fast, queue in is negligible, queue out is slow, only twice faster than acquisition
-                # 3. queue in buffer to a different thread, when memory location is filled up, run GPU FFT
-                # -- slow, not surprising
-    
-                self.Memory[self.MemoryLoc][buffersCompleted][:] = buffer.buffer
-                buffersCompleted += 1
-                # Add the buffer to the end of the list of available buffers.
-                self.board.postAsyncBuffer(buffer.addr, buffer.size_bytes)
             
-            if buffersCompleted == self.buffersPerAcquisition:
+        self.board.startCapture() # Start the acquisition
+        NACQ = self.buffersPerAcquisition if self.buffersPerAcquisition != CONTINUOUS else self.ui.BlineAVG.value()
+        buffersCompleted = 0
+        # print('start board', self.buffersPerAcquisition)
+        while (buffersCompleted < self.buffersPerAcquisition):
+
+            buffer = self.buffers[buffersCompleted % len(self.buffers)]
+            try:
+                self.board.waitAsyncBufferComplete(buffer.addr, timeout_ms=3000) 
+            except Exception as error:
+                # TODO: if timeout, break this inner while loop
+                print(error, 'stopping acquisition for board\n')
+                break
+            
+            # bytesTransferred += buffer.size_bytes
+            
+            self.Memory[self.MemoryLoc][buffersCompleted % NACQ][:] = buffer.buffer
+            buffersCompleted += 1
+            # print(buffersCompleted, NACQ)
+            if buffersCompleted % NACQ ==0:
+                # print('sending data back')
                 an_action = Board2ACQAction(self.MemoryLoc)
                 self.Board2ACQQueue.put(an_action)
-                nacqusition+=1 
                 self.MemoryLoc = (self.MemoryLoc+1) % 2
-            else:
-                self.board.abortAsyncRead()
+
+            # print(buffersCompleted)
+            # Add the buffer to the end of the list of available buffers.
+            self.board.postAsyncBuffer(buffer.addr, buffer.size_bytes)
+            
+            # get stop commend from BONE thread
+            try:
+                self.StopQueue.get(timeout=0.001)
+                print('\nsuccessfully caught that stop signal for board\n')
                 break
+            except:
+                pass
+        
+        self.board.abortAsyncRead()
             
             
     def StopAcquire(self):

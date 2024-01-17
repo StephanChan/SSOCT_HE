@@ -184,10 +184,80 @@
           </widget>
          </item>
          <item>
-          <widget class="QLabel" name="spacinglabel">
-           <property name="text">
-            <string/>
+          <widget class="QGroupBox" name="ContrastBox">
+           <property name="title">
+            <string>Contrast</string>
            </property>
+           <widget class="QDoubleSpinBox" name="MaxContrast">
+            <property name="geometry">
+             <rect>
+              <x>56</x>
+              <y>30</y>
+              <width>101</width>
+              <height>34</height>
+             </rect>
+            </property>
+            <property name="decimals">
+             <number>3</number>
+            </property>
+            <property name="minimum">
+             <double>-100.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>100.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>0.010000000000000</double>
+            </property>
+           </widget>
+           <widget class="QDoubleSpinBox" name="MinContrast">
+            <property name="geometry">
+             <rect>
+              <x>56</x>
+              <y>90</y>
+              <width>101</width>
+              <height>34</height>
+             </rect>
+            </property>
+            <property name="decimals">
+             <number>3</number>
+            </property>
+            <property name="minimum">
+             <double>-100.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>100.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>0.000000000000000</double>
+            </property>
+           </widget>
+           <widget class="QLabel" name="Maxlabel">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>30</y>
+              <width>51</width>
+              <height>21</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Max</string>
+            </property>
+           </widget>
+           <widget class="QLabel" name="Minlabel">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>90</y>
+              <width>51</width>
+              <height>21</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Min</string>
+            </property>
+           </widget>
           </widget>
          </item>
         </layout>
@@ -383,11 +453,6 @@
           </item>
           <item>
            <property name="text">
-            <string>RptCscan</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
             <string>SurfScan</string>
            </property>
           </item>
@@ -507,7 +572,7 @@
            <number>10000</number>
           </property>
           <property name="value">
-           <number>500</number>
+           <number>200</number>
           </property>
          </widget>
          <widget class="QLabel" name="PostClockLabel">
@@ -536,7 +601,7 @@
            <number>10000</number>
           </property>
           <property name="value">
-           <number>100</number>
+           <number>50</number>
           </property>
          </widget>
          <widget class="QLabel" name="PreclockLabel">
@@ -801,8 +866,11 @@
           <property name="maximum">
            <number>100000</number>
           </property>
+          <property name="singleStep">
+           <number>100</number>
+          </property>
           <property name="value">
-           <number>3000</number>
+           <number>1500</number>
           </property>
          </widget>
          <widget class="QLabel" name="XstepsLabel">
@@ -852,6 +920,12 @@
             <width>101</width>
             <height>31</height>
            </rect>
+          </property>
+          <property name="minimum">
+           <double>-100.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.100000000000000</double>
           </property>
          </widget>
          <widget class="QLabel" name="XBiasLabel">
@@ -1022,7 +1096,7 @@
            <double>50.000000000000000</double>
           </property>
           <property name="value">
-           <double>10.000000000000000</double>
+           <double>30.000000000000000</double>
           </property>
          </widget>
          <widget class="QDoubleSpinBox" name="YStop">
@@ -1376,7 +1450,7 @@ p, li { white-space: pre-wrap; }
           </rect>
          </property>
          <property name="currentIndex">
-          <number>0</number>
+          <number>1</number>
          </property>
          <widget class="QWidget" name="A">
           <attribute name="title">
@@ -1487,12 +1561,12 @@ p, li { white-space: pre-wrap; }
            </property>
            <item>
             <property name="text">
-             <string>Enable</string>
+             <string>Disable</string>
             </property>
            </item>
            <item>
             <property name="text">
-             <string>Disable</string>
+             <string>Enable</string>
             </property>
            </item>
           </widget>
@@ -1624,7 +1698,7 @@ p, li { white-space: pre-wrap; }
            </rect>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="JEngine">
            <attribute name="title">
@@ -1773,7 +1847,7 @@ p, li { white-space: pre-wrap; }
              </property>
             </item>
            </widget>
-           <widget class="QSpinBox" name="KTriggerLevel">
+           <widget class="QSpinBox" name="KLevel">
             <property name="geometry">
              <rect>
               <x>0</x>
@@ -1930,7 +2004,7 @@ p, li { white-space: pre-wrap; }
            <number>10000</number>
           </property>
           <property name="value">
-           <number>1024</number>
+           <number>1440</number>
           </property>
          </widget>
          <widget class="QLabel" name="PreSampleLabel">
@@ -2015,12 +2089,12 @@ p, li { white-space: pre-wrap; }
           </property>
           <item>
            <property name="text">
-            <string>500MHz</string>
+            <string>250MHz</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>250MHz</string>
+            <string>500MHz</string>
            </property>
           </item>
           <item>

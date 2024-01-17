@@ -35,7 +35,7 @@ class DisplayAction():
         self.args = args
 
 class GPUAction():
-    def __init__(self, action, mode, memoryLoc, args=[]):
+    def __init__(self, action, mode='', memoryLoc=0, args=[]):
         super().__init__()
         self.action = action
         self.mode = mode

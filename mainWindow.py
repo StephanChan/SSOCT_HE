@@ -9,7 +9,7 @@ from GUI import Ui_MainWindow
 from PyQt5.QtWidgets import  QMainWindow
 from PyQt5.QtGui import QPixmap
 import numpy as np
-
+from Actions import ACQAction
 from matplotlib import pyplot as plt
 from Generaic_functions import *
 
@@ -56,7 +56,12 @@ class MainWindow(QMainWindow):
         self.ui.SliceZStart.valueChanged.connect(self.Calculate_SliceDepth)
         self.ui.SliceZDepth.valueChanged.connect(self.Calculate_SliceDepth)
         self.ui.SliceZnumber.valueChanged.connect(self.Calculate_SliceDepth)
-        
+        # change brigtness and contrast
+        self.ui.ACQMode.currentIndexChanged.connect(self.Adjust_contrast)
+        self.ui.FFTDevice.currentIndexChanged.connect(self.Adjust_contrast)
+        # change window length for FFT
+        self.ui.PostSamples.valueChanged.connect(self.FFT_window_gen)
+        self.ui.PreSamples.valueChanged.connect(self.FFT_window_gen)
         
         
     def update_galvoXwaveform(self):
@@ -141,5 +146,18 @@ class MainWindow(QMainWindow):
         #print(self.slice_depths)
         #self.ui.statusbar.showMessage(self.image_depths)
         
-
+    def Adjust_contrast(self):
+        if self.ui.ACQMode.currentText() in ['SingleAline', 'RptAline']:
+            if self.ui.FFTDevice.currentText() == 'None':
+                self.ui.MinContrast.setValue(0)
+                self.ui.MaxContrast.setValue(1)
+            else:
+                self.ui.MinContrast.setValue(-7)
+                self.ui.MaxContrast.setValue(-2)
+        elif self.ui.ACQMode.currentText() in ['SingleBline', 'RptBline','SingleCscan', 'SurfScan', 'SurfScan+Slice']:
+            self.ui.MinContrast.setValue(0)
+            self.ui.MaxContrast.setValue(0.01)
         
+    def FFT_window_gen(self):
+        an_action = ACQAction('Window')
+        self.AcqQueue.put(an_action)

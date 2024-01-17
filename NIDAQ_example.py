@@ -13,7 +13,9 @@ import time
 import numpy as np
 
 with ni.Task('AO task') as AOtask, ni.Task('DO task') as DOtask:
-    AOwaveform = np.arange(-1,1,0.00001)
+    AOwaveform1 = np.arange(-1,1,0.0003)
+    AOwaveform2 = np.arange(1,-1,0.0003)
+    AOwaveform = np.append(AOwaveform1,AOwaveform2)
     AOtask.ao_channels.add_ao_voltage_chan(physical_channel='AODO/ao0', \
                                           min_val=- 10.0, max_val=10.0, \
                                           units=ni.constants.VoltageUnits.VOLTS)
@@ -22,8 +24,7 @@ with ni.Task('AO task') as AOtask, ni.Task('DO task') as DOtask:
                                     source='/AODO/PFI0', \
                                       sample_mode=Atype.CONTINUOUS,samps_per_chan=len(AOwaveform))
     AOtask.triggers.sync_type.MASTER = True
-    # task.triggers.start_trigger.cfg_dig_edge_start_trig(trigger_source='/AODO/PFI0', \
-    #                                                     trigger_edge=Edge.RISING)
+
 
     AOtask.write(AOwaveform, auto_start = False)
 
@@ -37,11 +38,12 @@ with ni.Task('AO task') as AOtask, ni.Task('DO task') as DOtask:
     
     DOtask.start()
     AOtask.start()
-    time.sleep(40)
-    # AOtask.wait_until_done()
+    time.sleep(10)
+    # AOtask.wait_until_done(timeout =21)
         
-    AOtask.stop()
+    
     DOtask.stop()
+    AOtask.stop()
     
     
     

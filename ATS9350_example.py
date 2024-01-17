@@ -13,16 +13,18 @@ import signal
 import sys
 import time
 global Memory
-Memory = []
-
-sys.path.append(os.path.join(os.path.dirname(__file__), '../..', 'Library'))
+Memory = list(range(2))
+from matplotlib import pyplot as plt
+# sys.path.append(os.path.join(os.path.dirname(__file__), '../..', 'Library'))
 import atsapi as ats
+global CONTINUOUS
 
+CONTINUOUS = 0x7FFFFFFF
 
 class ATS9350():
-    def __init__(self, GPUQueue):
+    def __init__(self):
         super().__init__()
-        self.board = ats.Board()
+        self.board = ats.Board(systemId = 1, boardId = 1)
         self.samplesPerSec = 250000000.0
     # Configures a board for acquisition
     def ConfigureBoard(self):
@@ -64,7 +66,7 @@ class ATS9350():
         # TODO: Select trigger inputs and levels as required.
         self.board.setTriggerOperation(ats.TRIG_ENGINE_OP_J,
                                   ats.TRIG_ENGINE_J,
-                                  ats.TRIG_CHAN_A,
+                                  ats.TRIG_EXTERNAL,
                                   ats.TRIGGER_SLOPE_POSITIVE,
                                   150,
                                   ats.TRIG_ENGINE_K,
@@ -97,27 +99,29 @@ class ATS9350():
         self.board.setTriggerTimeOut(triggerTimeout_clocks)
     
         # Configure AUX I/O connector as required
+        # self.board.configureAuxIO(ats.AUX_IN_TRIGGER_ENABLE,
+        #                      ats.TRIGGER_SLOPE_POSITIVE)
         self.board.configureAuxIO(ats.AUX_IN_TRIGGER_ENABLE,
-                             ats.TRIGGER_SLOPE_POSITIVE)
+                              ats.TRIGGER_SLOPE_POSITIVE)
     
         # No pre-trigger samples in NPT mode
         self.preTriggerSamples = 0
     
         # TODO: Select the number of samples per record.
-        self.postTriggerSamples = 2048
+        self.postTriggerSamples = 1024
     
         # TODO: Select the number of records per DMA buffer.
-        self.recordsPerBuffer = 2000
+        self.recordsPerBuffer = 3000
     
         # TODO: Select the number of buffers per acquisition.
-        self.buffersPerAcquisition = 200
+        self.buffersPerAcquisition = 100
         
         # TODO: Select the active channels.
-        self.channels = ats.CHANNEL_A | ats.CHANNEL_B
-        self.channelCount = 0
-        for c in ats.channels:
-            self.channelCount += (c & self.channels == c)
-    
+        self.channels = ats.CHANNEL_B# | ats.CHANNEL_B
+        self.channelCount = 1
+        # for c in ats.channels:
+        #     self.channelCount += (c & self.channels == c)
+        # print(self.channelCount)
         # TODO: Should data be saved to file?
         # saveData = False
         # dataFile = None
@@ -131,15 +135,19 @@ class ATS9350():
         self.samplesPerRecord = self.preTriggerSamples + self.postTriggerSamples
         self.bytesPerRecord = bytesPerSample * self.samplesPerRecord
         self.bytesPerBuffer = self.bytesPerRecord * self.recordsPerBuffer * self.channelCount
+        self.samplesPerBuffer = self.samplesPerRecord * self.recordsPerBuffer * self.channelCount
+        # print(self.bytesPerBuffer)
     
         # Init Cscan memory buffers for temporary copying Blines
         self.memoryCount = 2
         global Memory
-        Memory = []
         for ii in range(self.memoryCount):
-            Memory[ii]=np.zeros(self.bytesPerBuffer*self.buffersPerAcquisition, dtype = np.uint32)
-            
-    
+            if self.buffersPerAcquisition == CONTINUOUS:
+                Memory[ii]=np.zeros([1,self.samplesPerBuffer], dtype = np.uint16)
+            else:
+                Memory[ii]=np.zeros([self.buffersPerAcquisition,self.samplesPerBuffer], dtype = np.uint16)
+           
+        # print(Memory[0].shape)
     
         # Allocate DMA buffers
     
@@ -148,7 +156,7 @@ class ATS9350():
             self.sample_type = ctypes.c_uint16
             
         # TODO: Select number of DMA buffers to allocate
-        self.bufferCount = 4
+        self.bufferCount = 40
         
         self.buffers = []
         for i in range(self.bufferCount):
@@ -156,59 +164,76 @@ class ATS9350():
         
         # Set the record size
         self.board.setRecordSize(self.preTriggerSamples, self.postTriggerSamples)
-    
+
+    def AcquireData(self):
+        
+        global Memory
+        self.MemoryLoc = 0
+        
+
         recordsPerAcquisition = self.recordsPerBuffer * self.buffersPerAcquisition
-    
         # Configure the board to make an NPT AutoDMA acquisition
         self.board.beforeAsyncRead(self.channels,
                               -self.preTriggerSamples,
                               self.samplesPerRecord,
                               self.recordsPerBuffer,
-                              recordsPerAcquisition,
+                              # 0x7FFFFFFF,
+                               recordsPerAcquisition,
                               ats.ADMA_EXTERNAL_STARTCAPTURE | ats.ADMA_NPT)
-        
-    
-    
         # Post DMA buffers to board
         for buffer in self.buffers:
             self.board.postAsyncBuffer(buffer.addr, buffer.size_bytes)
-    
-    def AcquireData(self):
-        global Memory
+        self.board.startCapture() # Start the acquisition
+        # print("Capturing %d buffers. Press <enter> to abort" %
+              # self.buffersPerAcquisition)
+        NACQ = self.buffersPerAcquisition if self.buffersPerAcquisition != CONTINUOUS else 1
 
-        try:
-            self.board.startCapture() # Start the acquisition
-            print("Capturing %d buffers. Press <enter> to abort" %
-                  self.buffersPerAcquisition)
-            buffersCompleted = 0
-            bytesTransferred = 0
-            self.MemoryLoc = 0
-            while (buffersCompleted < self.buffersPerAcquisition and not
-                   ats.enter_pressed()):
-                # Wait for the buffer at the head of the list of available
-                # buffers to be filled by the board.
-                buffer = self.buffers[buffersCompleted % len(self.buffers)]
-                self.board.waitAsyncBufferComplete(buffer.addr, timeout_ms=5000)
-                buffersCompleted += 1
-                bytesTransferred += buffer.size_bytes
 
-                #TODO: select which way to do FFT
-                # 1. run GPU FFT for each buffer, one buffer can take 100ms to acquire
-                # --inplausible, processing takes longer time, need at least 200k Alines to be twice speed of acquisition
-                # 2. copy each buffer to a memory location, queue in memory location to a thread, then perform FFT on one memory for a time
-                # -- copy is fast, queue in is negligible, queue out is slow, only twice faster than acquisition
-                # 3. queue in buffer to a different thread, when memory location is filled up, run GPU FFT
-                # -- slow, not surprising
+        buffersCompleted = 0
+        # bytesTransferred = 0
+        # TODO: how to pause and stop acquisition for continuous mode?
+        while (buffersCompleted < self.buffersPerAcquisition): # and not ats.enter_pressed()):
+               
+            # Wait for the buffer at the head of the list of available
+            # buffers to be filled by the board.
+            buffer = self.buffers[buffersCompleted % len(self.buffers)]
+            # print('board waiting...\n')
+            try:
+                self.board.waitAsyncBufferComplete(buffer.addr, timeout_ms=5000) 
+            except Exception as error:
+                # TODO: if timeout, break this inner while loop
+                print(error)
+                break
+            
 
-                Memory[self.MemoryLoc][(buffersCompleted-1)*self.bytesPerBuffer:buffersCompleted*self.bytesPerBuffer] = buffer.buffer
-    
-                # Add the buffer to the end of the list of available buffers.
-                self.board.postAsyncBuffer(buffer.addr, buffer.size_bytes)
-            self.MemoryLoc = (self.MemoryLoc+1) % 2
-            # GPU process thread start
-        finally:
-            self.board.abortAsyncRead()
+            
+            # bytesTransferred += buffer.size_bytes
+
+            #TODO: select which way to do FFT
+            # 1. run GPU FFT for each buffer, one buffer can take 100ms to acquire
+            # --inplausible, processing takes longer time, need at least 200k Alines to be twice speed of acquisition
+            # 2. copy each buffer to a memory location, queue in memory location to a thread, then perform FFT on one memory for a time
+            # -- copy is fast, queue in is negligible, queue out is slow, only twice faster than acquisition
+            # 3. queue in buffer to a different thread, when memory location is filled up, run GPU FFT
+            # -- slow, not surprising
+            
+            Memory[self.MemoryLoc][buffersCompleted % NACQ][:] = buffer.buffer
+            # plt.plot(buffer.buffer[0:1024])
+            # print(buffer.buffer.shape)
+            buffersCompleted += 1
+            print(buffersCompleted)
+            # Add the buffer to the end of the list of available buffers.
+            self.board.postAsyncBuffer(buffer.addr, buffer.size_bytes)
+        
+            if buffersCompleted % NACQ == 0:
+                time.sleep(0.001)
+                self.MemoryLoc = (self.MemoryLoc+1) % 2
+            
+        self.board.abortAsyncRead()
 
 if __name__ == "__main__":
 
-    pass
+    example = ATS9350()
+    example.ConfigureBoard()
+    example.AcquireData()
+    example.AcquireData()

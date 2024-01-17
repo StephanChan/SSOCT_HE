@@ -10,9 +10,10 @@ Created on Mon Dec 11 19:41:46 2023
 # bias in unit of mm
     
 import numpy as np
-
+global Galvo_bias
+Galvo_bias = 3 # V
 def GenGalvoWave(StepSize = 1, Steps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma5X', preclocks = 50, postclocks = 200):
-
+    
     # total number of steps is the product of steps and aline average number
     # use different angle to mm ratio for different objective
     if obj == 'OptoSigma5X':
@@ -26,8 +27,8 @@ def GenGalvoWave(StepSize = 1, Steps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma
     Xrange = StepSize*Steps/1000
     # max voltage is converted from half of max X range plus bias divided by angle2mm ratio
     # extra division by 2 is because galvo angle change is only half of beam deviation angle
-    Vmax = (Xrange/2+bias)/angle2mmratio/2
-    Vmin = (-Xrange/2+bias)/angle2mmratio/2
+    Vmax = (Xrange/2+bias)/angle2mmratio/2+Galvo_bias
+    Vmin = (-Xrange/2+bias)/angle2mmratio/2+Galvo_bias
     # step size of voltage
     stepsize = (Vmax-Vmin)/Steps/AVG
     # ramping up and down time in unit of clocks, i.e., A-lines
@@ -36,6 +37,7 @@ def GenGalvoWave(StepSize = 1, Steps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma
     steps2=postclocks
     # linear waveform
     waveform=np.arange(Vmin, Vmax, stepsize)
+    # print(len(waveform))
     # ramping up  waveform, change amplitude to match the slop with linear waveform
     Prewave = stepsize*steps1/np.pi*np.cos(np.arange(np.pi,3*np.pi/2,np.pi/2/steps1))+Vmin
     # ramping down wavefor, change amplitude to match the slop with linear waveform
@@ -62,10 +64,10 @@ def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, A
         # RptAline is for checking Aline profile, we don't need to capture each Aline, only display 30 Alines per second\
         # if one wants to capture each Aline, they can set X and Y step size to be 0 and capture Cscan instead
         # 33 frames per second, how many samples for each frame
-        one_cycle_samples = np.int32(Aline_frq*0.03)
+        one_cycle_samples = np.int32(Aline_frq*0.1)
         # trigger enbale waveform generation
         DOwaveform = np.append(np.zeros(one_cycle_samples-100), pow(2,3)*np.ones(100))
-        CscanAO = np.zeros(BVG*len(DOwaveform))
+        CscanAO = np.ones(BVG*len(DOwaveform)) * Galvo_bias
         CscanDO = np.zeros(BVG*len(DOwaveform))
         for ii in range(BVG):
             CscanDO[ii*len(DOwaveform):(ii+1)*len(DOwaveform)] = DOwaveform
@@ -212,15 +214,15 @@ from PyQt5.QtGui import QPixmap
 
 from matplotlib import pyplot as plt
 
-def LinePlot(AOwaveform, DOwaveform = None):
+def LinePlot(AOwaveform, DOwaveform = None, m=2, M=4):
     # clear content on plot
     plt.cla()
     # plot the new waveform
     plt.plot(range(len(AOwaveform)),AOwaveform,linewidth=2)
     if np.any(DOwaveform):
         plt.plot(range(len(DOwaveform)),(DOwaveform>>3)*np.max(AOwaveform),linewidth=2)
-    plt.ylim(np.min(AOwaveform)-0.2,np.max(AOwaveform)+0.2)
-
+    # plt.ylim(np.min(AOwaveform)-0.2,np.max(AOwaveform)+0.2)
+    plt.ylim([m,M])
     plt.xticks(fontsize=15)
     plt.yticks(fontsize=15)
     plt.rcParams['savefig.dpi']=150
@@ -249,15 +251,15 @@ def ScatterPlot(mosaic):
     return pixmap
 
 import qimage2ndarray as qpy
-def ImagePlot(matrix):
+def ImagePlot(matrix, m=0, M=1):
     # select image brightness level
-    M=np.max(matrix)
-    level = -6
-    while M > pow(10,level):
-        level +=1
+    # M=np.max(matrix)
+    # level = -6
+    # while M > pow(10,level):
+    #     level +=1
     # im = QImage(matrix, matrix.shape[1], matrix.shape[0], QImage.Format_Grayscale8)
     # adjust image brightness
-    data = np.uint8(matrix/pow(10,level)*255.0*2)
+    data = np.uint8((matrix-m)/M*255.0*2)
     im = qpy.gray2qimage(data)
     pixmap = QPixmap(im)
     return pixmap
