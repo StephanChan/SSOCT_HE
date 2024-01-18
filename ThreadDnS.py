@@ -42,6 +42,9 @@ class DnSThread(QThread):
                 
                 elif self.item.action == 'Clear':
                     self.surf = []
+                elif self.item.action == 'UpdateContrast':
+                    self.Update_contrast()
+                
                     
                 else:
                     self.ui.statusbar.showMessage('Display and save thread is doing something invalid' + self.item.action)
@@ -55,40 +58,46 @@ class DnSThread(QThread):
     def Display_aline(self, data, raw = False):
         #data = ctypes.cast(data_address, ctypes.py_object).value 
         # TODO: make sure fft is shifted
+        # check if displaying before FFT
         if not raw:
             Zpixels = self.ui.DepthRange.value()
         else:
             Zpixels = self.ui.PreSamples.value() + self.ui.PostSamples.value()
+            data = data/pow(2,16)
         Xpixels = 100
         Yrpt = self.ui.BlineAVG.value()
         data = data.reshape([Yrpt,Xpixels,Zpixels])
         
         data = np.mean(data,0)
         data = data[0,:]
-        if not raw:
-            data=np.log10(data)
-        else:
-            data = data/pow(2,16)
+        self.Aline = data
+        # check if displaying in log scale
+        if self.ui.LOG.currentText() == '10log10':
+            data=10*np.log10(data)
+
         pixmap = LinePlot(data, [], self.ui.MinContrast.value(), self.ui.MaxContrast.value())
         # clear content on the waveformLabel
         self.ui.XYplane.clear()
         # update iamge on the waveformLabel
         self.ui.XYplane.setPixmap(pixmap)
     
-    def Display_bline(self, data):
-        Zpixels = self.ui.DepthRange.value()
+    def Display_bline(self, data, raw = False):
+        if not raw:
+            Zpixels = self.ui.DepthRange.value()
+        else:
+            Zpixels = self.ui.PreSamples.value() + self.ui.PostSamples.value()
+            data = data/pow(2,16)
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         Yrpt = self.ui.BlineAVG.value()
         
         data = data.reshape([Yrpt,Xpixels,Zpixels])
-        # if Yrpt > 1:
         data = np.mean(data,0)
-        
-        # data = data[0,:,:]
+
         data = np.transpose(data).copy()
-        # print(data.shape)
-        # print(data[0,0])
-        
+        self.Bline = data
+        if self.ui.LOG.currentText() == '10log10':
+            data=10*np.log10(data)
+
         pixmap = ImagePlot(data, self.ui.MinContrast.value(), self.ui.MaxContrast.value())
         # clear content on the waveformLabel
         self.ui.XYplane.clear()
@@ -99,6 +108,9 @@ class DnSThread(QThread):
             self.WriteData(data, self.BlineFilename([Yrpt,Xpixels,Zpixels]))
         
     def Display_Cscan(self, data):
+        self.Cscan = data
+        if self.ui.LOG.currentText() == '10log10':
+            data=10*np.log10(data)
         Zpixels = self.ui.DepthRange.value()
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
@@ -129,6 +141,8 @@ class DnSThread(QThread):
             self.WriteData(data, self.CscanFilename([Ypixels,Xpixels,Zpixels]))
         
     def Display_SurfScan(self, data, args):
+        if self.ui.LOG.currentText() == '10log10':
+            data=10*np.log10(data)
         Zpixels = self.ui.DepthRange.value()
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
@@ -173,6 +187,59 @@ class DnSThread(QThread):
         self.ui.SampleMosaic.setPixmap(pixmap)
         if self.ui.Save.isChecked():
             self.WriteData(data, self.SurfFilename([Ypixels*20,Xpixels*20,Zpixels]))
+            
+    def Update_contrast(self):
+        if self.ui.ACQMode.currentText() in ['SingleAline', 'RptAline']:
+            if self.ui.LOG.currentText() == '10log10':
+                data=10*np.log10(self.Aline)
+            else:
+                data = self.Aline
+            pixmap = LinePlot(data, [], self.ui.MinContrast.value(), self.ui.MaxContrast.value())
+            # clear content on the waveformLabel
+            self.ui.XYplane.clear()
+            # update iamge on the waveformLabel
+            self.ui.XYplane.setPixmap(pixmap)
+        elif self.ui.ACQMode.currentText() in ['SingleBline', 'RptBline']:
+            if self.ui.LOG.currentText() == '10log10':
+                data=10*np.log10(self.Bline)
+            else:
+                data = self.Bline
+
+            pixmap = ImagePlot(data, self.ui.MinContrast.value(), self.ui.MaxContrast.value())
+            # clear content on the waveformLabel
+            self.ui.XYplane.clear()
+            # update iamge on the waveformLabel
+            self.ui.XYplane.setPixmap(pixmap)
+        elif self.ui.ACQMode.currentText() == 'SingleCscan':
+            if self.ui.LOG.currentText() == '10log10':
+                data=10*np.log10(self.Cscan)
+            else:
+                data = self.Cscan
+            Zpixels = self.ui.DepthRange.value()
+            Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
+            Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
+            data = data.reshape([Ypixels,Xpixels,Zpixels])
+            plane = (data[:,1,:]).copy()
+            pixmap = ImagePlot(plane, self.ui.MinContrast.value(), self.ui.MaxContrast.value())
+            # clear content on the waveformLabel
+            self.ui.YZplane.clear()
+            # update iamge on the waveformLabel
+            self.ui.YZplane.setPixmap(pixmap)
+            
+            plane = np.transpose(data[1,:,:]).copy()
+            pixmap = ImagePlot(plane, self.ui.MinContrast.value(), self.ui.MaxContrast.value())
+            # clear content on the waveformLabel
+            self.ui.XZplane.clear()
+            # update iamge on the waveformLabel
+            self.ui.XZplane.setPixmap(pixmap)
+            
+            #data = ctypes.cast(data_address, ctypes.py_object).value 
+            plane = np.mean(data,2)# has to be first index, otherwise the memory space is not continuous
+            pixmap = ImagePlot(plane, self.ui.MinContrast.value(), self.ui.MaxContrast.value()/4)
+            # clear content on the waveformLabel
+            self.ui.XYplane.clear()
+            # update image on the waveformLabel
+            self.ui.XYplane.setPixmap(pixmap)
             
     def SurfFilename(self, shape):
         if self.tileNum <= self.totalTiles:

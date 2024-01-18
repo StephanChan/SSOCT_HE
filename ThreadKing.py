@@ -82,7 +82,7 @@ class KingThread(QThread):
             # samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
             # Alines =np.uint32((data.shape[1])/samples) * data.shape[0]
             # data=data.reshape([Alines, samples])
-            an_action = DnSAction(mode, data, args=True) # data in Memory[memoryLoc]
+            an_action = DnSAction(mode, data, args=False) # data in Memory[memoryLoc]
             self.DnSQueue.put(an_action)
         else:
             # In other modes, do FFT first
@@ -137,7 +137,7 @@ class KingThread(QThread):
                 # samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
                 # Alines =np.uint32((data.shape[1])/samples) * data.shape[0]
                 # data=data.reshape([Alines, samples])
-                an_action = DnSAction(mode, data, args=True) # data in Memory[memoryLoc]
+                an_action = DnSAction(mode, data, args=False) # data in Memory[memoryLoc]
                 self.DnSQueue.put(an_action)
             else:
                 # In other modes, do FFT first

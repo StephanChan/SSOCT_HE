@@ -132,6 +132,8 @@ class GUI(MainWindow):
         self.ui.PostSamples.valueChanged.connect(self.Update_FFTwindow)
         self.ui.PreSamples.valueChanged.connect(self.Update_FFTwindow)
         
+        self.ui.MaxContrast.valueChanged.connect(self.Update_contrast)
+        self.ui.MinContrast.valueChanged.connect(self.Update_contrast)
         self.Init_allThreads()
         self.Update_FFTwindow()
         
@@ -140,7 +142,11 @@ class GUI(MainWindow):
         self.AODO_thread = AODOThread_2(self.ui)
         self.DnS_thread = DnSThread_2(self.ui)
         self.GPU_thread = GPUThread_2(self.ui)
-        self.D_thread = ATS9351_2(self.ui)
+        if self.ui.ATS9351Enable.isChecked():
+            self.D_thread = ATS9351_2(self.ui)
+        else:
+            print('\nNO DIGITIZER selected!!!!!!!!!!!!!!!!!\n')
+            self.D_thread = None
         
         self.D_thread.start()
         self.GPU_thread.start()
@@ -225,7 +231,13 @@ class GUI(MainWindow):
         an_action = GPUAction('Window')
         GPUQueue.put(an_action)
         
-        
+    def Update_contrast(self):
+        if not self.ui.RunButton.isChecked():
+            an_action = DnSAction('UpdateContrast')
+            DnSQueue.put(an_action)
+            
+            
+            
     def closeEvent(self, event):
         self.ui.statusbar.showMessage('Exiting all threads')
         self.Stop_allThreads()

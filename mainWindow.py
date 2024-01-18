@@ -51,11 +51,15 @@ class MainWindow(QMainWindow):
         self.ui.SliceZDepth.valueChanged.connect(self.Calculate_SliceDepth)
         self.ui.SliceZnumber.valueChanged.connect(self.Calculate_SliceDepth)
         # change brigtness and contrast
-        self.ui.ACQMode.currentIndexChanged.connect(self.Adjust_contrast)
-        self.ui.FFTDevice.currentIndexChanged.connect(self.Adjust_contrast)
+        # self.ui.ACQMode.currentIndexChanged.connect(self.Adjust_contrast)
+        self.ui.FFTDevice.currentIndexChanged.connect(self.Update_scale)
 
         # update laser model
         self.ui.Laser.currentIndexChanged.connect(self.Update_laser)
+        self.ui.LOG.currentIndexChanged.connect(self.Update_scale)
+        
+
+            
         
         
     def update_galvoXwaveform(self):
@@ -140,20 +144,6 @@ class MainWindow(QMainWindow):
         #print(self.slice_depths)
         #self.ui.statusbar.showMessage(self.image_depths)
         
-    def Adjust_contrast(self):
-        if self.ui.ACQMode.currentText() in ['SingleAline', 'RptAline']:
-            if self.ui.FFTDevice.currentText() == 'None':
-                self.ui.MinContrast.setValue(0)
-                self.ui.MaxContrast.setValue(1)
-            else:
-                self.ui.MinContrast.setValue(-7)
-                self.ui.MaxContrast.setValue(-2)
-        elif self.ui.ACQMode.currentText() in ['SingleBline', 'RptBline','SingleCscan', 'SurfScan', 'SurfScan+Slice']:
-            self.ui.MinContrast.setValue(0)
-            self.ui.MaxContrast.setValue(0.01)
-        
-
-        
     def Update_laser(self):
         if self.ui.Laser.currentText() == 'Axsun100k':
             self.Aline_frq = 100000
@@ -161,3 +151,22 @@ class MainWindow(QMainWindow):
             self.Aline_frq = 200000
         else:
             self.ui.statusbar.showMessage('Laser invalid!!!')
+    
+    def Update_scale(self):
+        if self.ui.LOG.currentText() == '10log10':
+            self.ui.MinContrast.setValue(-50)
+            self.ui.MinContrast.setSingleStep(1)
+            self.ui.MaxContrast.setValue(-20)
+            self.ui.MaxContrast.setSingleStep(1)
+        else:
+            if self.ui.FFTDevice.currentText() == 'None':
+                self.ui.MinContrast.setValue(0)
+                self.ui.MinContrast.setSingleStep(0.1)
+                self.ui.MaxContrast.setValue(1)
+                self.ui.MaxContrast.setSingleStep(0.1)
+            else:
+                self.ui.MinContrast.setValue(0)
+                self.ui.MinContrast.setSingleStep(0.001)
+                self.ui.MaxContrast.setValue(0.01)
+                self.ui.MaxContrast.setSingleStep(0.001)
+    

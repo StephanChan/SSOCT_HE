@@ -252,14 +252,10 @@ def ScatterPlot(mosaic):
 
 import qimage2ndarray as qpy
 def ImagePlot(matrix, m=0, M=1):
-    # select image brightness level
-    # M=np.max(matrix)
-    # level = -6
-    # while M > pow(10,level):
-    #     level +=1
-    # im = QImage(matrix, matrix.shape[1], matrix.shape[0], QImage.Format_Grayscale8)
+    matrix[matrix<m] = m
+    matrix[matrix>M] = M
     # adjust image brightness
-    data = np.uint8((matrix-m)/M*255.0*2)
+    data = np.uint8((matrix-m)/np.abs(M-m)*255.0)
     im = qpy.gray2qimage(data)
     pixmap = QPixmap(im)
     return pixmap
