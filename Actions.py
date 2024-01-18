@@ -14,20 +14,13 @@ class AODOAction():
         self.action=action
 
         
-class SaveAction():
-    def __init__(self, action, data, filename):
-        super().__init__()
-        self.action=action
-        self.data = data
-        self.filename = filename
-        
 
-class ACQAction():
+class KingAction():
     def __init__(self, action):
         super().__init__()
         self.action = action
         
-class DisplayAction():
+class DnSAction():
     def __init__(self, action, data=[], args = []):
         super().__init__()
         self.action=action
@@ -42,12 +35,12 @@ class GPUAction():
         self.memoryLoc = memoryLoc
         self.args = args
         
-class BoardAction():
+class DAction():
     def __init__(self, action):
         super().__init__()
         self.action = action 
         
-class Board2ACQAction():
+class DbackAction():
     def __init__(self, action):
         super().__init__()
         self.action = action 

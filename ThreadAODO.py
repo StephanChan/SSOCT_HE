@@ -13,17 +13,13 @@ from nidaqmx.constants import Edge
 # from nidaqmx.errors import DaqWarning as warnings
 from Generaic_functions import GenAODO
 import time
-import numpy as np
 import traceback
 global Galvo_bias
 Galvo_bias = 3
 
 class AODOThread(QThread):
-    def __init__(self, ui, AODOQueue, PauseQueue):
+    def __init__(self):
         super().__init__()
-        self.ui = ui
-        self.queue = AODOQueue
-        self.pauseQueue = PauseQueue
         self.AOtask = None
         self.DOtask = None
     
@@ -155,8 +151,8 @@ class AODOThread(QThread):
                 time.sleep(0.5)
             self.DOtask.close()
             self.AOtask.close()
-        except Exception as error:
-            pass#print(traceback.format_exc())
+        except:
+            pass
         return 'AODO write task done'
                 
     def centergalvo(self):

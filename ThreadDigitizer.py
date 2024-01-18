@@ -12,34 +12,21 @@ import sys
 import numpy as np
 sys.path.append('c:\\alazartech\\ats-sdk\\7.2.3\\samples_python\\ats9350\\npt\\../..\\Library')
 import atsapi as ats
-from Actions import Board2ACQAction
+from Actions import DbackAction
 import traceback
-from matplotlib import pyplot as plt
 
 global CONTINUOUS
 
 CONTINUOUS = 0x7FFFFFFF
 
-class ATS9350(QThread):
+class ATS9351(QThread):
     def __init__(self):
         super().__init__()
-        # self.ui = ui
-        # self.queue = BoardQueue
-
-        # self.Board2ACQQueue = Board2ACQQueue
         self.board = ats.Board()
-        
-
-        self.test_message = 'Board thread successfully exited'
+        self.exit_message = 'Digitizer thread successfully exited'
 
         
     def run(self):
-        if self.ui.ClockFreq.currentText() == '500MHz':
-            self.samplesPerSec = 500000000.0
-        elif self.ui.ClockFreq.currentText() == '250MHz':
-            self.samplesPerSec = 250000000.0
-        elif self.ui.ClockFreq.currentText() == '125MHz':
-            self.samplesPerSec = 125000000.0
         self.QueueOut()
         
     def QueueOut(self):
@@ -54,31 +41,25 @@ class ATS9350(QThread):
                     self.StopAcquire()
                     
                 else:
-                    self.ui.statusbar.showMessage('Board thread is doing something invalid: '+self.item.action)
+                    self.ui.statusbar.showMessage('Digitizer thread is doing something invalid: '+self.item.action)
             except Exception as error:
-                print("\nAn error occurred:", error,' skip the Board action\n')
+                print("\nAn error occurred:", error,' skip the Digitizer action\n')
                 print(traceback.format_exc())
             self.item = self.queue.get()
-        print(self.test_message)
+        print(self.exit_message)
             
     # Configures a board for acquisition
+            
     def ConfigureBoard(self):
-        # TODO: Select clock parameters as required to generate this
-        # sample rate
-        #
-        # For example: if samplesPerSec is 100e6 (100 MS/s), then you can
-        # either:
-        #  - select clock source INTERNAL_CLOCK and sample rate
-        #    SAMPLE_RATE_100MSPS
-        #  - or select clock source FAST_EXTERNAL_CLOCK, sample rate
-        #    SAMPLE_RATE_USER_DEF, and connect a 100MHz signal to the
-        #    EXT CLK BNC connector
         if self.ui.ClockFreq.currentText() == '500MHz':
             SAMPLE_RATE = ats.SAMPLE_RATE_500MSPS
+            self.samplesPerSec = 500000000.0
         elif self.ui.ClockFreq.currentText() == '250MHz':
             SAMPLE_RATE = ats.SAMPLE_RATE_250MSPS
+            self.samplesPerSec = 250000000.0
         elif self.ui.ClockFreq.currentText() == '125MHz':
             SAMPLE_RATE = ats.SAMPLE_RATE_125MSPS
+            self.samplesPerSec = 125000000.0
         
         if self.ui.ClockSource.currentText() == 'Internal Clock':
             CLOCK_SOURCE = ats.INTERNAL_CLOCK
@@ -265,7 +246,7 @@ class ATS9350(QThread):
         # print(self.samplesPerBuffer)
         # Init Cscan memory buffers for temporary copying Blines
 
-        for ii in range(2):
+        for ii in range(self.memoryCount):
              if self.buffersPerAcquisition == CONTINUOUS:
                  self.Memory[ii]=np.zeros([self.ui.BlineAVG.value(),self.samplesPerBuffer], dtype = np.uint16)
              else:
@@ -317,10 +298,12 @@ class ATS9350(QThread):
 
             buffer = self.buffers[buffersCompleted % len(self.buffers)]
             try:
-                self.board.waitAsyncBufferComplete(buffer.addr, timeout_ms=500) 
+                self.board.waitAsyncBufferComplete(buffer.addr, timeout_ms=1000) 
             except Exception as error:
                 # TODO: if timeout, break this inner while loop
-                print(buffersCompleted, self.buffersPerAcquisition,'\n',error, '\nstopping acquisition for board\n')
+                print('Blines collected: ', buffersCompleted, \
+                      'Blines configured: ', self.buffersPerAcquisition, \
+                      '\n', error, '\nstopping acquisition for Digitizer\n')
                 break
             
             # bytesTransferred += buffer.size_bytes
@@ -329,10 +312,10 @@ class ATS9350(QThread):
             buffersCompleted += 1
             # print(buffersCompleted, NACQ)
             if buffersCompleted % NACQ ==0:
-                print('sending data back')
-                an_action = Board2ACQAction(self.MemoryLoc)
-                self.Board2ACQQueue.put(an_action)
-                self.MemoryLoc = (self.MemoryLoc+1) % 2
+                # print('sending data back')
+                an_action = DbackAction(self.MemoryLoc)
+                self.DbackQueue.put(an_action)
+                self.MemoryLoc = (self.MemoryLoc+1) % self.memoryCount
 
             # print(buffersCompleted)
             # Add the buffer to the end of the list of available buffers.
@@ -340,8 +323,8 @@ class ATS9350(QThread):
             
             # get stop commend from BONE thread
             try:
-                self.StopQueue.get(timeout=0.001)
-                print('\nsuccessfully caught that stop signal for board\n')
+                self.StopDQueue.get(timeout=0.001)
+                print('\nsuccessfully caught that stop signal for Digitizer\n')
                 break
             except:
                 pass

@@ -8,7 +8,7 @@ from PyQt5.QtCore import  QThread
 import time
 import cupy
 import numpy as np
-from Actions import DisplayAction
+from Actions import DnSAction
 import os
 import traceback
 
@@ -19,7 +19,7 @@ class GPUThread(QThread):
         # self.queue = GPUQueue
         # self.displayQueue = DisplayQueue
         # TODO: write windowing and dispersion function
-        self.test_message = 'GPU thread successfully exited'
+        self.exit_message = 'GPU thread successfully exited\n'
         
         self.winfunc = cupy.ElementwiseKernel(
             'float32 x, float32 y',
@@ -52,7 +52,7 @@ class GPUThread(QThread):
                 print("An error occurred:", error,' skip the FFT action\n')
                 print(traceback.format_exc())
             self.item = self.queue.get()
-        print(self.test_message)
+        print(self.exit_message)
 
     def cudaFFT(self, mode, memoryLoc, args):
         # get samples per Aline
@@ -91,8 +91,8 @@ class GPUThread(QThread):
         # print('FFT took ',time.time()-start,' seconds\n')
         # data_CPU = data_CPU.reshape([shape[0],Pixel_range * np.uint32(Alines/shape[0])])
         # display and save data
-        an_action = DisplayAction(mode, data_CPU, args) # data in Memory[memoryLoc]
-        self.displayQueue.put(an_action)
+        an_action = DnSAction(mode, data_CPU, args) # data in Memory[memoryLoc]
+        self.DnSQueue.put(an_action)
             
         
     def cpuFFT(self, mode, memoryLoc, args):
@@ -120,8 +120,8 @@ class GPUThread(QThread):
         
         data_CPU = data_CPU[:,Pixel_start: Pixel_start+Pixel_range ]
         # data_CPU = data_CPU.reshape([shape[0],Pixel_range * np.uint32(Alines/shape[0])])
-        an_action = DisplayAction(mode, data_CPU, args) # data in Memory[memoryLoc]
-        self.displayQueue.put(an_action)
+        an_action = DnSAction(mode, data_CPU, args) # data in Memory[memoryLoc]
+        self.DnSQueue.put(an_action)
         
     def update_window(self):
         self.window = np.float32(np.hanning(self.ui.PreSamples.value()+self.ui.PostSamples.value()))

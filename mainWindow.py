@@ -7,10 +7,8 @@ Created on Tue Dec 12 16:35:04 2023
 
 from GUI import Ui_MainWindow
 from PyQt5.QtWidgets import  QMainWindow
-from PyQt5.QtGui import QPixmap
 import numpy as np
-from Actions import ACQAction
-from matplotlib import pyplot as plt
+from Actions import *
 from Generaic_functions import *
 
 class MainWindow(QMainWindow):
@@ -18,15 +16,11 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        if self.ui.Laser.currentText() == 'Axsun100k':
-            self.Aline_frq = 100000
-        elif self.ui.Laser.currentText() == 'Thorlabs200k':
-            self.Aline_frq = 200000
-        else:
-            self.ui.statusbar.showMessage('Laser invalid!!!')
-        self.connectActions()
+        self.Update_laser()
         self.update_galvoXwaveform()
         self.update_Mosaic()
+        
+        self.connectActions()
         
     def connectActions(self):
         self.ui.Xsteps.valueChanged.connect(self.update_galvoXwaveform)
@@ -59,9 +53,9 @@ class MainWindow(QMainWindow):
         # change brigtness and contrast
         self.ui.ACQMode.currentIndexChanged.connect(self.Adjust_contrast)
         self.ui.FFTDevice.currentIndexChanged.connect(self.Adjust_contrast)
-        # change window length for FFT
-        self.ui.PostSamples.valueChanged.connect(self.FFT_window_gen)
-        self.ui.PreSamples.valueChanged.connect(self.FFT_window_gen)
+
+        # update laser model
+        self.ui.Laser.currentIndexChanged.connect(self.Update_laser)
         
         
     def update_galvoXwaveform(self):
@@ -158,6 +152,12 @@ class MainWindow(QMainWindow):
             self.ui.MinContrast.setValue(0)
             self.ui.MaxContrast.setValue(0.01)
         
-    def FFT_window_gen(self):
-        an_action = ACQAction('Window')
-        self.AcqQueue.put(an_action)
+
+        
+    def Update_laser(self):
+        if self.ui.Laser.currentText() == 'Axsun100k':
+            self.Aline_frq = 100000
+        elif self.ui.Laser.currentText() == 'Thorlabs200k':
+            self.Aline_frq = 200000
+        else:
+            self.ui.statusbar.showMessage('Laser invalid!!!')

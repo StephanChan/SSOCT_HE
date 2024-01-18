@@ -214,7 +214,7 @@
             <property name="geometry">
              <rect>
               <x>56</x>
-              <y>90</y>
+              <y>70</y>
               <width>101</width>
               <height>34</height>
              </rect>
@@ -249,7 +249,7 @@
             <property name="geometry">
              <rect>
               <x>10</x>
-              <y>90</y>
+              <y>70</y>
               <width>51</width>
               <height>21</height>
              </rect>
@@ -257,6 +257,26 @@
             <property name="text">
              <string>Min</string>
             </property>
+           </widget>
+           <widget class="QComboBox" name="LOG">
+            <property name="geometry">
+             <rect>
+              <x>20</x>
+              <y>110</y>
+              <width>121</width>
+              <height>31</height>
+             </rect>
+            </property>
+            <item>
+             <property name="text">
+              <string>10Log10</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Linear</string>
+             </property>
+            </item>
            </widget>
           </widget>
          </item>

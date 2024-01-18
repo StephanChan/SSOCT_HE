@@ -30,11 +30,93 @@ import sys
 from multiprocessing import Queue
 from PyQt5.QtWidgets import QApplication
 from mainWindow import MainWindow
-from Actions import ACQAction, EXIT, AODOAction
-from ThreadAcq import ACQThread
-from ThreadAODO import AODOThread
-from ThreadDisplay import DSPThread
+from Actions import *
 
+# init global memory for temporary storage of generated raw data
+global memoryCount
+memoryCount = 2
+
+global Memory
+Memory = list(range(memoryCount))
+
+# init all Queues as global variable
+# for any queue, you can do queue-in at multiple places, but you can only do queue-out at one place
+global AODOQueue # AODO stands for analog output and digital output
+global KingQueue # King of all threads, gives command to other threads
+global DnSQueue # DnS stands for display and save
+global PauseQueue 
+global GPUQueue 
+global DQueue # D stands for digitizer
+global DbackQueue # Dback stands for digitizer respond back, digitizer respond back if data collection is done
+global StopDQueue # StopD stands for stop digitizer, for stopping digitizer in continuous acquisition
+
+AODOQueue = Queue()
+KingQueue = Queue()
+DnSQueue = Queue()
+PauseQueue = Queue()
+GPUQueue = Queue()
+DQueue = Queue()
+DbackQueue = Queue()
+StopDQueue = Queue()
+
+# wrap GPU thread with Queues and Memory
+from ThreadGPU import GPUThread
+class GPUThread_2(GPUThread):
+    def __init__(self, ui):
+            super().__init__()
+            global Memory
+            self.Memory = Memory
+            self.ui = ui
+            self.queue = GPUQueue
+            self.DnSQueue = DnSQueue
+            
+# wrap digitzer thread with queues and Memory
+from ThreadDigitizer import ATS9351
+class ATS9351_2(ATS9351):
+    def __init__(self, ui):
+        super().__init__()
+        global Memory
+        self.memoryCount = memoryCount
+        self.Memory = Memory
+        self.ui = ui
+        self.queue = DQueue
+        self.DbackQueue = DbackQueue
+        self.StopDQueue = StopDQueue
+
+# wrap King thread with queues and Memory
+from ThreadKing import KingThread
+class KingThread_2(KingThread):
+    def __init__(self, ui):
+        super().__init__()
+        global Memory
+        self.Memory = Memory
+        self.ui = ui
+        self.queue = KingQueue
+        self.DnSQueue = DnSQueue
+        self.AODOQueue = AODOQueue
+        self.PauseQueue = PauseQueue
+        self.StopDQueue = StopDQueue
+        self.DbackQueue = DbackQueue
+        self.GPUQueue = GPUQueue
+        self.DQueue = DQueue
+
+# wrap AODO thread with queue
+from ThreadAODO import AODOThread
+class AODOThread_2(AODOThread):
+    def __init__(self, ui):
+        super().__init__()
+        self.ui = ui
+        self.queue = AODOQueue
+
+# wrap Display and save thread with queue        
+from ThreadDnS import DnSThread
+class DnSThread_2(DnSThread):
+    def __init__(self, ui):
+        super().__init__()
+        self.ui = ui
+        self.queue = DnSQueue
+        
+# wrap MainWindow object with queues and threads        
 class GUI(MainWindow):
     def __init__(self):
         super().__init__()
@@ -46,27 +128,33 @@ class GUI(MainWindow):
         self.ui.Zmove2.clicked.connect(self.Zmove2)
         self.ui.CenterGalvo.clicked.connect(self.CenterGalvo)
         
-        self.AODOQueue = Queue()
-        self.AcqQueue = Queue()
-        self.DisplayQueue = Queue()
-        self.PauseQueue = Queue()
+        # change window length for FFT
+        self.ui.PostSamples.valueChanged.connect(self.Update_FFTwindow)
+        self.ui.PreSamples.valueChanged.connect(self.Update_FFTwindow)
         
         self.Init_allThreads()
+        self.Update_FFTwindow()
         
     def Init_allThreads(self):
-        self.ACQ_thread=ACQThread(self.ui, self.AcqQueue, self.DisplayQueue, self.AODOQueue, self.PauseQueue)
-        self.AODO_thread = AODOThread(self.ui, self.AODOQueue, self.PauseQueue)
-        self.Display_thread = DSPThread(self.ui, self.DisplayQueue)
+        self.King_thread = KingThread_2(self.ui)
+        self.AODO_thread = AODOThread_2(self.ui)
+        self.DnS_thread = DnSThread_2(self.ui)
+        self.GPU_thread = GPUThread_2(self.ui)
+        self.D_thread = ATS9351_2(self.ui)
         
-        self.ACQ_thread.start()
+        self.D_thread.start()
+        self.GPU_thread.start()
+        self.King_thread.start()
         self.AODO_thread.start()
-        self.Display_thread.start()
+        self.DnS_thread.start()
             
     def Stop_allThreads(self):
         exit_element=EXIT()
-        self.AcqQueue.put(exit_element)
-        self.AODOQueue.put(exit_element)
-        self.DisplayQueue.put(exit_element)
+        KingQueue.put(exit_element)
+        AODOQueue.put(exit_element)
+        DnSQueue.put(exit_element)
+        GPUQueue.put(exit_element)
+        DQueue.put(exit_element)
         
     def run_task(self):
         # RptAline and SingleAline is for checking Aline profile, we don't need to capture each Aline, only display 30 Alines per second\
@@ -85,14 +173,14 @@ class GUI(MainWindow):
         if self.ui.ACQMode.currentText() in ['RptAline','RptBline','RptCscan','SurfScan','SurfScan+Slice']:
             if self.ui.RunButton.isChecked():
                 self.ui.RunButton.setText('Stop')
-                an_action = ACQAction(self.ui.ACQMode.currentText())
-                self.AcqQueue.put(an_action)
+                an_action = KingAction(self.ui.ACQMode.currentText())
+                KingQueue.put(an_action)
             else:
                 self.ui.RunButton.setText('Run')
                 self.Stop_task()
         elif self.ui.ACQMode.currentText() in ['SingleAline','SingleBline','SingleCscan']:
-            an_action = ACQAction(self.ui.ACQMode.currentText())
-            self.AcqQueue.put(an_action)
+            an_action = KingAction(self.ui.ACQMode.currentText())
+            KingQueue.put(an_action)
             self.ui.RunButton.setChecked(False)
             self.ui.RunButton.setText('Run')
         else:
@@ -101,36 +189,47 @@ class GUI(MainWindow):
         
     def Xmove2(self):
         an_action = AODOAction('Xmove2')
-        self.AODOQueue.put(an_action)
+        AODOQueue.put(an_action)
         
     def Ymove2(self):
         an_action = AODOAction('Ymove2')
-        self.AODOQueue.put(an_action)
+        AODOQueue.put(an_action)
         
     def Zmove2(self):
         an_action = AODOAction('Zmove2')
-        self.AODOQueue.put(an_action)
+        AODOQueue.put(an_action)
         
     def CenterGalvo(self):
         an_action = AODOAction('centergalvo')
-        self.AODOQueue.put(an_action)
+        AODOQueue.put(an_action)
         
     def Pause_task(self):
         if self.ui.PauseButton.isChecked():
-            self.PauseQueue.put('Pause')
+            PauseQueue.put('Pause')
             self.ui.statusbar.showMessage('acquisition paused...')
         else:
-            self.PauseQueue.put('unPause')
+            PauseQueue.put('unPause')
             self.ui.statusbar.showMessage('acquisition resumed...')
       
     def Stop_task(self):
-        self.PauseQueue.put('Stop')
+        PauseQueue.put('Stop')
         self.ui.statusbar.showMessage('acquisition stopped...')
+        
+    def Update_FFTwindow(self):
+        # samples = self.ui.PostSamples.value() + self.ui.PreSamples.value()
+        # if samples % 32 !=0:
+        #     print('Digitizer sample number must be dividible by 32!')
+        #     tmp += 1
+        #     Samples = samples + tmp
+        # self.ui.PostSamples.setValue(self.ui.PostSamples.value()+tmp)
+        an_action = GPUAction('Window')
+        GPUQueue.put(an_action)
+        
         
     def closeEvent(self, event):
         self.ui.statusbar.showMessage('Exiting all threads')
         self.Stop_allThreads()
-        if self.Display_thread.isFinished:
+        if self.DnS_thread.isFinished:
             event.accept()
         else:
             event.ignore()

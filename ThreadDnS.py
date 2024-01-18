@@ -10,11 +10,9 @@ from Generaic_functions import LinePlot, ImagePlot
 import numpy as np
 import traceback
 
-class DSPThread(QThread):
-    def __init__(self, ui, DspQueue):
+class DnSThread(QThread):
+    def __init__(self):
         super().__init__()
-        self.queue = DspQueue
-        self.ui = ui
         self.surf = []
         self.sliceNum = 1
         self.tileNum = 1
@@ -46,12 +44,12 @@ class DSPThread(QThread):
                     self.surf = []
                     
                 else:
-                    self.ui.statusbar.showMessage('Display thread is doing something invalid' + self.item.action)
+                    self.ui.statusbar.showMessage('Display and save thread is doing something invalid' + self.item.action)
             except Exception as error:
-                print("\nAn error occurred:", error,' skip the display action\n')
+                print("\nAn error occurred:", error,' skip the display and save action\n')
                 print(traceback.format_exc())
             self.item = self.queue.get()
-        print('Display Thread successfully exited')
+        print('Display and save Thread successfully exited')
             
 
     def Display_aline(self, data, raw = False):
