@@ -6,7 +6,9 @@ Created on Tue Dec 12 16:35:04 2023
 """
 
 from GUI import Ui_MainWindow
-from PyQt5.QtWidgets import  QMainWindow
+import os
+from PyQt5.QtWidgets import  QMainWindow, QFileDialog
+import PyQt5.QtCore as qc
 import numpy as np
 from Actions import *
 from Generaic_functions import *
@@ -19,7 +21,9 @@ class MainWindow(QMainWindow):
         self.Update_laser()
         self.update_galvoXwaveform()
         self.update_Mosaic()
+        settings = qc.QSettings("config.ini", qc.QSettings.IniFormat)
         
+        self.load_settings(settings)
         self.connectActions()
         
     def connectActions(self):
@@ -57,9 +61,32 @@ class MainWindow(QMainWindow):
         # update laser model
         self.ui.Laser.currentIndexChanged.connect(self.Update_laser)
         self.ui.LOG.currentIndexChanged.connect(self.Update_scale)
+        self.ui.Save.stateChanged.connect(self.chooseDir)
+        self.ui.LoadDispersion.clicked.connect(self.chooseCompenstaion)
         
 
-            
+    def chooseDir(self):
+         dir_choose = QFileDialog.getExistingDirectory(self,  
+                                     "选取文件夹",  
+                                     os.getcwd()) # 起始路径
+    
+         if dir_choose == "":
+             print("\n取消选择")
+             return
+         self.ui.DIR.setText(dir_choose)
+         
+    def chooseCompenstaion(self):
+         fileName_choose, filetype = QFileDialog.getOpenFileName(self,  
+                                    "选取文件",  
+                                    os.getcwd(), # 起始路径 
+                                    "All Files (*);;Text Files (*.txt)")   # 设置文件扩展名过滤,用双分号间隔
+
+         if fileName_choose == "":
+            print("\n取消选择")
+            return
+
+         self.ui.Disp_DIR.setText(fileName_choose)
+         self.update_Dispersion()
         
         
     def update_galvoXwaveform(self):
@@ -170,3 +197,69 @@ class MainWindow(QMainWindow):
                 self.ui.MaxContrast.setValue(0.01)
                 self.ui.MaxContrast.setSingleStep(0.001)
     
+    def load_settings(self,settings):
+        self.ui.FFTresults.setCurrentText(settings.value("FFTresults"))
+        self.ui.Objective.setCurrentText(settings.value("Objective"))
+        self.ui.Xsteps.setValue(settings.value('Xsteps'))
+        self.ui.XStepSize.setValue(settings.value('XStepSize'))
+        self.ui.XBias.setValue(settings.value('XBias'))
+        self.ui.AlineAVG.setValue(settings.value('AlineAVG'))
+        self.ui.Ysteps.setValue(settings.value('Ysteps'))
+        self.ui.YStepSize.setValue(settings.value('YStepSize'))
+        self.ui.BlineAVG.setValue(settings.value('BlineAVG'))
+        self.ui.DepthStart.setValue(settings.value('DepthStart'))
+        self.ui.DepthRange.setValue(settings.value('DepthRange'))
+        self.ui.PreClock.setValue(settings.value('PreClock'))
+        self.ui.PostClock.setValue(settings.value('PostClock'))
+        self.ui.XStart.setValue(settings.value('XStart'))
+        self.ui.XStop.setValue(settings.value('XStop'))
+        self.ui.YStart.setValue(settings.value('YStart'))
+        self.ui.YStop.setValue(settings.value('YStop'))
+        self.ui.Overlap.setValue(settings.value('Overlap'))
+        self.ui.ImageZStart.setValue(settings.value('ImageZStart'))
+        self.ui.ImageZDepth.setValue(settings.value('ImageZDepth'))
+        self.ui.ImageZnumber.setValue(settings.value('ImageZnumber'))
+        self.ui.SliceZStart.setValue(settings.value('SliceZStart'))
+        self.ui.SliceZDepth.setValue(settings.value('SliceZDepth'))
+        self.ui.SliceZnumber.setValue(settings.value('SliceZnumber'))
+        self.ui.PostSamples_2.setValue(settings.value('PostSamples_2'))
+        self.ui.TrigDura.setValue(settings.value('TrigDura'))
+        self.ui.TriggerTimeout_2.setValue(settings.value('TriggerTimeout_2'))
+        self.ui.Disp_DIR.setText(settings.value('Disp_DIR'))
+        
+    def save_settings(self,settings):
+        settings.setValue("FFTresults",self.ui.FFTresults.currentText())
+        settings.setValue("Objective",self.ui.Objective.currentText())
+        settings.setValue("Xsteps",self.ui.Xsteps.value())
+        settings.setValue("XStepSize",self.ui.XStepSize.value())
+        settings.setValue("XBias",self.ui.XBias.value())
+        settings.setValue("AlineAVG",self.ui.AlineAVG.value())
+        settings.setValue("Ysteps",self.ui.Ysteps.value())
+        settings.setValue("YStepSize",self.ui.YStepSize.value())
+        settings.setValue("BlineAVG",self.ui.BlineAVG.value())
+        settings.setValue("DepthStart",self.ui.DepthStart.value())
+        settings.setValue("DepthRange",self.ui.DepthRange.value())
+        settings.setValue("PreClock",self.ui.PreClock.value())
+        settings.setValue("PostClock",self.ui.PostClock.value())
+        settings.setValue("XStart",self.ui.XStart.value())
+        settings.setValue("XStop",self.ui.XStop.value())
+        settings.setValue("YStart",self.ui.YStart.value())
+        settings.setValue("YStop",self.ui.YStop.value())
+        settings.setValue("Overlap",self.ui.Overlap.value())
+        settings.setValue("ImageZStart",self.ui.ImageZStart.value())
+        settings.setValue("ImageZDepth",self.ui.ImageZDepth.value())
+        settings.setValue("ImageZnumber",self.ui.ImageZnumber.value())
+        settings.setValue("SliceZStart",self.ui.SliceZStart.value())
+        settings.setValue("SliceZDepth",self.ui.SliceZDepth.value())
+        settings.setValue("SliceZnumber",self.ui.SliceZnumber.value())
+        settings.setValue("PostSamples_2",self.ui.PostSamples_2.value())
+        settings.setValue("TrigDura",self.ui.TrigDura.value())
+        settings.setValue("TriggerTimeout_2",self.ui.TriggerTimeout_2.value())
+        settings.setValue("Disp_DIR",self.ui.Disp_DIR.toPlainText())
+        
+
+        
+        
+        
+        
+        

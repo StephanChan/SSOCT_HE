@@ -15,16 +15,17 @@ class AODOAction():
 
         
 
-class KingAction():
+class WeaverAction():
     def __init__(self, action):
         super().__init__()
         self.action = action
         
 class DnSAction():
-    def __init__(self, action, data=[], args = []):
+    def __init__(self, action, data=[], raw = False, args = []):
         super().__init__()
         self.action=action
         self.data = data
+        self.raw = raw
         self.args = args
 
 class GPUAction():

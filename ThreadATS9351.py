@@ -335,4 +335,3 @@ class ATS9351(QThread):
     def StopAcquire(self):
         self.board.abortAsyncRead()
             
-    

@@ -22,13 +22,13 @@ class GPUThread(QThread):
         self.exit_message = 'GPU thread successfully exited\n'
         
         self.winfunc = cupy.ElementwiseKernel(
-            'float32 x, float32 y',
-            'float32 z',
+            'float32 x, complex64 y',
+            'complex64 z',
             'z=x*y',
             'winfunc')
         
     def run(self):
-        self.update_window()
+        self.update_Dispersion()
         # self.update_FFTlength()
         self.QueueOut()
         
@@ -42,8 +42,8 @@ class GPUThread(QThread):
                     
                 elif self.item.action == 'CPU':
                     self.cpuFFT(self.item.mode, self.item.memoryLoc, self.item.args)
-                elif self.item.action == 'Window':
-                    self.update_window()
+                elif self.item.action == 'update_Dispersion':
+                    self.update_Dispersion()
                 else:
                     self.ui.statusbar.showMessage('GPU thread is doing something invalid '+self.item.action)
                 if time.time()-start > 1:
@@ -56,7 +56,10 @@ class GPUThread(QThread):
 
     def cudaFFT(self, mode, memoryLoc, args):
         # get samples per Aline
-        samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
+        if self.Digitizer == 'ATS9351':
+            samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
+        elif self.Digitizer == 'ART8912':
+            samples = self.ui.PostSamples_2.value()
         # get depth pixels after FFT
         Pixel_start = self.ui.DepthStart.value()
         Pixel_range = self.ui.DepthRange.value()
@@ -66,7 +69,11 @@ class GPUThread(QThread):
         Alines =np.uint32((data_CPU.shape[1])/samples) * data_CPU.shape[0]
         data_CPU=data_CPU.reshape([Alines, samples])
         # rescale data to [0,1] range
-        data_CPU=np.float32(data_CPU/65535-0.5)
+        if self.Digitizer == 'ATS9351':
+            data_CPU=np.float32(data_CPU/65535-0.5)
+        elif self.Digitizer == 'ART8912':
+            data_CPU=np.float32(data_CPU/4095-0.5)
+        
         fftAxis = 1
         # # zero-padding data before FFT
         # if data_CPU.shape[1] != self.length_FFT:
@@ -81,6 +88,12 @@ class GPUThread(QThread):
         dispersion_GPU = cupy.array(self.dispersion)
         # window function and dispersion compensation
         data_GPU = self.winfunc(data_GPU, dispersion_GPU)
+        
+        ############### debug dispersion compensation
+        # data_CPU = cupy.asnumpy(data_GPU)
+        # tmp = 
+        
+        
         # FFT
         data_GPU = cupy.fft.fft(data_GPU, axis=fftAxis)/samples
         # calculate absolute value and only keep depth range specified
@@ -90,14 +103,17 @@ class GPUThread(QThread):
 
         # print('FFT took ',time.time()-start,' seconds\n')
         # data_CPU = data_CPU.reshape([shape[0],Pixel_range * np.uint32(Alines/shape[0])])
-        # display and save data
-        an_action = DnSAction(mode, data_CPU, args) # data in Memory[memoryLoc]
+        # display and save data, data type is float32
+        an_action = DnSAction(mode, data = data_CPU, args = args) # data in Memory[memoryLoc]
         self.DnSQueue.put(an_action)
             
         
     def cpuFFT(self, mode, memoryLoc, args):
 
-        samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
+        if self.Digitizer == 'ATS9351':
+            samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
+        elif self.Digitizer == 'ART8912':
+            samples = self.ui.PostSamples_2.value()
         Pixel_start = self.ui.DepthStart.value()
         Pixel_range = self.ui.DepthRange.value()
         data_CPU = self.Memory[memoryLoc].copy()
@@ -105,7 +121,10 @@ class GPUThread(QThread):
         Alines =np.uint32((data_CPU.shape[1])/samples) * data_CPU.shape[0]
         
         data_CPU=data_CPU.reshape([Alines, samples])
-        data_CPU=np.float32(data_CPU)
+        if self.Digitizer == 'ATS9351':
+            data_CPU=np.float32(data_CPU/65535-0.5)
+        elif self.Digitizer == 'ART8912':
+            data_CPU=np.float32(data_CPU/4095-0.5)
         fftAxis = 1
         # if data_CPU.shape[1] != self.length_FFT:
         #     data_padded = np.zeros([Alines, self.length_FFT], dtype = np.float32)
@@ -123,21 +142,38 @@ class GPUThread(QThread):
         an_action = DnSAction(mode, data_CPU, args) # data in Memory[memoryLoc]
         self.DnSQueue.put(an_action)
         
-    def update_window(self):
-        self.window = np.float32(np.hanning(self.ui.PreSamples.value()+self.ui.PostSamples.value()))
+    def update_Dispersion(self):
+        if self.Digitizer == 'ATS9351':
+            samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
+        elif self.Digitizer == 'ART8912':
+            samples = self.ui.PostSamples_2.value()
+        # print('GPU dispersion samples: ',samples)
+            
+        self.window = np.float32(np.hanning(samples))
         # update dispersion and window
         dispersion_path = self.ui.Disp_DIR.toPlainText()
+        # print(dispersion_path)
         if os.path.isfile(dispersion_path):
-            with open(dispersion_path, "rb") as file: 
-                self.dispersion = np.float32(file.read())
-                file.close()
+            self.dispersion = np.float32(np.fromfile(dispersion_path, dtype=np.float32))
+            self.dispersion = np.complex64(np.exp(1j*self.dispersion))
+            print('using disperison compensation\n')
         else:
-            self.dispersion = np.float32(np.ones(self.ui.PreSamples.value()+self.ui.PostSamples.value()))
-            
-        self.dispersion = self.dispersion * self.window
-        # print('window updated\n')
+            self.dispersion = np.complex64(np.ones(samples))
+            print('using no disperison compensation\n')
+        if len(self.window) == len(self.dispersion):
+            self.dispersion = np.complex64(self.dispersion * self.window)
+        else:
+            print('dispersion length unmatch current sample size, using no dispersion compensation\n')
+            self.dispersion = np.complex64(np.ones(samples))
+            self.dispersion = np.complex64(self.dispersion * self.window)
+        self.dispersion = self.dispersion.reshape([1,len(self.dispersion)])
+        
         
     def update_FFTlength(self):
         self.length_FFT = 2
-        while self.length_FFT < self.ui.PreSamples.value()+self.ui.PostSamples.value():
+        if self.Digitizer == 'ATS9351':
+            samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
+        elif self.Digitizer == 'ART8912':
+            samples = self.ui.PostSamples_2.value()
+        while self.length_FFT < samples:
             self.length_FFT *=2

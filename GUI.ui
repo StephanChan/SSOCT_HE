@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1343</width>
+    <width>1329</width>
     <height>990</height>
    </rect>
   </property>
@@ -198,7 +198,7 @@
              </rect>
             </property>
             <property name="decimals">
-             <number>3</number>
+             <number>4</number>
             </property>
             <property name="minimum">
              <double>-100.000000000000000</double>
@@ -206,8 +206,11 @@
             <property name="maximum">
              <double>100.000000000000000</double>
             </property>
+            <property name="singleStep">
+             <double>0.010000000000000</double>
+            </property>
             <property name="value">
-             <double>-20.000000000000000</double>
+             <double>0.100000000000000</double>
             </property>
            </widget>
            <widget class="QDoubleSpinBox" name="MinContrast">
@@ -220,7 +223,7 @@
              </rect>
             </property>
             <property name="decimals">
-             <number>3</number>
+             <number>4</number>
             </property>
             <property name="minimum">
              <double>-100.000000000000000</double>
@@ -228,8 +231,11 @@
             <property name="maximum">
              <double>100.000000000000000</double>
             </property>
+            <property name="singleStep">
+             <double>0.010000000000000</double>
+            </property>
             <property name="value">
-             <double>-50.000000000000000</double>
+             <double>0.000000000000000</double>
             </property>
            </widget>
            <widget class="QLabel" name="Maxlabel">
@@ -269,12 +275,12 @@
             </property>
             <item>
              <property name="text">
-              <string>10log10</string>
+              <string>Linear</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>Linear</string>
+              <string>10log10</string>
              </property>
             </item>
            </widget>
@@ -344,7 +350,7 @@
         <widget class="QLabel" name="XwaveformLabel">
          <property name="geometry">
           <rect>
-           <x>1039</x>
+           <x>1020</x>
            <y>0</y>
            <width>271</width>
            <height>200</height>
@@ -373,7 +379,7 @@
          <property name="geometry">
           <rect>
            <x>10</x>
-           <y>20</y>
+           <y>0</y>
            <width>231</width>
            <height>191</height>
           </rect>
@@ -558,7 +564,7 @@
          <property name="geometry">
           <rect>
            <x>860</x>
-           <y>10</y>
+           <y>0</y>
            <width>151</width>
            <height>201</height>
           </rect>
@@ -629,7 +635,7 @@
          <property name="geometry">
           <rect>
            <x>710</x>
-           <y>10</y>
+           <y>0</y>
            <width>141</width>
            <height>201</height>
           </rect>
@@ -656,7 +662,7 @@
            <number>10000</number>
           </property>
           <property name="value">
-           <number>200</number>
+           <number>640</number>
           </property>
          </widget>
          <widget class="QLabel" name="DepthStartLabel">
@@ -706,7 +712,7 @@
          <property name="geometry">
           <rect>
            <x>250</x>
-           <y>10</y>
+           <y>0</y>
            <width>451</width>
            <height>201</height>
           </rect>
@@ -847,6 +853,9 @@
             <width>101</width>
             <height>31</height>
            </rect>
+          </property>
+          <property name="decimals">
+           <number>3</number>
           </property>
           <property name="maximum">
            <double>10000.000000000000000</double>
@@ -1279,7 +1288,7 @@ p, li { white-space: pre-wrap; }
            </rect>
           </property>
           <property name="decimals">
-           <number>1</number>
+           <number>3</number>
           </property>
           <property name="maximum">
            <double>50.000000000000000</double>
@@ -1397,7 +1406,7 @@ p, li { white-space: pre-wrap; }
            </rect>
           </property>
           <property name="decimals">
-           <number>1</number>
+           <number>3</number>
           </property>
           <property name="maximum">
            <double>50.000000000000000</double>
@@ -1457,7 +1466,7 @@ p, li { white-space: pre-wrap; }
           </rect>
          </property>
          <property name="currentIndex">
-          <number>0</number>
+          <number>1</number>
          </property>
          <widget class="QWidget" name="ATS9351">
           <attribute name="title">
@@ -1466,7 +1475,7 @@ p, li { white-space: pre-wrap; }
           <widget class="QGroupBox" name="TriggerBox">
            <property name="geometry">
             <rect>
-             <x>530</x>
+             <x>440</x>
              <y>0</y>
              <width>471</width>
              <height>181</height>
@@ -1755,7 +1764,7 @@ p, li { white-space: pre-wrap; }
              <number>10000</number>
             </property>
             <property name="value">
-             <number>1440</number>
+             <number>2560</number>
             </property>
            </widget>
            <widget class="QLabel" name="PreSampleLabel">
@@ -1820,7 +1829,7 @@ p, li { white-space: pre-wrap; }
           <widget class="QGroupBox" name="AUXIObox">
            <property name="geometry">
             <rect>
-             <x>1030</x>
+             <x>940</x>
              <y>10</y>
              <width>221</width>
              <height>161</height>
@@ -1919,7 +1928,7 @@ p, li { white-space: pre-wrap; }
           <widget class="QTabWidget" name="ChannelSetting">
            <property name="geometry">
             <rect>
-             <x>350</x>
+             <x>260</x>
              <y>0</y>
              <width>151</width>
              <height>171</height>
@@ -2119,7 +2128,7 @@ p, li { white-space: pre-wrap; }
           <widget class="QGroupBox" name="ClockSetting">
            <property name="geometry">
             <rect>
-             <x>120</x>
+             <x>30</x>
              <y>10</y>
              <width>191</width>
              <height>161</height>
@@ -2139,12 +2148,12 @@ p, li { white-space: pre-wrap; }
             </property>
             <item>
              <property name="text">
-              <string>250MHz</string>
+              <string>500MHz</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>500MHz</string>
+              <string>250MHz</string>
              </property>
             </item>
             <item>
@@ -2200,27 +2209,504 @@ p, li { white-space: pre-wrap; }
             </property>
            </widget>
           </widget>
-          <widget class="QCheckBox" name="ATS9351Enable">
+         </widget>
+         <widget class="QWidget" name="ART8192">
+          <attribute name="title">
+           <string>ART8192</string>
+          </attribute>
+          <widget class="QTabWidget" name="ChannelSetting_2">
            <property name="geometry">
             <rect>
-             <x>0</x>
-             <y>71</y>
-             <width>111</width>
-             <height>31</height>
+             <x>170</x>
+             <y>10</y>
+             <width>151</width>
+             <height>141</height>
             </rect>
            </property>
-           <property name="text">
-            <string>ENABLE</string>
+           <property name="currentIndex">
+            <number>1</number>
            </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
+           <widget class="QWidget" name="A_2">
+            <attribute name="title">
+             <string>Ch A</string>
+            </attribute>
+            <widget class="QComboBox" name="ACoupling_2">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>30</y>
+               <width>141</width>
+               <height>31</height>
+              </rect>
+             </property>
+             <item>
+              <property name="text">
+               <string>DC coupling</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>AC coupling</string>
+              </property>
+             </item>
+            </widget>
+            <widget class="QComboBox" name="AInputRange_2">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>60</y>
+               <width>141</width>
+               <height>31</height>
+              </rect>
+             </property>
+             <item>
+              <property name="text">
+               <string>2V</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>10V</string>
+              </property>
+             </item>
+            </widget>
+            <widget class="QComboBox" name="Aenable_2">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>0</y>
+               <width>141</width>
+               <height>31</height>
+              </rect>
+             </property>
+             <item>
+              <property name="text">
+               <string>Enable</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Disable</string>
+              </property>
+             </item>
+            </widget>
+           </widget>
+           <widget class="QWidget" name="B_2">
+            <attribute name="title">
+             <string>Ch B</string>
+            </attribute>
+            <widget class="QComboBox" name="BInputRange_2">
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>60</y>
+               <width>141</width>
+               <height>31</height>
+              </rect>
+             </property>
+             <item>
+              <property name="text">
+               <string>2V</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>10V</string>
+              </property>
+             </item>
+            </widget>
+            <widget class="QComboBox" name="BCoupling_2">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>30</y>
+               <width>141</width>
+               <height>31</height>
+              </rect>
+             </property>
+             <item>
+              <property name="text">
+               <string>DC coupling</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>AC coupling</string>
+              </property>
+             </item>
+            </widget>
+            <widget class="QComboBox" name="Benable_2">
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>0</y>
+               <width>141</width>
+               <height>31</height>
+              </rect>
+             </property>
+             <item>
+              <property name="text">
+               <string>Disable</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Enable</string>
+              </property>
+             </item>
+            </widget>
+           </widget>
           </widget>
-         </widget>
-         <widget class="QWidget" name="Digitizer2">
-          <attribute name="title">
-           <string>Digitizer2</string>
-          </attribute>
+          <widget class="QGroupBox" name="ClockSetting_2">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>10</y>
+             <width>141</width>
+             <height>111</height>
+            </rect>
+           </property>
+           <property name="title">
+            <string>Clock Setting</string>
+           </property>
+           <widget class="QComboBox" name="ClockFreq_2">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>60</y>
+              <width>131</width>
+              <height>31</height>
+             </rect>
+            </property>
+            <item>
+             <property name="text">
+              <string>250MHz</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>125MHz</string>
+             </property>
+            </item>
+           </widget>
+           <widget class="QLabel" name="ClockFreqLabel_2">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>30</y>
+              <width>121</width>
+              <height>21</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Clock Freq</string>
+            </property>
+           </widget>
+          </widget>
+          <widget class="QGroupBox" name="TriggerBox_2">
+           <property name="geometry">
+            <rect>
+             <x>330</x>
+             <y>0</y>
+             <width>471</width>
+             <height>171</height>
+            </rect>
+           </property>
+           <property name="title">
+            <string>Trigger Setting</string>
+           </property>
+           <widget class="QComboBox" name="TriggerCoupling_2">
+            <property name="geometry">
+             <rect>
+              <x>130</x>
+              <y>50</y>
+              <width>141</width>
+              <height>41</height>
+             </rect>
+            </property>
+            <item>
+             <property name="text">
+              <string>DC coupling</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>AC coupling</string>
+             </property>
+            </item>
+           </widget>
+           <widget class="QComboBox" name="TriggerType_2">
+            <property name="geometry">
+             <rect>
+              <x>130</x>
+              <y>130</y>
+              <width>141</width>
+              <height>31</height>
+             </rect>
+            </property>
+            <item>
+             <property name="text">
+              <string>DTR</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SYNC</string>
+             </property>
+            </item>
+           </widget>
+           <widget class="QSpinBox" name="PostSamples_2">
+            <property name="geometry">
+             <rect>
+              <x>370</x>
+              <y>30</y>
+              <width>81</width>
+              <height>41</height>
+             </rect>
+            </property>
+            <property name="maximum">
+             <number>10000</number>
+            </property>
+            <property name="value">
+             <number>1280</number>
+            </property>
+           </widget>
+           <widget class="QLabel" name="PostSampleLabel_2">
+            <property name="geometry">
+             <rect>
+              <x>290</x>
+              <y>30</y>
+              <width>71</width>
+              <height>31</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Samps</string>
+            </property>
+           </widget>
+           <widget class="QDoubleSpinBox" name="TriggerTimeout_2">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="geometry">
+             <rect>
+              <x>320</x>
+              <y>100</y>
+              <width>81</width>
+              <height>31</height>
+             </rect>
+            </property>
+            <property name="decimals">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <double>1000000.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>1.000000000000000</double>
+            </property>
+           </widget>
+           <widget class="QLabel" name="TriggerTimeoutLabel_2">
+            <property name="geometry">
+             <rect>
+              <x>290</x>
+              <y>70</y>
+              <width>151</width>
+              <height>31</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Time Out(s)</string>
+            </property>
+           </widget>
+           <widget class="QComboBox" name="Edge_2">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>60</y>
+              <width>101</width>
+              <height>31</height>
+             </rect>
+            </property>
+            <item>
+             <property name="text">
+              <string>Falling</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Rising</string>
+             </property>
+            </item>
+           </widget>
+           <widget class="QSpinBox" name="TrigDura">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>130</y>
+              <width>101</width>
+              <height>31</height>
+             </rect>
+            </property>
+            <property name="maximum">
+             <number>5000</number>
+            </property>
+            <property name="value">
+             <number>50</number>
+            </property>
+           </widget>
+           <widget class="QLabel" name="TrigEdgeLable">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>30</y>
+              <width>101</width>
+              <height>31</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Trig Edge</string>
+            </property>
+           </widget>
+           <widget class="QLabel" name="TrigDuraLable">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>100</y>
+              <width>121</width>
+              <height>31</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Trig dura(ns)</string>
+            </property>
+           </widget>
+           <widget class="QLabel" name="TrigSourceLabel">
+            <property name="geometry">
+             <rect>
+              <x>140</x>
+              <y>100</y>
+              <width>121</width>
+              <height>31</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Trig Source</string>
+            </property>
+           </widget>
+          </widget>
+          <widget class="QGroupBox" name="AUXIObox_2">
+           <property name="geometry">
+            <rect>
+             <x>820</x>
+             <y>0</y>
+             <width>141</width>
+             <height>171</height>
+            </rect>
+           </property>
+           <property name="title">
+            <string>TRIG OUT</string>
+           </property>
+           <widget class="QComboBox" name="AUXIO_2">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>30</y>
+              <width>111</width>
+              <height>31</height>
+             </rect>
+            </property>
+            <item>
+             <property name="text">
+              <string>ENABLE</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>DISABLE</string>
+             </property>
+            </item>
+           </widget>
+           <widget class="QComboBox" name="AUXEDGE_2">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>80</y>
+              <width>101</width>
+              <height>31</height>
+             </rect>
+            </property>
+            <item>
+             <property name="text">
+              <string>Rising</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Falling</string>
+             </property>
+            </item>
+           </widget>
+           <widget class="QLabel" name="AUXEDGElabel_2">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>60</y>
+              <width>101</width>
+              <height>31</height>
+             </rect>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>14</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>TRIG Edge</string>
+            </property>
+           </widget>
+           <widget class="QSpinBox" name="TrigOutDura">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>140</y>
+              <width>101</width>
+              <height>31</height>
+             </rect>
+            </property>
+            <property name="maximum">
+             <number>5000</number>
+            </property>
+            <property name="value">
+             <number>100</number>
+            </property>
+           </widget>
+           <widget class="QLabel" name="TrigDuraLable_2">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>110</y>
+              <width>121</width>
+              <height>31</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Trig dura(ns)</string>
+            </property>
+           </widget>
+          </widget>
          </widget>
         </widget>
        </widget>
@@ -2528,6 +3014,9 @@ p, li { white-space: pre-wrap; }
             <height>41</height>
            </rect>
           </property>
+          <property name="decimals">
+           <number>3</number>
+          </property>
           <property name="maximum">
            <double>50.000000000000000</double>
           </property>
@@ -2557,8 +3046,8 @@ p, li { white-space: pre-wrap; }
         <widget class="QCheckBox" name="Save">
          <property name="geometry">
           <rect>
-           <x>60</x>
-           <y>20</y>
+           <x>30</x>
+           <y>10</y>
            <width>91</width>
            <height>31</height>
           </rect>
@@ -2576,10 +3065,10 @@ p, li { white-space: pre-wrap; }
         <widget class="QTextEdit" name="DIR">
          <property name="geometry">
           <rect>
-           <x>50</x>
-           <y>50</y>
-           <width>281</width>
-           <height>131</height>
+           <x>30</x>
+           <y>40</y>
+           <width>311</width>
+           <height>101</height>
           </rect>
          </property>
          <property name="html">
@@ -2593,10 +3082,10 @@ p, li { white-space: pre-wrap; }
         <widget class="QTextEdit" name="Disp_DIR">
          <property name="geometry">
           <rect>
-           <x>370</x>
-           <y>50</y>
-           <width>401</width>
-           <height>71</height>
+           <x>350</x>
+           <y>40</y>
+           <width>391</width>
+           <height>101</height>
           </rect>
          </property>
          <property name="html">
@@ -2604,7 +3093,33 @@ p, li { white-space: pre-wrap; }
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Microsoft YaHei UI'; font-size:15pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;D:\SSOCT_HE\data\dispersion.dat&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;D:\SSOCT_HE\data\dispersion1.bin&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="RedoDC">
+         <property name="geometry">
+          <rect>
+           <x>350</x>
+           <y>140</y>
+           <width>221</width>
+           <height>36</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>REDO Compensation </string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="LoadDispersion">
+         <property name="geometry">
+          <rect>
+           <x>350</x>
+           <y>0</y>
+           <width>221</width>
+           <height>36</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Load Compensation</string>
          </property>
         </widget>
        </widget>
@@ -2689,7 +3204,7 @@ p, li { white-space: pre-wrap; }
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1343</width>
+     <width>1329</width>
      <height>33</height>
     </rect>
    </property>

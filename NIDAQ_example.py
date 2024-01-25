@@ -24,8 +24,8 @@ with ni.Task('AO task') as AOtask, ni.Task('DO task') as DOtask:
                                     source='/AODO/PFI0', \
                                         active_edge= Edge.FALLING,\
                                       sample_mode=Atype.CONTINUOUS,samps_per_chan=len(AOwaveform))
-    AOtask.triggers.sync_type.MASTER = True
-
+    # AOtask.triggers.sync_type.MASTER = True
+    AOtask.triggers.start_trigger.cfg_dig_edge_start_trig("/AODO/PFI1")
 
     AOtask.write(AOwaveform, auto_start = False)
 
@@ -34,14 +34,15 @@ with ni.Task('AO task') as AOtask, ni.Task('DO task') as DOtask:
                                     source='/AODO/PFI0', \
                                         active_edge= Edge.FALLING,\
                                       sample_mode=Atype.CONTINUOUS,samps_per_chan=len(AOwaveform))
-    DOtask.triggers.sync_type.SLAVE = True
+    # DOtask.triggers.sync_type.SLAVE = True
+    DOtask.triggers.start_trigger.cfg_dig_edge_start_trig("/AODO/PFI1")
     # DOwaveform = np.uint32(np.append(np.zeros(np.int32(len(AOwaveform)/2)),8*np.ones(np.int32(len(AOwaveform)/2))))
     DOwaveform = [0,0,0,0,0,0,0,0,0,0,8,8,8,8,8,8,8,8,8]
     DOtask.write(DOwaveform, auto_start = False)
     
     DOtask.start()
     AOtask.start()
-    time.sleep(10)
+    time.sleep(5)
     # AOtask.wait_until_done(timeout =21)
         
     

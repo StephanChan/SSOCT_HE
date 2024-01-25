@@ -16,11 +16,11 @@ nFFT = 3000
 # init raw data
 data = np.sin(2*np.pi*np.random.randint(10,90)*np.arange(nSamp)/nSamp)
 data = np.float32(np.tile(data,[nFFT,1]))
-window = np.float32(np.hanning(nSamp))
+window = np.complex64(np.hanning(nSamp))
 # define CUDA kernel that calculate the product of two arrays
 winfunc = cp.ElementwiseKernel(
-    'float32 x, float32 y',
-    'float32 z',
+    'float32 x, complex64 y',
+    'complex64 z',
     'z=x*y',
     'winfunc')
 
@@ -41,6 +41,8 @@ data_gpu  = cp.array(data)
 window_gpu = cp.array(window)
 # calculate array product
 data_gpu = winfunc(data_gpu, window_gpu)
+# results = cp.asnumpy(data_gpu)
+# results_CPU = data*window
 # data_o_gpu = cp.ndarray([data.shape[0], data.shape[1]], dtype=np.complex64)
 # data_o_gpu2 = cp.ndarray([data.shape[0], 200], dtype=np.complex64)
 # data_o_gpu3 = cp.ndarray([data.shape[0], 200], dtype=np.float32)
@@ -72,5 +74,5 @@ results = cp.asnumpy(data_gpu)
 # cache.clear()
 print('\n GPU total time is: ',time.time()-start)
 # plt.figure()
-plt.plot(results[1][:])
+# plt.plot(results[1][:])
 # print(mempool.used_bytes())

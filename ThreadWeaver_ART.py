@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Dec 12 16:49:35 2023
+Created on Wed Jan 24 11:10:17 2024
 
 @author: admin
 """
+
+#################################################################
+# THIS KING THREAD IS USING ART8912, WHICH IS MASTER AND the AODO board WILL BE SLAVE
 from PyQt5.QtCore import  QThread
 import time
 import numpy as np
@@ -12,7 +15,7 @@ from Actions import DnSAction, AODOAction, GPUAction, DAction
 import traceback
 
        
-class KingThread(QThread):
+class WeaverThread(QThread):
     def __init__(self):
         super().__init__()
         self.mosaic = None
@@ -57,13 +60,14 @@ class KingThread(QThread):
         # ready AODO 
         an_action = AODOAction('ConfigAODO')
         self.AODOQueue.put(an_action)
-        # start digitizer
-        an_action = DAction('StartAcquire')
-        self.DQueue.put(an_action)
-        time.sleep(0.1) # starting acquire takes less than 0.1 second, this is to make sure board started before AODO started
         # start AODO
         an_action = AODOAction('StartOnce')
         self.AODOQueue.put(an_action)
+        time.sleep(0.1) # starting acquire takes less than 0.1 second, this is to make sure board started before AODO started
+        # start digitizer
+        an_action = DAction('StartAcquire')
+        self.DQueue.put(an_action)
+
         ######################################### collect data
         # collect data from digitizer, data format: [Y pixels, X*Z pixels]
         an_action = self.DbackQueue.get() # never time out
@@ -72,7 +76,7 @@ class KingThread(QThread):
         if self.ui.FFTDevice.currentText() in ['None']:
             # In None mode, directly do display and save
             data = self.Memory[memoryLoc].copy()
-            an_action = DnSAction(mode, data, args=True) # data in Memory[memoryLoc]
+            an_action = DnSAction(mode, data, raw=True) # data in Memory[memoryLoc]
             self.DnSQueue.put(an_action)
             
         elif self.ui.FFTDevice.currentText() in ['Alazar']:
@@ -82,7 +86,7 @@ class KingThread(QThread):
             # samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
             # Alines =np.uint32((data.shape[1])/samples) * data.shape[0]
             # data=data.reshape([Alines, samples])
-            an_action = DnSAction(mode, data, args=False) # data in Memory[memoryLoc]
+            an_action = DnSAction(mode, data) # data in Memory[memoryLoc]
             self.DnSQueue.put(an_action)
         else:
             # In other modes, do FFT first
@@ -92,7 +96,8 @@ class KingThread(QThread):
         # AODO stop automatically, but need close() explicitely
         an_action = AODOAction('CloseTask')
         self.AODOQueue.put(an_action)
-        # ATS9351 will stop automatically
+        an_action = DAction('CloseTask')
+        self.DQueue.put(an_action)
         return mode + ' successfully finished'
             
     
@@ -107,13 +112,14 @@ class KingThread(QThread):
         # ready AODO for continuous measurement
         an_action = AODOAction('ConfigAODO')
         self.AODOQueue.put(an_action)
-        # start digitizer
-        an_action = DAction('StartAcquire')
-        self.DQueue.put(an_action)
-        time.sleep(0.1) # starting acquire takes less than 0.1 second, this is to make sure board started before AODO started
         # start AODO
         an_action = AODOAction('StartContinuous')
         self.AODOQueue.put(an_action)
+        time.sleep(0.1) # starting acquire takes less than 0.1 second, this is to make sure board started before AODO started
+        # start digitizer
+        an_action = DAction('StartAcquire')
+        self.DQueue.put(an_action)
+        
         interrupt = None
         ######################################################### repeat acquisition until Stop button is clicked
         while interrupt != 'Stop':
@@ -127,7 +133,7 @@ class KingThread(QThread):
             if self.ui.FFTDevice.currentText() in ['None']:
                 # In None mode, directly do display and save
                 data = self.Memory[memoryLoc].copy()
-                an_action = DnSAction(mode, data, args=True) # data in Memory[memoryLoc]
+                an_action = DnSAction(mode, data, raw=True) # data in Memory[memoryLoc]
                 self.DnSQueue.put(an_action)
                 
             elif self.ui.FFTDevice.currentText() in ['Alazar']:
@@ -137,7 +143,7 @@ class KingThread(QThread):
                 # samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
                 # Alines =np.uint32((data.shape[1])/samples) * data.shape[0]
                 # data=data.reshape([Alines, samples])
-                an_action = DnSAction(mode, data, args=False) # data in Memory[memoryLoc]
+                an_action = DnSAction(mode, data) # data in Memory[memoryLoc]
                 self.DnSQueue.put(an_action)
             else:
                 # In other modes, do FFT first
@@ -151,12 +157,12 @@ class KingThread(QThread):
                if interrupt == 'Pause':
                    self.ui.PauseButton.setChecked(True)
                    self.ui.PauseButton.setText('Unpause')
-                   # stop Board with any input
-                   self.StopDQueue.put(0)
-                   time.sleep(0.2) # make sure board stops first and AODO stops next
                    # pause AODO
                    an_action = AODOAction('StopContinuous')
                    self.AODOQueue.put(an_action)
+                   # stop Board with any input
+                   self.StopDQueue.put(0)
+                   
                    # wait until unpause button or stop button is clicked
                    interrupt = self.PauseQueue.get()  # never time out
                    # if unpause button is clicked        
@@ -164,21 +170,24 @@ class KingThread(QThread):
                         self.ui.PauseButton.setChecked(False)
                         self.ui.PauseButton.setText('Pause')
                         interrupt = None
-                        # restart ATS9351 for continuous acquisition
-                        an_action = DAction('StartAcquire')
-                        self.DQueue.put(an_action)
-                        time.sleep(0.1) # starting acquire takes less than 0.1 second, this is to make sure board started before AODO started
                         # restart AODO for continuous acquisition
                         an_action = AODOAction('StartContinuous')
                         self.AODOQueue.put(an_action)
+                        time.sleep(0.1) # starting acquire takes less than 0.1 second, this is to make sure board started before AODO started
+            
+                        # restart ART8912 for continuous acquisition
+                        an_action = DAction('StartAcquire')
+                        self.DQueue.put(an_action)
+                        
 
                elif interrupt == 'Stop':
-                    # stop Board with any input
-                    self.StopDQueue.put(0)
-                    time.sleep(0.2)
                     # stop AODO 
                     an_action = AODOAction('StopContinuous')
                     self.AODOQueue.put(an_action)
+                    # stop Board with any input
+                    self.StopDQueue.put(0)
+                    an_action = DAction('CloseTask')
+                    self.DQueue.put(an_action)
                     an_action = AODOAction('CloseTask')
                     self.AODOQueue.put(an_action)
             except:
@@ -231,13 +240,15 @@ class KingThread(QThread):
             ############################################################  iterate through Cscans in one stripe
             while files < CscansPerStripe and interrupt != 'Stop': 
                 ###################################### start one Cscan
-                # start ATS9351 for one Cscan acquisition
-                an_action = DAction('StartAcquire')
-                self.DQueue.put(an_action)
-                time.sleep(0.1) # wait 0.1 seconds to make sure board started before AODO start
                 # start AODO for one Cscan acquisition
                 an_action = AODOAction('StartOnce')
                 self.AODOQueue.put(an_action)
+                time.sleep(0.1) # wait 0.1 seconds to make sure board started before ART8912 start
+                
+                # start ATS9351 for one Cscan acquisition
+                an_action = DAction('StartAcquire')
+                self.DQueue.put(an_action)
+                
                 ###################################### collecting data
                 # collect data from digitizer
                 an_action = self.DbackQueue.get() # never time out
@@ -254,12 +265,12 @@ class KingThread(QThread):
                     # Alines =np.uint32((data.shape[1])/samples) * data.shape[0]
                     # data=data.reshape([Alines, samples])
                     
-                    an_action = DnSAction('SurfScan', data, args) # data in Memory[memoryLoc]
+                    an_action = DnSAction('SurfScan', data, args=args) # data in Memory[memoryLoc]
                     self.DnSQueue.put(an_action)
                 else:
                     # need to do FFT before display and save
                     args = [[files, stripes], [CscansPerStripe, self.totalTiles],[self.ui.Xsteps.value()*self.ui.AlineAVG.value(),self.ui.PreSamples.value()+self.ui.PostSamples.value()]]
-                    an_action = GPUAction(self.ui.FFTDevice.currentText(), 'SurfScan', memoryLoc, args)
+                    an_action = GPUAction(self.ui.FFTDevice.currentText(), 'SurfScan', memoryLoc, args=args)
                     self.GPUQueue.put(an_action)
                 # increment files imaged
                 files +=1
@@ -288,6 +299,8 @@ class KingThread(QThread):
         # close AODO tasks
         an_action = AODOAction('CloseTask')
         self.AODOQueue.put(an_action)
+        an_action = DAction('CloseTask')
+        self.DQueue.put(an_action)
         # reset RUN button
         self.ui.RunButton.setChecked(False)
         self.ui.RunButton.setText('Run')

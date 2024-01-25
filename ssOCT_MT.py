@@ -29,9 +29,10 @@ Created on Sun Dec 10 20:14:40 2023
 import sys
 from multiprocessing import Queue
 from PyQt5.QtWidgets import QApplication
+import PyQt5.QtCore as qc
 from mainWindow import MainWindow
 from Actions import *
-
+import time
 # init global memory for temporary storage of generated raw data
 global memoryCount
 memoryCount = 2
@@ -39,10 +40,14 @@ memoryCount = 2
 global Memory
 Memory = list(range(memoryCount))
 
+global Digitizer
+
+Digitizer = 'ART8912'
+
 # init all Queues as global variable
 # for any queue, you can do queue-in at multiple places, but you can only do queue-out at one place
 global AODOQueue # AODO stands for analog output and digital output
-global KingQueue # King of all threads, gives command to other threads
+global WeaverQueue # King of all threads, gives command to other threads
 global DnSQueue # DnS stands for display and save
 global PauseQueue 
 global GPUQueue 
@@ -51,7 +56,7 @@ global DbackQueue # Dback stands for digitizer respond back, digitizer respond b
 global StopDQueue # StopD stands for stop digitizer, for stopping digitizer in continuous acquisition
 
 AODOQueue = Queue()
-KingQueue = Queue()
+WeaverQueue = Queue()
 DnSQueue = Queue()
 PauseQueue = Queue()
 GPUQueue = Queue()
@@ -69,36 +74,68 @@ class GPUThread_2(GPUThread):
             self.ui = ui
             self.queue = GPUQueue
             self.DnSQueue = DnSQueue
+            self.Digitizer = Digitizer
             
 # wrap digitzer thread with queues and Memory
-from ThreadDigitizer import ATS9351
-class ATS9351_2(ATS9351):
-    def __init__(self, ui):
-        super().__init__()
-        global Memory
-        self.memoryCount = memoryCount
-        self.Memory = Memory
-        self.ui = ui
-        self.queue = DQueue
-        self.DbackQueue = DbackQueue
-        self.StopDQueue = StopDQueue
+if Digitizer == 'ATS9351':
+    from ThreadATS9351 import ATS9351
+    class Digitizer_2(ATS9351):
+        def __init__(self, ui):
+            super().__init__()
+            global Memory
+            self.memoryCount = memoryCount
+            self.Memory = Memory
+            self.ui = ui
+            self.queue = DQueue
+            self.DbackQueue = DbackQueue
+            self.StopDQueue = StopDQueue
+    
+    from ThreadWeaver_ATS import WeaverThread
+    class WeaverThread_2(WeaverThread):
+        def __init__(self, ui):
+            super().__init__()
+            global Memory
+            self.Memory = Memory
+            self.ui = ui
+            self.queue = WeaverQueue
+            self.DnSQueue = DnSQueue
+            self.AODOQueue = AODOQueue
+            self.PauseQueue = PauseQueue
+            self.StopDQueue = StopDQueue
+            self.DbackQueue = DbackQueue
+            self.GPUQueue = GPUQueue
+            self.DQueue = DQueue
+            
+            
+elif Digitizer == 'ART8912':
+    from ThreadART8912 import ART8912
+    class Digitizer_2(ART8912):
+        def __init__(self, ui):
+            super().__init__()
+            global Memory
+            self.memoryCount = memoryCount
+            self.Memory = Memory
+            self.ui = ui
+            self.queue = DQueue
+            self.DbackQueue = DbackQueue
+            self.StopDQueue = StopDQueue
 
-# wrap King thread with queues and Memory
-from ThreadKing import KingThread
-class KingThread_2(KingThread):
-    def __init__(self, ui):
-        super().__init__()
-        global Memory
-        self.Memory = Memory
-        self.ui = ui
-        self.queue = KingQueue
-        self.DnSQueue = DnSQueue
-        self.AODOQueue = AODOQueue
-        self.PauseQueue = PauseQueue
-        self.StopDQueue = StopDQueue
-        self.DbackQueue = DbackQueue
-        self.GPUQueue = GPUQueue
-        self.DQueue = DQueue
+    # since ART8912 is master, AODO is slave,we need a separate king thread to organize them
+    from ThreadWeaver_ART import WeaverThread
+    class WeaverThread_2(WeaverThread):
+        def __init__(self, ui):
+            super().__init__()
+            global Memory
+            self.Memory = Memory
+            self.ui = ui
+            self.queue = WeaverQueue
+            self.DnSQueue = DnSQueue
+            self.AODOQueue = AODOQueue
+            self.PauseQueue = PauseQueue
+            self.StopDQueue = StopDQueue
+            self.DbackQueue = DbackQueue
+            self.GPUQueue = GPUQueue
+            self.DQueue = DQueue
 
 # wrap AODO thread with queue
 from ThreadAODO import AODOThread
@@ -107,6 +144,7 @@ class AODOThread_2(AODOThread):
         super().__init__()
         self.ui = ui
         self.queue = AODOQueue
+        self.Digitizer = Digitizer
 
 # wrap Display and save thread with queue        
 from ThreadDnS import DnSThread
@@ -115,6 +153,7 @@ class DnSThread_2(DnSThread):
         super().__init__()
         self.ui = ui
         self.queue = DnSQueue
+        self.Digitizer = Digitizer
         
 # wrap MainWindow object with queues and threads        
 class GUI(MainWindow):
@@ -129,34 +168,33 @@ class GUI(MainWindow):
         self.ui.CenterGalvo.clicked.connect(self.CenterGalvo)
         
         # change window length for FFT
-        self.ui.PostSamples.valueChanged.connect(self.Update_FFTwindow)
-        self.ui.PreSamples.valueChanged.connect(self.Update_FFTwindow)
+        self.ui.PostSamples.valueChanged.connect(self.update_Dispersion)
+        self.ui.PreSamples.valueChanged.connect(self.update_Dispersion)
+        self.ui.PostSamples_2.valueChanged.connect(self.update_Dispersion)
         
         self.ui.MaxContrast.valueChanged.connect(self.Update_contrast)
         self.ui.MinContrast.valueChanged.connect(self.Update_contrast)
+        self.ui.Disp_DIR.textChanged.connect(self.update_Dispersion)
+        
+        self.ui.RedoDC.clicked.connect(self.redo_dispersion_compensation)
         self.Init_allThreads()
-        self.Update_FFTwindow()
         
     def Init_allThreads(self):
-        self.King_thread = KingThread_2(self.ui)
+        self.Weaver_thread = WeaverThread_2(self.ui)
         self.AODO_thread = AODOThread_2(self.ui)
         self.DnS_thread = DnSThread_2(self.ui)
         self.GPU_thread = GPUThread_2(self.ui)
-        if self.ui.ATS9351Enable.isChecked():
-            self.D_thread = ATS9351_2(self.ui)
-        else:
-            print('\nNO DIGITIZER selected!!!!!!!!!!!!!!!!!\n')
-            self.D_thread = None
+        self.D_thread = Digitizer_2(self.ui)
         
         self.D_thread.start()
         self.GPU_thread.start()
-        self.King_thread.start()
+        self.Weaver_thread.start()
         self.AODO_thread.start()
         self.DnS_thread.start()
             
     def Stop_allThreads(self):
         exit_element=EXIT()
-        KingQueue.put(exit_element)
+        WeaverQueue.put(exit_element)
         AODOQueue.put(exit_element)
         DnSQueue.put(exit_element)
         GPUQueue.put(exit_element)
@@ -179,14 +217,14 @@ class GUI(MainWindow):
         if self.ui.ACQMode.currentText() in ['RptAline','RptBline','RptCscan','SurfScan','SurfScan+Slice']:
             if self.ui.RunButton.isChecked():
                 self.ui.RunButton.setText('Stop')
-                an_action = KingAction(self.ui.ACQMode.currentText())
-                KingQueue.put(an_action)
+                an_action = WeaverAction(self.ui.ACQMode.currentText())
+                WeaverQueue.put(an_action)
             else:
                 self.ui.RunButton.setText('Run')
                 self.Stop_task()
         elif self.ui.ACQMode.currentText() in ['SingleAline','SingleBline','SingleCscan']:
-            an_action = KingAction(self.ui.ACQMode.currentText())
-            KingQueue.put(an_action)
+            an_action = WeaverAction(self.ui.ACQMode.currentText())
+            WeaverQueue.put(an_action)
             self.ui.RunButton.setChecked(False)
             self.ui.RunButton.setText('Run')
         else:
@@ -221,14 +259,8 @@ class GUI(MainWindow):
         PauseQueue.put('Stop')
         self.ui.statusbar.showMessage('acquisition stopped...')
         
-    def Update_FFTwindow(self):
-        # samples = self.ui.PostSamples.value() + self.ui.PreSamples.value()
-        # if samples % 32 !=0:
-        #     print('Digitizer sample number must be dividible by 32!')
-        #     tmp += 1
-        #     Samples = samples + tmp
-        # self.ui.PostSamples.setValue(self.ui.PostSamples.value()+tmp)
-        an_action = GPUAction('Window')
+    def update_Dispersion(self):
+        an_action = GPUAction('update_Dispersion')
         GPUQueue.put(an_action)
         
     def Update_contrast(self):
@@ -236,11 +268,22 @@ class GUI(MainWindow):
             an_action = DnSAction('UpdateContrast')
             DnSQueue.put(an_action)
             
-            
+    def redo_dispersion_compensation(self):
+        mode = self.ui.ACQMode.currentText()
+        device = self.ui.FFTDevice.currentText()
+        self.ui.ACQMode.setCurrentText('SingleAline')
+        self.ui.FFTDevice.setCurrentText('None')
+        an_action = WeaverAction(self.ui.ACQMode.currentText())
+        WeaverQueue.put(an_action)
+        time.sleep(3)
+        an_action = DnSAction('dispersionCompensation')
+        DnSQueue.put(an_action)
             
     def closeEvent(self, event):
         self.ui.statusbar.showMessage('Exiting all threads')
         self.Stop_allThreads()
+        settings = qc.QSettings("config.ini", qc.QSettings.IniFormat)
+        self.save_settings(settings )
         if self.DnS_thread.isFinished:
             event.accept()
         else:

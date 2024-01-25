@@ -95,8 +95,10 @@ class AODOThread(QThread):
             self.AOtask.timing.cfg_samp_clk_timing(rate=self.Aline_freq, \
                                             source=self.ui.ClockTerm.toPlainText(), \
                                               sample_mode=Atype.FINITE,samps_per_chan=len(AOwaveform))
-                
-        self.AOtask.triggers.sync_type.MASTER = True
+        if self.Digitizer == 'ATS9351':      
+            self.AOtask.triggers.sync_type.MASTER = True
+        elif self.Digitizer == 'ART8912':
+            self.AOtask.triggers.start_trigger.cfg_dig_edge_start_trig("/AODO/PFI1")
 
         # print(len(DOwaveform))
             
@@ -114,7 +116,10 @@ class AODOThread(QThread):
                                             source=self.ui.ClockTerm.toPlainText(), \
                                               sample_mode=Atype.FINITE,samps_per_chan=len(DOwaveform))
        
-        self.DOtask.triggers.sync_type.SLAVE = True
+        if self.Digitizer == 'ATS9351':      
+            self.DOtask.triggers.sync_type.SLAVE = True
+        elif self.Digitizer == 'ART8912':
+            self.DOtask.triggers.start_trigger.cfg_dig_edge_start_trig("/AODO/PFI1")
         
         self.DOtask.write(DOwaveform, auto_start = False)
         return 'AODO configuration success'

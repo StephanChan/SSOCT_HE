@@ -9,6 +9,8 @@ from PyQt5.QtCore import  QThread
 from Generaic_functions import LinePlot, ImagePlot
 import numpy as np
 import traceback
+global SCALE
+SCALE =0.2
 
 class DnSThread(QThread):
     def __init__(self):
@@ -30,21 +32,22 @@ class DnSThread(QThread):
             try:
                 if self.item.action in ['SingleAline','RptAline']:
                     
-                    self.Display_aline(self.item.data, self.item.args)
+                    self.Display_aline(self.item.data, self.item.raw)
                 
                 elif self.item.action in ['SingleBline','RptBline']:
-                    self.Display_bline(self.item.data)
+                    self.Display_bline(self.item.data, self.item.raw)
                     
                 elif self.item.action in ['SingleCscan','RptCscan']:
-                    self.Display_Cscan(self.item.data)
+                    self.Display_Cscan(self.item.data, self.item.raw)
                 elif self.item.action == 'SurfScan':
-                    self.Display_SurfScan(self.item.data, self.item.args)
+                    self.Display_SurfScan(self.item.data, self.item.raw, self.item.args)
                 
                 elif self.item.action == 'Clear':
                     self.surf = []
                 elif self.item.action == 'UpdateContrast':
                     self.Update_contrast()
-                
+                elif self.item.action == 'dispersionCompensation':
+                    self.dispersion_compensation()
                     
                 else:
                     self.ui.statusbar.showMessage('Display and save thread is doing something invalid' + self.item.action)
@@ -62,19 +65,27 @@ class DnSThread(QThread):
         if not raw:
             Zpixels = self.ui.DepthRange.value()
         else:
-            Zpixels = self.ui.PreSamples.value() + self.ui.PostSamples.value()
-            data = data/pow(2,16)
-        Xpixels = 100
+            if self.Digitizer == 'ATS9351':
+                Zpixels = self.ui.PreSamples.value()+self.ui.PostSamples.value()
+                data = np.float32(data/pow(2,16))
+            elif self.Digitizer == 'ART8912':
+                Zpixels = self.ui.PostSamples_2.value()
+                data = np.float32(data/pow(2,12))
+        Xpixels = 10
         Yrpt = self.ui.BlineAVG.value()
         data = data.reshape([Yrpt,Xpixels,Zpixels])
-        
-        data = np.mean(data,0)
-        data = data[0,:]
+        # data in original state
         self.Aline = data
+        
+        data = np.float32(np.mean(data,0))
+        data = data[1,:]
+        # data = data.reshape(Xpixels*Zpixels)
+        # print(data.shape)
+        # print(data)
         # check if displaying in log scale
         if self.ui.LOG.currentText() == '10log10':
-            data=10*np.log10(data)
-
+            data=np.float32(10*np.log10(data+0.000001))
+        # float32 data type
         pixmap = LinePlot(data, [], self.ui.MinContrast.value(), self.ui.MaxContrast.value())
         # clear content on the waveformLabel
         self.ui.XYplane.clear()
@@ -85,18 +96,25 @@ class DnSThread(QThread):
         if not raw:
             Zpixels = self.ui.DepthRange.value()
         else:
-            Zpixels = self.ui.PreSamples.value() + self.ui.PostSamples.value()
-            data = data/pow(2,16)
+            if self.Digitizer == 'ATS9351':
+                Zpixels = self.ui.PreSamples.value()+self.ui.PostSamples.value()
+                data = np.float32(data/pow(2,16))
+            elif self.Digitizer == 'ART8912':
+                Zpixels = self.ui.PostSamples_2.value()
+                data = np.float32(data/pow(2,12))
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
+        if self.Digitizer == 'ART8912':
+            Xpixels = Xpixels + self.ui.PreClock.value()
         Yrpt = self.ui.BlineAVG.value()
         
         data = data.reshape([Yrpt,Xpixels,Zpixels])
-        data = np.mean(data,0)
-
-        data = np.transpose(data).copy()
+        # data in original state
         self.Bline = data
+        data = np.float32(np.mean(data,0))
+        data = np.transpose(data).copy()
+        # data = np.flip(data, 1).copy()
         if self.ui.LOG.currentText() == '10log10':
-            data=10*np.log10(data)
+            data=np.float32(10*np.log10(data+0.000001))
 
         pixmap = ImagePlot(data, self.ui.MinContrast.value(), self.ui.MaxContrast.value())
         # clear content on the waveformLabel
@@ -105,16 +123,33 @@ class DnSThread(QThread):
         self.ui.XYplane.setPixmap(pixmap)
         
         if self.ui.Save.isChecked():
+            if raw:
+                data = np.uint16(self.Bline*65535)
+            else:
+                data = np.uint16(self.Bline/SCALE*65535)
             self.WriteData(data, self.BlineFilename([Yrpt,Xpixels,Zpixels]))
         
-    def Display_Cscan(self, data):
-        self.Cscan = data
-        if self.ui.LOG.currentText() == '10log10':
-            data=10*np.log10(data)
-        Zpixels = self.ui.DepthRange.value()
+    def Display_Cscan(self, data, raw = False):
+        if not raw:
+            Zpixels = self.ui.DepthRange.value()
+        else:
+            if self.Digitizer == 'ATS9351':
+                Zpixels = self.ui.PreSamples.value()+self.ui.PostSamples.value()
+                data = np.float32(data/pow(2,16))
+            elif self.Digitizer == 'ART8912':
+                Zpixels = self.ui.PostSamples_2.value()
+                data = np.float32(data/pow(2,12))
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
+        if self.Digitizer == 'ART8912':
+            Xpixels = Xpixels + self.ui.PreClock.value()
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
         data = data.reshape([Ypixels,Xpixels,Zpixels])
+        # data in original state
+        self.Cscan = data
+        
+        if self.ui.LOG.currentText() == '10log10':
+            data=np.float32(10*np.log10(data+0.000001))
+
         plane = (data[:,1,:]).copy()
         pixmap = ImagePlot(plane, self.ui.MinContrast.value(), self.ui.MaxContrast.value())
         # clear content on the waveformLabel
@@ -138,15 +173,32 @@ class DnSThread(QThread):
         self.ui.XYplane.setPixmap(pixmap)
         
         if self.ui.Save.isChecked():
-            self.WriteData(data, self.CscanFilename([Ypixels,Xpixels,Zpixels]))
+            if raw:
+                data = np.uint16(self.Cscan*65535)
+            else:
+                data = np.uint16(self.Cscan/SCALE*65535)
+            self.WriteData(self.Cscan, self.CscanFilename([Ypixels,Xpixels,Zpixels]))
+
         
-    def Display_SurfScan(self, data, args):
-        if self.ui.LOG.currentText() == '10log10':
-            data=10*np.log10(data)
-        Zpixels = self.ui.DepthRange.value()
+    def Display_SurfScan(self, data, raw = False, args = []):
+        if not raw:
+            Zpixels = self.ui.DepthRange.value()
+        else:
+            if self.Digitizer == 'ATS9351':
+                Zpixels = self.ui.PreSamples.value()+self.ui.PostSamples.value()
+                data = np.float32(data/pow(2,16))
+            elif self.Digitizer == 'ART8912':
+                Zpixels = self.ui.PostSamples_2.value()
+                data = np.float32(data/pow(2,12))
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
+        if self.Digitizer == 'ART8912':
+            Xpixels = Xpixels + self.ui.PreClock.value()
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
         data = data.reshape([Ypixels,Xpixels,Zpixels])
+        self.Cscan = data
+        if self.ui.LOG.currentText() == '10log10':
+            data=np.float32(10*np.log10(data+0.000001))
+
         plane = (data[:,1,:]).copy()
         pixmap = ImagePlot(plane, self.ui.MinContrast.value(), self.ui.MaxContrast.value())
         # clear content on the waveformLabel
@@ -186,39 +238,40 @@ class DnSThread(QThread):
         # update iamge on the waveformLabel
         self.ui.SampleMosaic.setPixmap(pixmap)
         if self.ui.Save.isChecked():
-            self.WriteData(data, self.SurfFilename([Ypixels*20,Xpixels*20,Zpixels]))
+            if raw:
+                data = np.uint16(self.Cscan*65535)
+            else:
+                data = np.uint16(self.Cscan/SCALE*65535)
+            self.WriteData(self.Cscan, self.SurfFilename([Ypixels*20,Xpixels*20,Zpixels]))
+
             
     def Update_contrast(self):
         if self.ui.ACQMode.currentText() in ['SingleAline', 'RptAline']:
+            data = np.float32(np.mean(self.Aline,0))
+            data = data[0,:]
             if self.ui.LOG.currentText() == '10log10':
-                data=10*np.log10(self.Aline)
-            else:
-                data = self.Aline
+                data=10*np.log10(data+0.000001)
             pixmap = LinePlot(data, [], self.ui.MinContrast.value(), self.ui.MaxContrast.value())
             # clear content on the waveformLabel
             self.ui.XYplane.clear()
             # update iamge on the waveformLabel
             self.ui.XYplane.setPixmap(pixmap)
         elif self.ui.ACQMode.currentText() in ['SingleBline', 'RptBline']:
+            data = np.float32(np.mean(self.Bline,0))
+            data = np.transpose(data).copy()
+            # data = np.flip(data, 1).copy()
             if self.ui.LOG.currentText() == '10log10':
-                data=10*np.log10(self.Bline)
-            else:
-                data = self.Bline
-
+                data=np.float32(10*np.log10(data+0.000001))
             pixmap = ImagePlot(data, self.ui.MinContrast.value(), self.ui.MaxContrast.value())
             # clear content on the waveformLabel
             self.ui.XYplane.clear()
             # update iamge on the waveformLabel
             self.ui.XYplane.setPixmap(pixmap)
-        elif self.ui.ACQMode.currentText() == 'SingleCscan':
+        elif self.ui.ACQMode.currentText() in ['SurfScan','SurfScan+Slice', 'SingleCscan']:
             if self.ui.LOG.currentText() == '10log10':
-                data=10*np.log10(self.Cscan)
+                data=10*np.log10(self.Cscan+0.000001)
             else:
                 data = self.Cscan
-            Zpixels = self.ui.DepthRange.value()
-            Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
-            Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
-            data = data.reshape([Ypixels,Xpixels,Zpixels])
             plane = (data[:,1,:]).copy()
             pixmap = ImagePlot(plane, self.ui.MinContrast.value(), self.ui.MaxContrast.value())
             # clear content on the waveformLabel
@@ -241,30 +294,83 @@ class DnSThread(QThread):
             # update image on the waveformLabel
             self.ui.XYplane.setPixmap(pixmap)
             
+            
     def SurfFilename(self, shape):
         if self.tileNum <= self.totalTiles:
-            filename = 'slice-'+str(self.sliceNum)+'-tile-'+str(self.tileNum)+'-Y'+str(shape[0])+'-X'+str(shape[1])+'-Z'+str(shape[2])+'.dat'
+            filename = 'slice-'+str(self.sliceNum)+'-tile-'+str(self.tileNum)+'-Y'+str(shape[0])+'-X'+str(shape[1])+'-Z'+str(shape[2])+'.bin'
             self.tileNum = self.tileNum + 1
         else:
             self.sliceNum = self.sliceNum + 1
             self.tileNum = 1
-            filename = 'slice-'+str(self.sliceNum)+'-tile-'+str(self.tileNum)+'-Y'+str(shape[0])+'-X'+str(shape[1])+'-Z'+str(shape[2])+'.dat'
+            filename = 'slice-'+str(self.sliceNum)+'-tile-'+str(self.tileNum)+'-Y'+str(shape[0])+'-X'+str(shape[1])+'-Z'+str(shape[2])+'.bin'
         return filename
     
     def CscanFilename(self, shape):
-        filename = 'Cscan-'+str(self.CscanNum)+'-Y'+str(shape[0])+'-X'+str(shape[1])+'-Z'+str(shape[2])+'.dat'
+        filename = 'Cscan-'+str(self.CscanNum)+'-Y'+str(shape[0])+'-X'+str(shape[1])+'-Z'+str(shape[2])+'.bin'
         self.CscanNum = self.CscanNum + 1
         return filename
     
     def BlineFilename(self, shape):
-        filename = 'Bline-'+str(self.BlineNum)+'-Yrpt'+str(shape[0])+'-X'+str(shape[1])+'-Z'+str(shape[2])+'.dat'
+        filename = 'Bline-'+str(self.BlineNum)+'-Yrpt'+str(shape[0])+'-X'+str(shape[1])+'-Z'+str(shape[2])+'.bin'
         self.BlineNum = self.BlineNum + 1
         return filename
-        
+
     def WriteData(self, data, filename):
         filePath = self.ui.DIR.toPlainText()
-        filePath = filePath + "\\" + filename
+        filePath = filePath + "/" + filename
         # print(filePath)
-        with open(filePath, "wb") as file:
-            file.write(data)
-            file.close()
+        import time
+        start = time.time()
+        fp = open(filePath, 'wb')
+        data.tofile(fp)
+        fp.close()
+        print('time for saving: ', time.time()-start)
+        
+    def dispersion_compensation(self):
+        S = self.Aline.shape
+        ALINE = self.Aline.reshape([S[0]*S[1],S[2]])-0.5
+
+        Aline = ALINE[0,:]
+        L=len(Aline)
+        fR=np.fft.fft(Aline)/L # FFT of interference signal
+        import matplotlib.pyplot as plt
+        # plt.figure()
+        # plt.plot(range(L),np.abs(fR))
+        z = np.argmax(np.abs(fR[20:L//2-20]))
+        low_position = max(10,z-100)
+        high_position = min(L//2,z+100)
+        fR[0:low_position]=0
+        fR[high_position:L-high_position]=0
+        fR[L-low_position:-1]=0
+        
+        Aline = np.fft.ifft(fR)
+        from scipy.signal import hilbert
+        hR=hilbert(np.real(Aline))
+        hR_phi=np.unwrap(np.angle(hR))
+        
+        phi_delta=np.linspace(hR_phi[0],hR_phi[L-1],L)
+        phi_diff=np.float32(phi_delta-hR_phi)
+        ALINE = ALINE*np.exp(1j*phi_diff)
+ 
+        fR = np.fft.fft(ALINE, axis=1)/L
+
+        fR = np.abs(fR[:,self.ui.DepthStart.value():self.ui.DepthStart.value()+self.ui.DepthRange.value()])
+        self.ui.MaxContrast.setValue(0.1)
+        self.Display_aline(fR, raw = False)
+        
+        filePath = self.ui.DIR.toPlainText()
+        import datetime
+        current_time = datetime.datetime.now()
+        filePath = filePath + "/" + 'dispersion_compensation_'+\
+            str(current_time.year)+'-'+\
+            str(current_time.month)+'-'+\
+            str(current_time.day)+'-'+\
+            str(current_time.hour)+'-'+\
+            str(current_time.minute)+\
+            '.bin'
+        fp = open(filePath, 'wb')
+        phi_diff.tofile(fp)
+        fp.close()
+        
+        self.ui.Disp_DIR.setText(filePath)
+        
