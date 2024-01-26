@@ -23,7 +23,10 @@ class MainWindow(QMainWindow):
         self.update_Mosaic()
         settings = qc.QSettings("config.ini", qc.QSettings.IniFormat)
         
-        self.load_settings(settings)
+        try:
+            self.load_settings(settings)
+        except:
+            pass
         self.connectActions()
         
     def connectActions(self):

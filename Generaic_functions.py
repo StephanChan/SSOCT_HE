@@ -4,11 +4,19 @@ Created on Mon Dec 11 19:41:46 2023
 
 @author: admin
 """
+# DO configure: port0 line 0 for X stage, port0 line 1 for Y stage, port 0 line 2 for Z stage, port 0 line 3 for Digitizer enable
 
 # Generating Galvo X direction waveforms based on step size, Xsteps, Aline averages and objective
 # StepSize in unit of um
 # bias in unit of mm
-    
+global STEPS
+STEPS = 25000
+# 2mm per revolve
+global DISTANCE
+DISTANCE = 2
+# scan direction suring Cscan is Y axis
+global CSCAN_AXIS
+CSCAN_AXIS = 1 
 import numpy as np
 global Galvo_bias
 Galvo_bias = 3 # V
@@ -52,9 +60,16 @@ def GenGalvoWave(StepSize = 1, Steps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma
     status = 'waveform updated'
     return waveform, status
 
-def GenStageWave(one_cycle_samples, stageSpeed):
+def GenStageWave(one_cycle_samples, Aline_frq, stageSpeed):
     # generate DO waveforms for moving stage
-    return np.ones(one_cycle_samples)
+    time = one_cycle_samples/Aline_frq # time for one bline
+    distance = time*stageSpeed # mm to move
+    steps = distance / DISTANCE * STEPS # how many steps needed to reach that distance
+    stride = np.uint16(one_cycle_samples/steps)
+    stagewaveform = np.zeros(one_cycle_samples)
+    for ii in range(0,one_cycle_samples,stride):
+        stagewaveform[ii] = 1
+    return stagewaveform
 
 def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma5X',\
             preclocks = 50, postclocks = 200, YStepSize = 1, YSteps = 200, BVG = 1):
@@ -106,9 +121,9 @@ def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, A
         # calculate stage speed for Cscan
         stageSpeed=YStepSize/1000/(len(AOwaveform)/Aline_frq) # unit: mm/s
         # generate stage control waveforms for one step
-        stagewaveform = GenStageWave(one_cycle_samples, stageSpeed)
+        stagewaveform = GenStageWave(one_cycle_samples, Aline_frq, stageSpeed)
         # append preclocks and postclocks
-        stagewaveform = np.append(np.zeros(preclocks), pow(2,0)*stagewaveform)
+        stagewaveform = np.append(np.zeros(preclocks), pow(2,CSCAN_AXIS)*stagewaveform)
         stagewaveform = np.append(stagewaveform, np.zeros(preclocks+postclocks))
         # add stagewaveform with trigger enable waveform for DOwaveform
         DOwaveform = DOwaveform + stagewaveform

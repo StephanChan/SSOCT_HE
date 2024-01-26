@@ -162,9 +162,7 @@ class GUI(MainWindow):
 
         self.ui.RunButton.clicked.connect(self.run_task)
         self.ui.PauseButton.clicked.connect(self.Pause_task)
-        self.ui.Xmove2.clicked.connect(self.Xmove2)
-        self.ui.Ymove2.clicked.connect(self.Ymove2)
-        self.ui.Zmove2.clicked.connect(self.Zmove2)
+        
         self.ui.CenterGalvo.clicked.connect(self.CenterGalvo)
         
         # change window length for FFT
@@ -177,6 +175,11 @@ class GUI(MainWindow):
         self.ui.Disp_DIR.textChanged.connect(self.update_Dispersion)
         
         self.ui.RedoDC.clicked.connect(self.redo_dispersion_compensation)
+        
+        self.ui.Xmove2.clicked.connect(self.Xmove2)
+        self.ui.Ymove2.clicked.connect(self.Ymove2)
+        self.ui.Zmove2.clicked.connect(self.Zmove2)
+        self.ui.InitStageButton.clicked.connect(self.InitStages)
         self.Init_allThreads()
         
     def Init_allThreads(self):
@@ -230,6 +233,9 @@ class GUI(MainWindow):
         else:
             self.Slice()
 
+    def InitStages(self):
+        an_action = AODOAction('Init')
+        AODOQueue.put(an_action)
         
     def Xmove2(self):
         an_action = AODOAction('Xmove2')

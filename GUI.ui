@@ -2717,35 +2717,22 @@ p, li { white-space: pre-wrap; }
         <widget class="QGroupBox" name="XstageBox">
          <property name="geometry">
           <rect>
-           <x>20</x>
-           <y>10</y>
-           <width>391</width>
+           <x>240</x>
+           <y>0</y>
+           <width>331</width>
            <height>181</height>
           </rect>
          </property>
          <property name="title">
           <string>Xstage</string>
          </property>
-         <widget class="QCheckBox" name="XInit">
-          <property name="geometry">
-           <rect>
-            <x>10</x>
-            <y>30</y>
-            <width>111</width>
-            <height>21</height>
-           </rect>
-          </property>
-          <property name="text">
-           <string>InitStage</string>
-          </property>
-         </widget>
          <widget class="QPushButton" name="XHome">
           <property name="geometry">
            <rect>
-            <x>10</x>
-            <y>60</y>
-            <width>61</width>
-            <height>41</height>
+            <x>20</x>
+            <y>30</y>
+            <width>71</width>
+            <height>51</height>
            </rect>
           </property>
           <property name="text">
@@ -2755,21 +2742,24 @@ p, li { white-space: pre-wrap; }
          <widget class="QDoubleSpinBox" name="XSpeed">
           <property name="geometry">
            <rect>
-            <x>10</x>
-            <y>130</y>
+            <x>20</x>
+            <y>110</y>
             <width>91</width>
             <height>41</height>
            </rect>
           </property>
+          <property name="maximum">
+           <double>8.000000000000000</double>
+          </property>
           <property name="value">
-           <double>10.000000000000000</double>
+           <double>5.000000000000000</double>
           </property>
          </widget>
          <widget class="QLabel" name="XSpeedlabel">
           <property name="geometry">
            <rect>
-            <x>10</x>
-            <y>110</y>
+            <x>20</x>
+            <y>90</y>
             <width>61</width>
             <height>21</height>
            </rect>
@@ -2800,11 +2790,14 @@ p, li { white-space: pre-wrap; }
             <height>41</height>
            </rect>
           </property>
+          <property name="minimum">
+           <double>5.000000000000000</double>
+          </property>
           <property name="maximum">
-           <double>150.000000000000000</double>
+           <double>145.000000000000000</double>
           </property>
           <property name="value">
-           <double>50.000000000000000</double>
+           <double>75.000000000000000</double>
           </property>
          </widget>
          <widget class="QLabel" name="XPositionLabel">
@@ -2824,35 +2817,22 @@ p, li { white-space: pre-wrap; }
         <widget class="QGroupBox" name="YstageBox">
          <property name="geometry">
           <rect>
-           <x>450</x>
-           <y>10</y>
-           <width>391</width>
+           <x>580</x>
+           <y>0</y>
+           <width>331</width>
            <height>181</height>
           </rect>
          </property>
          <property name="title">
           <string>Ystage</string>
          </property>
-         <widget class="QCheckBox" name="YInit">
-          <property name="geometry">
-           <rect>
-            <x>10</x>
-            <y>30</y>
-            <width>111</width>
-            <height>21</height>
-           </rect>
-          </property>
-          <property name="text">
-           <string>InitStage</string>
-          </property>
-         </widget>
          <widget class="QPushButton" name="YHome">
           <property name="geometry">
            <rect>
             <x>10</x>
-            <y>60</y>
-            <width>61</width>
-            <height>41</height>
+            <y>30</y>
+            <width>71</width>
+            <height>51</height>
            </rect>
           </property>
           <property name="text">
@@ -2863,20 +2843,26 @@ p, li { white-space: pre-wrap; }
           <property name="geometry">
            <rect>
             <x>10</x>
-            <y>130</y>
+            <y>110</y>
             <width>91</width>
             <height>41</height>
            </rect>
           </property>
+          <property name="minimum">
+           <double>0.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>8.000000000000000</double>
+          </property>
           <property name="value">
-           <double>10.000000000000000</double>
+           <double>5.000000000000000</double>
           </property>
          </widget>
          <widget class="QLabel" name="YSpeedlabel">
           <property name="geometry">
            <rect>
             <x>10</x>
-            <y>110</y>
+            <y>90</y>
             <width>61</width>
             <height>21</height>
            </rect>
@@ -2907,11 +2893,14 @@ p, li { white-space: pre-wrap; }
             <height>41</height>
            </rect>
           </property>
+          <property name="minimum">
+           <double>2.000000000000000</double>
+          </property>
           <property name="maximum">
-           <double>50.000000000000000</double>
+           <double>48.000000000000000</double>
           </property>
           <property name="value">
-           <double>20.000000000000000</double>
+           <double>25.000000000000000</double>
           </property>
          </widget>
          <widget class="QLabel" name="YPositionLabel">
@@ -2931,35 +2920,22 @@ p, li { white-space: pre-wrap; }
         <widget class="QGroupBox" name="ZstageBox">
          <property name="geometry">
           <rect>
-           <x>900</x>
-           <y>10</y>
-           <width>391</width>
+           <x>910</x>
+           <y>0</y>
+           <width>341</width>
            <height>181</height>
           </rect>
          </property>
          <property name="title">
           <string>Zstage</string>
          </property>
-         <widget class="QCheckBox" name="ZInit">
-          <property name="geometry">
-           <rect>
-            <x>10</x>
-            <y>40</y>
-            <width>111</width>
-            <height>21</height>
-           </rect>
-          </property>
-          <property name="text">
-           <string>InitStage</string>
-          </property>
-         </widget>
          <widget class="QPushButton" name="ZHome">
           <property name="geometry">
            <rect>
             <x>10</x>
-            <y>70</y>
-            <width>61</width>
-            <height>41</height>
+            <y>30</y>
+            <width>71</width>
+            <height>51</height>
            </rect>
           </property>
           <property name="text">
@@ -2970,20 +2946,26 @@ p, li { white-space: pre-wrap; }
           <property name="geometry">
            <rect>
             <x>10</x>
-            <y>140</y>
+            <y>110</y>
             <width>91</width>
             <height>41</height>
            </rect>
           </property>
+          <property name="minimum">
+           <double>0.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>8.000000000000000</double>
+          </property>
           <property name="value">
-           <double>5.000000000000000</double>
+           <double>2.500000000000000</double>
           </property>
          </widget>
          <widget class="QLabel" name="ZSpeedlabel">
           <property name="geometry">
            <rect>
             <x>10</x>
-            <y>120</y>
+            <y>90</y>
             <width>61</width>
             <height>21</height>
            </rect>
@@ -3017,11 +2999,14 @@ p, li { white-space: pre-wrap; }
           <property name="decimals">
            <number>3</number>
           </property>
+          <property name="minimum">
+           <double>2.000000000000000</double>
+          </property>
           <property name="maximum">
-           <double>50.000000000000000</double>
+           <double>48.000000000000000</double>
           </property>
           <property name="value">
-           <double>10.000000000000000</double>
+           <double>25.000000000000000</double>
           </property>
          </widget>
          <widget class="QLabel" name="ZPositionLabel">
@@ -3037,6 +3022,19 @@ p, li { white-space: pre-wrap; }
            <string>Position</string>
           </property>
          </widget>
+        </widget>
+        <widget class="QPushButton" name="InitStageButton">
+         <property name="geometry">
+          <rect>
+           <x>50</x>
+           <y>80</y>
+           <width>125</width>
+           <height>36</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Init Stages</string>
+         </property>
         </widget>
        </widget>
        <widget class="QWidget" name="Generaltab">

@@ -4,18 +4,24 @@ Created on Tue Dec 12 16:51:20 2023
 
 @author: admin
 """
+###########################################
+# 25000 steps per revolve
+global STEPS
+STEPS = 25000
+# 2mm per revolve
+global DISTANCE
+DISTANCE = 2
+global Galvo_bias
+Galvo_bias = 3
+###########################################
 from PyQt5.QtCore import  QThread
 import nidaqmx as ni
 from nidaqmx.constants import AcquisitionType as Atype
 from nidaqmx.constants import Edge
-# from nidaqmx.constants import RegenerationMode as Rmode
-# from nidaqmx.constants import Edge as Edge
-# from nidaqmx.errors import DaqWarning as warnings
 from Generaic_functions import GenAODO
 import time
 import traceback
-global Galvo_bias
-Galvo_bias = 3
+import numpy as np
 
 class AODOThread(QThread):
     def __init__(self):
@@ -24,6 +30,7 @@ class AODOThread(QThread):
         self.DOtask = None
     
     def run(self):
+        self.Init_Stages()
         self.QueueOut()
         
     def QueueOut(self):
@@ -31,15 +38,13 @@ class AODOThread(QThread):
         while self.item.action != 'exit':
             try:
                 if self.item.action == 'Xmove2':
-                    #print('X stage thread is doing ',self.item.action)
-                    self.ui.statusbar.showMessage('X stage moving to position: '+ str(self.ui.XPosition.value()))
+                    self.Move(axis = 'X')
                 elif self.item.action == 'Ymove2':
-                    #print('Y stage thread is doing ',self.item.action)
-                    self.ui.statusbar.showMessage('Y stage moving to position: '+ str(self.ui.YPosition.value()))
+                    self.Move(axis = 'Y')
                 elif self.item.action == 'Zmove2':
-                    #print('Z stage thread is doing ',self.item.action)
-                    self.ui.statusbar.showMessage('Z stage moving to position: '+ str(self.ui.ZPosition.value()))
-                    
+                    self.Move(axis = 'Z')
+                elif self.item.action == 'Init':
+                    self.Init_Stages()
                 elif self.item.action == 'ConfigAODO':
                     self.ui.statusbar.showMessage(self.ConfigAODO())
                 elif self.item.action == 'StartOnce':
@@ -62,6 +67,14 @@ class AODOThread(QThread):
             self.item = self.queue.get()
         print('AODO thread successfully exited')
 
+    def Init_Stages(self):
+        self.Xpos = self.ui.XPosition.value()
+        self.Ypos = self.ui.YPosition.value()
+        self.Zpos = self.ui.ZPosition.value()
+        # print('X pos: ',self.Xpos)
+        # print('Y pos: ',self.Ypos)
+        # print('Z pos: ',self.Zpos)
+        
     def ConfigAODO(self):
         if self.ui.Laser.currentText() == 'Axsun100k':
             self.Aline_freq = 100000
@@ -105,8 +118,8 @@ class AODOThread(QThread):
         self.AOtask.write(AOwaveform, auto_start = False)
         # Confiture Digital output task for stage control and digitizer trigger enabling
          
-        self.DOtask.do_channels.add_do_chan(lines='AODO/port0/line0:3')
-        if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline','RptCscan']:
+        self.DOtask.do_channels.add_do_chan(lines='AODO/port0/line0:7')
+        if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline']:
             self.DOtask.timing.cfg_samp_clk_timing(rate=self.Aline_freq, \
                                             source=self.ui.ClockTerm.toPlainText(), \
                                                 active_edge= Edge.FALLING,\
@@ -125,12 +138,20 @@ class AODOThread(QThread):
         return 'AODO configuration success'
             
     def StartOnce(self):
+        if self.ui.ACQMode.currentText() in ['SingleCscan', 'SurfScan', 'SurfScan+Slice']:
+            settingtask = ni.Task('setting')
+            settingtask.do_channels.add_do_chan(lines='AODO/port2/line0:7')
+            settingtask.write(8 + 1 + 16, auto_start = True)
         self.DOtask.start()
         self.AOtask.start()
         # try:
         self.AOtask.wait_until_done(timeout = 60)
         self.AOtask.stop()
         self.DOtask.stop()
+        if self.ui.ACQMode.currentText() in ['SingleCscan', 'SurfScan', 'SurfScan+Slice']:
+            settingtask.write(1+4+16, auto_start = True)
+            settingtask.stop()
+            settingtask.close()
         # except:
 
         # print('AODO write task done')
@@ -170,3 +191,66 @@ class AODOThread(QThread):
             DOtask.write(0, auto_start = True)
             # AOtask.close()
             
+    def Move(self, axis = 'X'):
+        ###########################
+        # you can only move one axis at a time
+        ###########################
+        # X axis use port 2 line 0-1 for enable and direction, use port 0 line 0 for steps
+        # Y axis use port 2 line 2-3 for enable and direction, use port 0 line 1 for steps
+        # Z axis use port 2 line 4-5 for enable and direction, use port 0 line 2 for steps
+        # enable low enables, enable high disables
+        Xdisable = 1
+        Ydisable = 4
+        Zdisable = 16
+        direction = 0
+        if axis == 'X':
+            line = 1
+            speed = self.ui.XSpeed.value()
+            distance = self.ui.XPosition.value()-self.Xpos
+            if distance > 0:
+                direction = 2
+            enable = Ydisable + Zdisable
+        elif axis == 'Y':
+            line = 2
+            speed = self.ui.YSpeed.value()
+            distance = self.ui.YPosition.value()-self.Ypos
+            if distance > 0:
+                direction = 8
+            enable = Xdisable + Zdisable
+        elif axis == 'Z':
+            line = 4
+            speed = self.ui.ZSpeed.value()
+            distance = self.ui.ZPosition.value()-self.Zpos
+            if distance < 0:
+                direction = 32
+            enable = Xdisable + Ydisable
+            
+        if np.abs(distance) < 0.001:
+            return
+        with ni.Task('Move task') as DOtask, ni.Task('setting') as settingtask:
+            settingtask.do_channels.add_do_chan(lines='AODO/port2/line0:7')
+            settingtask.write(direction + enable, auto_start = True)
+            DOwaveform = np.ones([np.uint32(STEPS//DISTANCE*np.abs(distance)), 2],dtype = np.uint32)*line
+            DOwaveform[:,1] = 0
+            DOwaveform=DOwaveform.flatten()
+            DOtask.do_channels.add_do_chan(lines='AODO/port0/line0:7')
+            DOtask.timing.cfg_samp_clk_timing(rate=STEPS*2//DISTANCE*speed, \
+                                              active_edge= Edge.FALLING,\
+                                              sample_mode=Atype.FINITE,samps_per_chan=len(DOwaveform))
+            DOtask.write(DOwaveform, auto_start = True)
+            
+            DOtask.wait_until_done(timeout =60)
+                
+            DOtask.stop()
+            settingtask.write(Xdisable + Ydisable + Zdisable, auto_start = True)
+            settingtask.stop()
+            
+        if axis == 'X':
+            self.Xpos = self.Xpos+distance
+            self.ui.XPosition.setValue(self.Xpos)
+        elif axis == 'Y':
+            self.Ypos = self.Ypos+distance
+            self.ui.YPosition.setValue(self.Ypos)
+        elif axis == 'Z':
+            self.Zpos = self.Zpos+distance
+            self.ui.ZPosition.setValue(self.Zpos)
