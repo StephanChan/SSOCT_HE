@@ -68,7 +68,7 @@ class MainWindow(QMainWindow):
         self.ui.Save.stateChanged.connect(self.chooseDir)
         self.ui.LoadDispersion.clicked.connect(self.chooseCompenstaion)
         self.ui.LoadBG.clicked.connect(self.chooseBackground)
-        
+        self.ui.ConfigButton.clicked.connect(self.LoadConfig)
 
     def chooseDir(self):
         if self.ui.Save.isChecked():
@@ -81,7 +81,24 @@ class MainWindow(QMainWindow):
                  print("\n取消选择")
                  return
              self.ui.DIR.setText(dir_choose)
-         
+             
+    def LoadConfig(self):
+        fileName_choose, filetype = QFileDialog.getOpenFileName(self,  
+                                   "选取文件",  
+                                   os.getcwd(), # 起始路径 
+                                   "All Files (*);;Text Files (*.txt)")   # 设置文件扩展名过滤,用双分号间隔
+
+        if fileName_choose == "":
+           print("\n取消选择")
+           return
+        settings = qc.QSettings(fileName_choose, qc.QSettings.IniFormat)
+        
+        try:
+            self.load_settings(settings)
+        except Exception as error:
+            print('settings reload failed, using default settings')
+            print(traceback.format_exc())
+        
     def chooseCompenstaion(self):
          fileName_choose, filetype = QFileDialog.getOpenFileName(self,  
                                     "选取文件",  
