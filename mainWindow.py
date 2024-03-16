@@ -12,21 +12,23 @@ import PyQt5.QtCore as qc
 import numpy as np
 from Actions import *
 from Generaic_functions import *
+import traceback
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.Update_laser()
-        self.update_galvoXwaveform()
-        self.update_Mosaic()
         settings = qc.QSettings("config.ini", qc.QSettings.IniFormat)
         
         try:
             self.load_settings(settings)
-        except:
-            pass
+        except Exception as error:
+            print('settings reload failed, using default settings')
+            print(traceback.format_exc())
+        self.Update_laser()
+        self.update_galvoXwaveform()
+        self.update_Mosaic()
         self.connectActions()
         
     def connectActions(self):
@@ -59,24 +61,26 @@ class MainWindow(QMainWindow):
         self.ui.SliceZnumber.valueChanged.connect(self.Calculate_SliceDepth)
         # change brigtness and contrast
         # self.ui.ACQMode.currentIndexChanged.connect(self.Adjust_contrast)
-        self.ui.FFTDevice.currentIndexChanged.connect(self.Update_scale)
+        # self.ui.FFTDevice.currentIndexChanged.connect(self.Update_scale)
 
         # update laser model
         self.ui.Laser.currentIndexChanged.connect(self.Update_laser)
-        self.ui.LOG.currentIndexChanged.connect(self.Update_scale)
         self.ui.Save.stateChanged.connect(self.chooseDir)
         self.ui.LoadDispersion.clicked.connect(self.chooseCompenstaion)
+        self.ui.LoadBG.clicked.connect(self.chooseBackground)
         
 
     def chooseDir(self):
-         dir_choose = QFileDialog.getExistingDirectory(self,  
-                                     "选取文件夹",  
-                                     os.getcwd()) # 起始路径
-    
-         if dir_choose == "":
-             print("\n取消选择")
-             return
-         self.ui.DIR.setText(dir_choose)
+        if self.ui.Save.isChecked():
+            
+             dir_choose = QFileDialog.getExistingDirectory(self,  
+                                         "选取文件夹",  
+                                         os.getcwd()) # 起始路径
+        
+             if dir_choose == "":
+                 print("\n取消选择")
+                 return
+             self.ui.DIR.setText(dir_choose)
          
     def chooseCompenstaion(self):
          fileName_choose, filetype = QFileDialog.getOpenFileName(self,  
@@ -89,8 +93,20 @@ class MainWindow(QMainWindow):
             return
 
          self.ui.Disp_DIR.setText(fileName_choose)
-         self.update_Dispersion()
+         # self.update_Dispersion()
         
+    def chooseBackground(self):
+        fileName_choose, filetype = QFileDialog.getOpenFileName(self,  
+                                   "选取文件",  
+                                   os.getcwd(), # 起始路径 
+                                   "All Files (*);;Text Files (*.txt)")   # 设置文件扩展名过滤,用双分号间隔
+
+        if fileName_choose == "":
+           print("\n取消选择")
+           return
+
+        self.ui.BG_DIR.setText(fileName_choose)
+        # self.update_background()
         
     def update_galvoXwaveform(self):
         # calculate the total X range
@@ -110,7 +126,8 @@ class MainWindow(QMainWindow):
                                                  postclocks = self.ui.PostClock.value())
         # show generating waveform result
         #print(self.Xwaveform)
-        self.ui.statusbar.showMessage(status)
+        current_message = self.ui.statusbar.currentMessage()
+        self.ui.statusbar.showMessage(current_message+status)
         if len(AOwaveform) > 0:
             pixmap = LinePlot(AOwaveform, DOwaveform)
             # clear content on the waveformLabel
@@ -182,53 +199,41 @@ class MainWindow(QMainWindow):
         else:
             self.ui.statusbar.showMessage('Laser invalid!!!')
     
-    def Update_scale(self):
-        if self.ui.LOG.currentText() == '10log10':
-            self.ui.MinContrast.setValue(-50)
-            self.ui.MinContrast.setSingleStep(1)
-            self.ui.MaxContrast.setValue(-20)
-            self.ui.MaxContrast.setSingleStep(1)
-        else:
-            if self.ui.FFTDevice.currentText() == 'None':
-                self.ui.MinContrast.setValue(0)
-                self.ui.MinContrast.setSingleStep(0.1)
-                self.ui.MaxContrast.setValue(1)
-                self.ui.MaxContrast.setSingleStep(0.1)
-            else:
-                self.ui.MinContrast.setValue(0)
-                self.ui.MinContrast.setSingleStep(0.001)
-                self.ui.MaxContrast.setValue(0.01)
-                self.ui.MaxContrast.setSingleStep(0.001)
     
     def load_settings(self,settings):
         self.ui.FFTresults.setCurrentText(settings.value("FFTresults"))
         self.ui.Objective.setCurrentText(settings.value("Objective"))
-        self.ui.Xsteps.setValue(settings.value('Xsteps'))
-        self.ui.XStepSize.setValue(settings.value('XStepSize'))
-        self.ui.XBias.setValue(settings.value('XBias'))
-        self.ui.AlineAVG.setValue(settings.value('AlineAVG'))
-        self.ui.Ysteps.setValue(settings.value('Ysteps'))
-        self.ui.YStepSize.setValue(settings.value('YStepSize'))
-        self.ui.BlineAVG.setValue(settings.value('BlineAVG'))
-        self.ui.DepthStart.setValue(settings.value('DepthStart'))
-        self.ui.DepthRange.setValue(settings.value('DepthRange'))
-        self.ui.PreClock.setValue(settings.value('PreClock'))
-        self.ui.PostClock.setValue(settings.value('PostClock'))
-        self.ui.XStart.setValue(settings.value('XStart'))
-        self.ui.XStop.setValue(settings.value('XStop'))
-        self.ui.YStart.setValue(settings.value('YStart'))
-        self.ui.YStop.setValue(settings.value('YStop'))
-        self.ui.Overlap.setValue(settings.value('Overlap'))
-        self.ui.ImageZStart.setValue(settings.value('ImageZStart'))
-        self.ui.ImageZDepth.setValue(settings.value('ImageZDepth'))
-        self.ui.ImageZnumber.setValue(settings.value('ImageZnumber'))
-        self.ui.SliceZStart.setValue(settings.value('SliceZStart'))
-        self.ui.SliceZDepth.setValue(settings.value('SliceZDepth'))
-        self.ui.SliceZnumber.setValue(settings.value('SliceZnumber'))
-        self.ui.PostSamples_2.setValue(settings.value('PostSamples_2'))
-        self.ui.TrigDura.setValue(settings.value('TrigDura'))
-        self.ui.TriggerTimeout_2.setValue(settings.value('TriggerTimeout_2'))
+        self.ui.Xsteps.setValue(np.int16(settings.value('Xsteps')))
+        self.ui.XStepSize.setValue(np.float32(settings.value('XStepSize')))
+        self.ui.XBias.setValue(np.float32(settings.value('XBias')))
+        self.ui.AlineAVG.setValue(np.int16(settings.value('AlineAVG')))
+        self.ui.Ysteps.setValue(np.int16(settings.value('Ysteps')))
+        self.ui.YStepSize.setValue(np.float32(settings.value('YStepSize')))
+        self.ui.BlineAVG.setValue(np.int16(settings.value('BlineAVG')))
+        self.ui.DepthStart.setValue(np.int16(settings.value('DepthStart')))
+        self.ui.DepthRange.setValue(np.int16(settings.value('DepthRange')))
+        self.ui.PreClock.setValue(np.int16(settings.value('PreClock')))
+        self.ui.PostClock.setValue(np.int16(settings.value('PostClock')))
+        self.ui.XStart.setValue(np.float32(settings.value('XStart')))
+        self.ui.XStop.setValue(np.float32(settings.value('XStop')))
+        self.ui.YStart.setValue(np.float32(settings.value('YStart')))
+        self.ui.YStop.setValue(np.float32(settings.value('YStop')))
+        self.ui.Overlap.setValue(np.float32(settings.value('Overlap')))
+        self.ui.ImageZStart.setValue(np.float32(settings.value('ImageZStart')))
+        self.ui.ImageZDepth.setValue(np.float32(settings.value('ImageZDepth')))
+        self.ui.ImageZnumber.setValue(np.int16(settings.value('ImageZnumber')))
+        self.ui.SliceZStart.setValue(np.float32(settings.value('SliceZStart')))
+        self.ui.SliceZDepth.setValue(np.float32(settings.value('SliceZDepth')))
+        self.ui.SliceZnumber.setValue(np.int16(settings.value('SliceZnumber')))
+        self.ui.PostSamples_2.setValue(np.int16(settings.value('PostSamples_2')))
+        self.ui.TrigDura.setValue(np.int16(settings.value('TrigDura')))
+        self.ui.TriggerTimeout_2.setValue(np.int16(settings.value('TriggerTimeout_2')))
         self.ui.Disp_DIR.setText(settings.value('Disp_DIR'))
+        self.ui.DelaySamples.setValue(np.int16(settings.value('DelaySamples')))
+        self.ui.XPosition.setValue(np.float32(settings.value('XPosition')))
+        self.ui.YPosition.setValue(np.float32(settings.value('YPosition')))
+        self.ui.ZPosition.setValue(np.float32(settings.value('ZPosition')))
+        self.ui.BG_DIR.setText(settings.value('BG_DIR'))
         
     def save_settings(self,settings):
         settings.setValue("FFTresults",self.ui.FFTresults.currentText())
@@ -258,7 +263,12 @@ class MainWindow(QMainWindow):
         settings.setValue("PostSamples_2",self.ui.PostSamples_2.value())
         settings.setValue("TrigDura",self.ui.TrigDura.value())
         settings.setValue("TriggerTimeout_2",self.ui.TriggerTimeout_2.value())
-        settings.setValue("Disp_DIR",self.ui.Disp_DIR.toPlainText())
+        settings.setValue("Disp_DIR",self.ui.Disp_DIR.text())
+        settings.setValue("DelaySamples",self.ui.DelaySamples.value())
+        settings.setValue("XPosition",self.ui.XPosition.value())
+        settings.setValue("YPosition",self.ui.YPosition.value())
+        settings.setValue("ZPosition",self.ui.ZPosition.value())
+        settings.setValue("BG_DIR",self.ui.BG_DIR.text())
         
 
         

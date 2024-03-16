@@ -22,7 +22,7 @@ class ART8912():
 
         
     def ConfigureBoard(self):
-        taskName = "ART8912"  # 设备名 DMC管理器里面的名称
+        taskName = "ART8912M"  # 设备名 DMC管理器里面的名称
         self.taskHandle = lib_importer.task_handle(0)                # 设备句柄
         #创建任务
         error_code = Functions.ArtScope_init(taskName, self.taskHandle)

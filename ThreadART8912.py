@@ -49,13 +49,13 @@ class ART8912(QThread):
                 else:
                     self.ui.statusbar.showMessage('Digitizer thread is doing something invalid: '+self.item.action)
             except Exception as error:
-                print("\nAn error occurred:", error,' skip the Digitizer action\n')
+                self.ui.statusbar.showMessage("\nAn error occurred:"+" skip the Digitizer action\n")
                 print(traceback.format_exc())
             self.item = self.queue.get()
-        print(self.exit_message)
+        self.ui.statusbar.showMessage(self.exit_message)
         
     def ConfigureBoard(self):
-        taskName = "ART8912"  # 设备名 DMC管理器里面的名称
+        taskName = "ART8912M"  # 设备名 DMC管理器里面的名称
         self.taskHandle = lib_importer.task_handle(0)                # 设备句柄
         #创建任务
         error_code = Functions.ArtScope_init(taskName, self.taskHandle)
@@ -146,7 +146,7 @@ class ART8912(QThread):
         #当读取的数据长度大于此长度时，实际读取的个数是实际采样长度
         actualRecordLength = ctypes.c_uint32(0)                  # 返回的实际每通道采集数据长度
         error_code = Functions.ArtScope_ActualRecordLength(self.taskHandle, actualRecordLength)
-        print('actual samples: ', actualRecordLength.value)
+        # print('actual samples: ', actualRecordLength.value)
         if error_code < 0:
             Functions.ArtScope_Close(self.taskHandle)
             check_for_error(error_code)
@@ -160,7 +160,7 @@ class ART8912(QThread):
             self.usefulLength = 10 * actualRecordLength.value * numWfms.value
         else:
             AlinesPerBline = self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2+self.ui.PostClock.value()
-            self.usefulLength = (self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()) * actualRecordLength.value * numWfms.value
+            self.usefulLength = (self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2) * actualRecordLength.value * numWfms.value
                 
         
         self.sumLength = actualRecordLength.value * AlinesPerBline * numWfms.value
@@ -179,10 +179,10 @@ class ART8912(QThread):
                  self.Memory[ii]=np.zeros([self.NBlines, self.usefulLength], dtype = np.uint16)
                  
         self.MemoryLoc = 0
-        print('configure ART8912 success\n')
+        # print('configure ART8912 success\n')
         
     def StartAcquire(self):
-
+        num = 1
         timeout = self.ui.TriggerTimeout_2.value()              # 数据读取超时时间 单位：s
         readLength = self.sumLength                         # 数据读取长度
         usefulLength = self.usefulLength
@@ -214,15 +214,18 @@ class ART8912(QThread):
             blinesCompleted+=1
             
             if blinesCompleted % NACQ ==0:
-                # print('sending data back')
+                # print('sending data back', num)
+                num+=1
                 an_action = DbackAction(self.MemoryLoc)
                 self.DbackQueue.put(an_action)
                 self.MemoryLoc = (self.MemoryLoc+1) % self.memoryCount
-
             # get stop commend from BONE thread
             try:
                 self.StopDQueue.get(timeout=0.001)
-                print('\nsuccessfully caught that stop signal for Digitizer\n')
+                current_message = self.ui.statusbar.currentMessage()
+                self.ui.statusbar.showMessage(current_message+'successfully stopped Digitizer...')
+                self.CloseTask()
+                print( num, ' data packages returned by digitizer\n')
                 break
             except:
                 pass

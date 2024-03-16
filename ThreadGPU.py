@@ -11,6 +11,9 @@ import numpy as np
 from Actions import DnSAction
 import os
 import traceback
+# signal amplification
+global AMPLIFICATION
+AMPLIFICATION = 5000
 
 class GPUThread(QThread):
     def __init__(self):
@@ -26,9 +29,11 @@ class GPUThread(QThread):
             'complex64 z',
             'z=x*y',
             'winfunc')
+        self.FFT_actions = 0 # count how many FFT actions have taken place
         
     def run(self):
         self.update_Dispersion()
+        self.update_background()
         # self.update_FFTlength()
         self.QueueOut()
         
@@ -39,42 +44,47 @@ class GPUThread(QThread):
             try:
                 if self.item.action == 'GPU':
                     self.cudaFFT(self.item.mode, self.item.memoryLoc, self.item.args)
-                    
+                    self.FFT_actions += 1
                 elif self.item.action == 'CPU':
                     self.cpuFFT(self.item.mode, self.item.memoryLoc, self.item.args)
+                    self.FFT_actions += 1
                 elif self.item.action == 'update_Dispersion':
                     self.update_Dispersion()
+                elif self.item.action == 'update_background':
+                    self.update_background()
+                elif self.item.action == 'display_FFT_actions':
+                    self.display_FFT_actions()
                 else:
                     self.ui.statusbar.showMessage('GPU thread is doing something invalid '+self.item.action)
                 if time.time()-start > 1:
                     print('an FFT action took ',time.time()-start,' seconds\n')
             except Exception as error:
-                print("An error occurred:", error,' skip the FFT action\n')
+                self.ui.statusbar.showMessage("An error occurred:"+" skip the FFT action\n")
                 print(traceback.format_exc())
             self.item = self.queue.get()
-        print(self.exit_message)
+        self.ui.statusbar.showMessage(self.exit_message)
 
     def cudaFFT(self, mode, memoryLoc, args):
         # get samples per Aline
         if self.Digitizer == 'ATS9351':
             samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
         elif self.Digitizer == 'ART8912':
-            samples = self.ui.PostSamples_2.value()
+            samples = self.ui.PostSamples_2.value()# - self.ui.DelaySamples.value()
         # get depth pixels after FFT
         Pixel_start = self.ui.DepthStart.value()
         Pixel_range = self.ui.DepthRange.value()
+        # print(Pixel_start, Pixel_range)
         # copy data from global memory
-        data_CPU = self.Memory[memoryLoc].copy()
+        data_CPU = np.float32(self.Memory[memoryLoc].copy())
         # reshape data as [Alines, Samples]
         Alines =np.uint32((data_CPU.shape[1])/samples) * data_CPU.shape[0]
         data_CPU=data_CPU.reshape([Alines, samples])
         # rescale data to [0,1] range
-        if self.Digitizer == 'ATS9351':
-            data_CPU=np.float32(data_CPU/65535-0.5)
-        elif self.Digitizer == 'ART8912':
-            data_CPU=np.float32(data_CPU/4095-0.5)
-        
+        if self.Digitizer == 'ART8912':
+            data_CPU = data_CPU[:,self.ui.DelaySamples.value():]-self.background
+            samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()
         fftAxis = 1
+
         # # zero-padding data before FFT
         # if data_CPU.shape[1] != self.length_FFT:
         #     data_padded = np.zeros([Alines, self.length_FFT], dtype = np.float32)
@@ -88,18 +98,13 @@ class GPUThread(QThread):
         dispersion_GPU = cupy.array(self.dispersion)
         # window function and dispersion compensation
         data_GPU = self.winfunc(data_GPU, dispersion_GPU)
-        
-        ############### debug dispersion compensation
-        # data_CPU = cupy.asnumpy(data_GPU)
-        # tmp = 
-        
-        
+
         # FFT
         data_GPU = cupy.fft.fft(data_GPU, axis=fftAxis)/samples
         # calculate absolute value and only keep depth range specified
         data_GPU = cupy.absolute(data_GPU[:,Pixel_start:Pixel_start+Pixel_range])
         # transfer data back to computer
-        data_CPU = cupy.asnumpy(data_GPU)
+        data_CPU = cupy.asnumpy(data_GPU)*AMPLIFICATION
 
         # print('FFT took ',time.time()-start,' seconds\n')
         # data_CPU = data_CPU.reshape([shape[0],Pixel_range * np.uint32(Alines/shape[0])])
@@ -146,28 +151,46 @@ class GPUThread(QThread):
         if self.Digitizer == 'ATS9351':
             samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
         elif self.Digitizer == 'ART8912':
-            samples = self.ui.PostSamples_2.value()
+            samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()
         # print('GPU dispersion samples: ',samples)
             
         self.window = np.float32(np.hanning(samples))
         # update dispersion and window
-        dispersion_path = self.ui.Disp_DIR.toPlainText()
+        dispersion_path = self.ui.Disp_DIR.text()
         # print(dispersion_path)
+        current_message = self.ui.statusbar.currentMessage()
         if os.path.isfile(dispersion_path):
             self.dispersion = np.float32(np.fromfile(dispersion_path, dtype=np.float32))
             self.dispersion = np.complex64(np.exp(1j*self.dispersion))
-            print('using disperison compensation\n')
+            
+            self.ui.statusbar.showMessage(current_message+"load disperison compensation success...", 1000)
         else:
             self.dispersion = np.complex64(np.ones(samples))
-            print('using no disperison compensation\n')
+            self.ui.statusbar.showMessage('no disperison compensation...')
         if len(self.window) == len(self.dispersion):
             self.dispersion = np.complex64(self.dispersion * self.window)
         else:
-            print('dispersion length unmatch current sample size, using no dispersion compensation\n')
+            self.ui.statusbar.showMessage('dispersion length unmatch current sample size, using no dispersion compensation...')
             self.dispersion = np.complex64(np.ones(samples))
             self.dispersion = np.complex64(self.dispersion * self.window)
         self.dispersion = self.dispersion.reshape([1,len(self.dispersion)])
         
+    def update_background(self):
+        if self.Digitizer == 'ATS9351':
+            samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
+        elif self.Digitizer == 'ART8912':
+            samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()
+
+        background_path = self.ui.BG_DIR.text()
+
+        if os.path.isfile(background_path):
+            self.background = np.fromfile(background_path, dtype=np.float32)
+            current_message = self.ui.statusbar.currentMessage()
+            self.ui.statusbar.showMessage(current_message+"load background success...",1000)
+        else:
+            current_message = self.ui.statusbar.currentMessage()
+            self.ui.statusbar.showMessage('using 2048 as background...')
+            self.background = np.float32(np.ones(samples)*2048)
         
     def update_FFTlength(self):
         self.length_FFT = 2
@@ -177,3 +200,7 @@ class GPUThread(QThread):
             samples = self.ui.PostSamples_2.value()
         while self.length_FFT < samples:
             self.length_FFT *=2
+
+    def display_FFT_actions(self):
+        print( self.FFT_actions, ' FFT actions taken place\n')
+        self.FFT_actions = 0

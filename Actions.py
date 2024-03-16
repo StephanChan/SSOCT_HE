@@ -9,9 +9,10 @@ Created on Tue Dec 12 16:43:51 2023
 import numpy as np
 
 class AODOAction():
-    def __init__(self, action):
+    def __init__(self, action, direction = 1):
         super().__init__()
         self.action=action
+        self.direction = direction
 
         
 

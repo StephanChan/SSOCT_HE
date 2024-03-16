@@ -47,6 +47,7 @@ Digitizer = 'ART8912'
 # init all Queues as global variable
 # for any queue, you can do queue-in at multiple places, but you can only do queue-out at one place
 global AODOQueue # AODO stands for analog output and digital output
+global StagebackQueue # stage finish moving report queue
 global WeaverQueue # King of all threads, gives command to other threads
 global DnSQueue # DnS stands for display and save
 global PauseQueue 
@@ -56,6 +57,7 @@ global DbackQueue # Dback stands for digitizer respond back, digitizer respond b
 global StopDQueue # StopD stands for stop digitizer, for stopping digitizer in continuous acquisition
 
 AODOQueue = Queue()
+StagebackQueue = Queue()
 WeaverQueue = Queue()
 DnSQueue = Queue()
 PauseQueue = Queue()
@@ -100,6 +102,7 @@ if Digitizer == 'ATS9351':
             self.queue = WeaverQueue
             self.DnSQueue = DnSQueue
             self.AODOQueue = AODOQueue
+            self.StagebackQueue = StagebackQueue
             self.PauseQueue = PauseQueue
             self.StopDQueue = StopDQueue
             self.DbackQueue = DbackQueue
@@ -131,6 +134,7 @@ elif Digitizer == 'ART8912':
             self.queue = WeaverQueue
             self.DnSQueue = DnSQueue
             self.AODOQueue = AODOQueue
+            self.StagebackQueue = StagebackQueue
             self.PauseQueue = PauseQueue
             self.StopDQueue = StopDQueue
             self.DbackQueue = DbackQueue
@@ -145,6 +149,7 @@ class AODOThread_2(AODOThread):
         self.ui = ui
         self.queue = AODOQueue
         self.Digitizer = Digitizer
+        self.StagebackQueue = StagebackQueue
 
 # wrap Display and save thread with queue        
 from ThreadDnS import DnSThread
@@ -169,13 +174,19 @@ class GUI(MainWindow):
         self.ui.PostSamples.valueChanged.connect(self.update_Dispersion)
         self.ui.PreSamples.valueChanged.connect(self.update_Dispersion)
         self.ui.PostSamples_2.valueChanged.connect(self.update_Dispersion)
+        self.ui.DelaySamples.valueChanged.connect(self.update_Dispersion)
         
-        self.ui.MaxContrast.valueChanged.connect(self.Update_contrast)
-        self.ui.MinContrast.valueChanged.connect(self.Update_contrast)
-        self.ui.Disp_DIR.textChanged.connect(self.update_Dispersion)
+        self.ui.XYmax.valueChanged.connect(self.Update_contrast_XY)
+        self.ui.XYmin.valueChanged.connect(self.Update_contrast_XY)
+        self.ui.XYZmax.valueChanged.connect(self.Update_contrast_XYZ)
+        self.ui.XYZmin.valueChanged.connect(self.Update_contrast_XYZ)
+        self.ui.Surfmax.valueChanged.connect(self.Update_contrast_Surf)
+        self.ui.Surfmin.valueChanged.connect(self.Update_contrast_Surf)
         
         self.ui.RedoDC.clicked.connect(self.redo_dispersion_compensation)
-        
+        self.ui.redoBG.clicked.connect(self.redo_background)
+        self.ui.BG_DIR.textChanged.connect(self.update_background)
+        self.ui.Disp_DIR.textChanged.connect(self.update_Dispersion)
         self.ui.Xmove2.clicked.connect(self.Xmove2)
         self.ui.Ymove2.clicked.connect(self.Ymove2)
         self.ui.Zmove2.clicked.connect(self.Zmove2)
@@ -223,13 +234,18 @@ class GUI(MainWindow):
                 an_action = WeaverAction(self.ui.ACQMode.currentText())
                 WeaverQueue.put(an_action)
             else:
+                # time.sleep(0.5)
                 self.ui.RunButton.setText('Run')
                 self.Stop_task()
+                
+                # self.CenterGalvo()
         elif self.ui.ACQMode.currentText() in ['SingleAline','SingleBline','SingleCscan']:
             an_action = WeaverAction(self.ui.ACQMode.currentText())
             WeaverQueue.put(an_action)
+            # time.sleep(0.5)
             self.ui.RunButton.setChecked(False)
             self.ui.RunButton.setText('Run')
+            # self.CenterGalvo()
         else:
             self.Slice()
 
@@ -240,14 +256,17 @@ class GUI(MainWindow):
     def Xmove2(self):
         an_action = AODOAction('Xmove2')
         AODOQueue.put(an_action)
+        StagebackQueue.get()
         
     def Ymove2(self):
         an_action = AODOAction('Ymove2')
         AODOQueue.put(an_action)
+        StagebackQueue.get()
         
     def Zmove2(self):
         an_action = AODOAction('Zmove2')
         AODOQueue.put(an_action)
+        StagebackQueue.get()
         
     def CenterGalvo(self):
         an_action = AODOAction('centergalvo')
@@ -269,11 +288,24 @@ class GUI(MainWindow):
         an_action = GPUAction('update_Dispersion')
         GPUQueue.put(an_action)
         
-    def Update_contrast(self):
+    def update_background(self):
+        an_action = GPUAction('update_background')
+        GPUQueue.put(an_action)
+        
+    def Update_contrast_XY(self):
         if not self.ui.RunButton.isChecked():
-            an_action = DnSAction('UpdateContrast')
+            an_action = DnSAction('UpdateContrastXY')
+            DnSQueue.put(an_action)
+
+    def Update_contrast_XYZ(self):
+        if not self.ui.RunButton.isChecked():
+            an_action = DnSAction('UpdateContrastXYZ')
             DnSQueue.put(an_action)
             
+    def Update_contrast_Surf(self):
+        an_action = DnSAction('UpdateContrastSurf')
+        DnSQueue.put(an_action)
+        
     def redo_dispersion_compensation(self):
         mode = self.ui.ACQMode.currentText()
         device = self.ui.FFTDevice.currentText()
@@ -284,7 +316,28 @@ class GUI(MainWindow):
         time.sleep(3)
         an_action = DnSAction('dispersionCompensation')
         DnSQueue.put(an_action)
+        # time.sleep(3)
+        # self.update_Dispersion()
+        self.ui.ACQMode.setCurrentText(mode)
+        
+        self.ui.FFTDevice.setCurrentText(device)
             
+    def redo_background(self):
+        mode = self.ui.ACQMode.currentText()
+        device = self.ui.FFTDevice.currentText()
+        self.ui.ACQMode.setCurrentText('SingleBline')
+        self.ui.FFTDevice.setCurrentText('None')
+        an_action = WeaverAction(self.ui.ACQMode.currentText())
+        WeaverQueue.put(an_action)
+        time.sleep(3)
+        an_action = DnSAction('getBackground')
+        DnSQueue.put(an_action)
+        # time.sleep(3)
+        # self.update_Dispersion()
+        self.ui.ACQMode.setCurrentText(mode)
+        
+        self.ui.FFTDevice.setCurrentText(device)
+    
     def closeEvent(self, event):
         self.ui.statusbar.showMessage('Exiting all threads')
         self.Stop_allThreads()

@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """
 Created on Tue Dec 12 18:26:44 2023
@@ -10,7 +11,10 @@ from Generaic_functions import LinePlot, ImagePlot
 import numpy as np
 import traceback
 global SCALE
-SCALE =0.2
+SCALE =65535
+import matplotlib.pyplot as plt
+from scipy.signal import hilbert
+import datetime
 
 class DnSThread(QThread):
     def __init__(self):
@@ -21,11 +25,13 @@ class DnSThread(QThread):
         self.BlineNum = 1
         self.CscanNum = 1
         self.totalTiles = 0
+        self.display_actions = 0
         
     def run(self):
         self.QueueOut()
         
     def QueueOut(self):
+        num = 0
         self.item = self.queue.get()
         while self.item.action != 'exit':
             #self.ui.statusbar.showMessage('Display thread is doing ' + self.item.action)
@@ -36,6 +42,7 @@ class DnSThread(QThread):
                 
                 elif self.item.action in ['SingleBline','RptBline']:
                     self.Display_bline(self.item.data, self.item.raw)
+                    self.display_actions += 1
                     
                 elif self.item.action in ['SingleCscan','RptCscan']:
                     self.Display_Cscan(self.item.data, self.item.raw)
@@ -44,20 +51,35 @@ class DnSThread(QThread):
                 
                 elif self.item.action == 'Clear':
                     self.surf = []
-                elif self.item.action == 'UpdateContrast':
-                    self.Update_contrast()
+                elif self.item.action == 'UpdateContrastXY':
+                    self.Update_contrast_XY()
+                elif self.item.action == 'UpdateContrastXYZ':
+                    self.Update_contrast_XYZ()
+                elif self.item.action == 'UpdateContrastSurf':
+                    self.Update_contrast_Surf()
                 elif self.item.action == 'dispersionCompensation':
                     self.dispersion_compensation()
+                elif self.item.action == 'getBackground':
+                    self.getBackground()
+                elif self.item.action == 'display_counts':
+                    self.print_display_counts()
                     
                 else:
+                    
                     self.ui.statusbar.showMessage('Display and save thread is doing something invalid' + self.item.action)
             except Exception as error:
-                print("\nAn error occurred:", error,' skip the display and save action\n')
+                self.ui.statusbar.showMessage("\nAn error occurred:"+" skip the display and save action\n")
                 print(traceback.format_exc())
+            num+=1
+            # print(num, 'th display\n')
             self.item = self.queue.get()
-        print('Display and save Thread successfully exited')
+        current_message = self.ui.statusbar.currentMessage()
+        self.ui.statusbar.showMessage(current_message+"Display and save Thread successfully exited...")
             
-
+    def print_display_counts(self):
+        print( self.display_actions, ' Blines displayed\n')
+        self.display_actions = 0
+        
     def Display_aline(self, data, raw = False):
         #data = ctypes.cast(data_address, ctypes.py_object).value 
         # TODO: make sure fft is shifted
@@ -67,30 +89,27 @@ class DnSThread(QThread):
         else:
             if self.Digitizer == 'ATS9351':
                 Zpixels = self.ui.PreSamples.value()+self.ui.PostSamples.value()
-                data = np.float32(data/pow(2,16))
+                # data = np.float32(data/pow(2,16))
             elif self.Digitizer == 'ART8912':
                 Zpixels = self.ui.PostSamples_2.value()
-                data = np.float32(data/pow(2,12))
+                # data = np.float32(data/pow(2,12))
         Xpixels = 10
         Yrpt = self.ui.BlineAVG.value()
         data = data.reshape([Yrpt,Xpixels,Zpixels])
         # data in original state
+        if self.Digitizer == 'ART8912' and raw:
+            Zpixels = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()
+            data = data[:,:,self.ui.DelaySamples.value():]
         self.Aline = data
         
         data = np.float32(np.mean(data,0))
         data = data[1,:]
-        # data = data.reshape(Xpixels*Zpixels)
-        # print(data.shape)
-        # print(data)
-        # check if displaying in log scale
-        if self.ui.LOG.currentText() == '10log10':
-            data=np.float32(10*np.log10(data+0.000001))
         # float32 data type
-        pixmap = LinePlot(data, [], self.ui.MinContrast.value(), self.ui.MaxContrast.value())
+        pixmap = LinePlot(data, [], self.ui.XYmin.value(), self.ui.XYmax.value())
         # clear content on the waveformLabel
-        self.ui.XYplane.clear()
+        self.ui.XZplane.clear()
         # update iamge on the waveformLabel
-        self.ui.XYplane.setPixmap(pixmap)
+        self.ui.XZplane.setPixmap(pixmap)
     
     def Display_bline(self, data, raw = False):
         if not raw:
@@ -98,33 +117,33 @@ class DnSThread(QThread):
         else:
             if self.Digitizer == 'ATS9351':
                 Zpixels = self.ui.PreSamples.value()+self.ui.PostSamples.value()
-                data = np.float32(data/pow(2,16))
+                # data = np.float32(data/pow(2,16))
             elif self.Digitizer == 'ART8912':
                 Zpixels = self.ui.PostSamples_2.value()
-                data = np.float32(data/pow(2,12))
+                # data = np.float32(data/pow(2,12))
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         if self.Digitizer == 'ART8912':
-            Xpixels = Xpixels + self.ui.PreClock.value()
+            Xpixels = Xpixels + self.ui.PreClock.value()*2
         Yrpt = self.ui.BlineAVG.value()
         
         data = data.reshape([Yrpt,Xpixels,Zpixels])
+        if self.Digitizer == 'ART8912' and raw:
+            Zpixels = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()
+            data = data[:,:,self.ui.DelaySamples.value():]
         # data in original state
         self.Bline = data
         data = np.float32(np.mean(data,0))
         data = np.transpose(data).copy()
-        # data = np.flip(data, 1).copy()
-        if self.ui.LOG.currentText() == '10log10':
-            data=np.float32(10*np.log10(data+0.000001))
 
-        pixmap = ImagePlot(data, self.ui.MinContrast.value(), self.ui.MaxContrast.value())
+        pixmap = ImagePlot(data, self.ui.XYmin.value(), self.ui.XYmax.value())
         # clear content on the waveformLabel
-        self.ui.XYplane.clear()
+        self.ui.XZplane.clear()
         # update iamge on the waveformLabel
-        self.ui.XYplane.setPixmap(pixmap)
+        self.ui.XZplane.setPixmap(pixmap)
         
         if self.ui.Save.isChecked():
             if raw:
-                data = np.uint16(self.Bline*65535)
+                data = np.uint16(self.Bline)
             else:
                 data = np.uint16(self.Bline/SCALE*65535)
             self.WriteData(data, self.BlineFilename([Yrpt,Xpixels,Zpixels]))
@@ -135,49 +154,41 @@ class DnSThread(QThread):
         else:
             if self.Digitizer == 'ATS9351':
                 Zpixels = self.ui.PreSamples.value()+self.ui.PostSamples.value()
-                data = np.float32(data/pow(2,16))
+                # data = np.float32(data/pow(2,16))
             elif self.Digitizer == 'ART8912':
                 Zpixels = self.ui.PostSamples_2.value()
-                data = np.float32(data/pow(2,12))
+                # data = np.float32(data/pow(2,12))
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         if self.Digitizer == 'ART8912':
-            Xpixels = Xpixels + self.ui.PreClock.value()
+            Xpixels = Xpixels + self.ui.PreClock.value()*2
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
         data = data.reshape([Ypixels,Xpixels,Zpixels])
+        if self.Digitizer == 'ART8912' and raw:
+            Zpixels = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()
+            data = data[:,:,self.ui.DelaySamples.value():]
         # data in original state
         self.Cscan = data
-        
-        if self.ui.LOG.currentText() == '10log10':
-            data=np.float32(10*np.log10(data+0.000001))
 
-        plane = (data[:,1,:]).copy()
-        pixmap = ImagePlot(plane, self.ui.MinContrast.value(), self.ui.MaxContrast.value())
-        # clear content on the waveformLabel
-        self.ui.YZplane.clear()
-        # update iamge on the waveformLabel
-        self.ui.YZplane.setPixmap(pixmap)
-        
-        plane = np.transpose(data[1,:,:]).copy()
-        pixmap = ImagePlot(plane, self.ui.MinContrast.value(), self.ui.MaxContrast.value())
+        plane = np.transpose(data[0,:,:]).copy()# has to be first index, otherwise the memory space is not continuous
+        pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
         # clear content on the waveformLabel
         self.ui.XZplane.clear()
-        # update iamge on the waveformLabel
+        # update image on the waveformLabel
         self.ui.XZplane.setPixmap(pixmap)
         
-        #data = ctypes.cast(data_address, ctypes.py_object).value 
         plane = np.mean(data,2)# has to be first index, otherwise the memory space is not continuous
-        pixmap = ImagePlot(plane, self.ui.MinContrast.value(), self.ui.MaxContrast.value()/4)
+        pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
         # clear content on the waveformLabel
         self.ui.XYplane.clear()
         # update image on the waveformLabel
         self.ui.XYplane.setPixmap(pixmap)
-        
+        #TODO: Qgraphicsview display 3D interactive image
         if self.ui.Save.isChecked():
             if raw:
-                data = np.uint16(self.Cscan*65535)
+                data = np.uint16(self.Cscan)
             else:
                 data = np.uint16(self.Cscan/SCALE*65535)
-            self.WriteData(self.Cscan, self.CscanFilename([Ypixels,Xpixels,Zpixels]))
+            self.WriteData(data, self.CscanFilename([Ypixels,Xpixels,Zpixels]))
 
         
     def Display_SurfScan(self, data, raw = False, args = []):
@@ -186,113 +197,118 @@ class DnSThread(QThread):
         else:
             if self.Digitizer == 'ATS9351':
                 Zpixels = self.ui.PreSamples.value()+self.ui.PostSamples.value()
-                data = np.float32(data/pow(2,16))
+                # data = np.float32(data/pow(2,16))
             elif self.Digitizer == 'ART8912':
                 Zpixels = self.ui.PostSamples_2.value()
-                data = np.float32(data/pow(2,12))
+                # data = np.float32(data/pow(2,12))
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         if self.Digitizer == 'ART8912':
-            Xpixels = Xpixels + self.ui.PreClock.value()
+            Xpixels = Xpixels + self.ui.PreClock.value()*2
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
         data = data.reshape([Ypixels,Xpixels,Zpixels])
-        self.Cscan = data
-        if self.ui.LOG.currentText() == '10log10':
-            data=np.float32(10*np.log10(data+0.000001))
-
-        plane = (data[:,1,:]).copy()
-        pixmap = ImagePlot(plane, self.ui.MinContrast.value(), self.ui.MaxContrast.value())
-        # clear content on the waveformLabel
-        self.ui.YZplane.clear()
-        # update iamge on the waveformLabel
-        self.ui.YZplane.setPixmap(pixmap)
         
-        plane = np.transpose(data[1,:,:]).copy()
-        pixmap = ImagePlot(plane, self.ui.MinContrast.value(), self.ui.MaxContrast.value())
+        if self.Digitizer == 'ART8912' and raw:
+            Zpixels = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()
+            data = data[:,:,self.ui.DelaySamples.value():]
+        
+        #######################################
+        # for even strips, need to flip data in Y dimension because scanning was in backward direction
+        surfX = args[1][0]
+        surfY = np.int32(args[1][1]/args[1][0])
+        fileY = args[0][1]-1
+        if np.mod(fileY,2) == 0:
+            fileX = args[0][0]
+        else:
+            fileX = surfX - args[0][0]-1
+            
+        if np.mod(fileY,2)==1:
+            data = np.flip(data,0)
+        #######################################
+        
+        self.Cscan = data
+        
+        plane = np.transpose(data[0,:,:]).copy()# has to be first index, otherwise the memory space is not continuous
+        pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
         # clear content on the waveformLabel
         self.ui.XZplane.clear()
-        # update iamge on the waveformLabel
+        # update image on the waveformLabel
         self.ui.XZplane.setPixmap(pixmap)
         
-        #data = ctypes.cast(data_address, ctypes.py_object).value 
         plane = np.mean(data,2)
-        pixmap = ImagePlot(plane, self.ui.MinContrast.value(), self.ui.MaxContrast.value()/4)
+        pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
         # clear content on the waveformLabel
         self.ui.XYplane.clear()
         # update iamge on the waveformLabel
         self.ui.XYplane.setPixmap(pixmap)
         
-        fileX = args[0][0]
-        fileY = args[0][1]-1
-        surfX = args[1][0]
-        surfY = np.int32(args[1][1]/args[1][0])
+        scale = 2
+
+        
+        
         self.totalTiles = args[1][1]
-        Xpixels = np.uint16(Xpixels/20)
-        Ypixels = np.uint16(Ypixels/20)
         if not np.any(self.surf):
-            self.surf = np.zeros([ surfX*Ypixels,surfY*Xpixels],dtype = np.float32)
-            
-        self.surf[Ypixels*fileX:Ypixels*(fileX+1),Xpixels*fileY:Xpixels*(fileY+1)] = np.resize(plane,[Ypixels,Xpixels])
-        pixmap = ImagePlot(self.surf, self.ui.MinContrast.value(), self.ui.MaxContrast.value()/10)
+            self.surf = np.zeros([ surfX*Ypixels//scale,surfY*Xpixels//scale],dtype = np.float32)
+        
+        self.surf[Ypixels//scale*fileX:Ypixels//scale*(fileX+1),Xpixels//scale*fileY:Xpixels//scale*(fileY+1)] = plane[::scale,::scale]
+        pixmap = ImagePlot(self.surf, self.ui.Surfmin.value(), self.ui.Surfmax.value())
         # clear content on the waveformLabel
         self.ui.SampleMosaic.clear()
         # update iamge on the waveformLabel
         self.ui.SampleMosaic.setPixmap(pixmap)
         if self.ui.Save.isChecked():
             if raw:
-                data = np.uint16(self.Cscan*65535)
+                data = np.uint16(self.Cscan)
             else:
                 data = np.uint16(self.Cscan/SCALE*65535)
-            self.WriteData(self.Cscan, self.SurfFilename([Ypixels*20,Xpixels*20,Zpixels]))
+            self.WriteData(data, self.SurfFilename([Ypixels,Xpixels,Zpixels]))
 
             
-    def Update_contrast(self):
+    def Update_contrast_XY(self):
         if self.ui.ACQMode.currentText() in ['SingleAline', 'RptAline']:
             data = np.float32(np.mean(self.Aline,0))
             data = data[0,:]
-            if self.ui.LOG.currentText() == '10log10':
-                data=10*np.log10(data+0.000001)
-            pixmap = LinePlot(data, [], self.ui.MinContrast.value(), self.ui.MaxContrast.value())
-            # clear content on the waveformLabel
-            self.ui.XYplane.clear()
-            # update iamge on the waveformLabel
-            self.ui.XYplane.setPixmap(pixmap)
-        elif self.ui.ACQMode.currentText() in ['SingleBline', 'RptBline']:
-            data = np.float32(np.mean(self.Bline,0))
-            data = np.transpose(data).copy()
-            # data = np.flip(data, 1).copy()
-            if self.ui.LOG.currentText() == '10log10':
-                data=np.float32(10*np.log10(data+0.000001))
-            pixmap = ImagePlot(data, self.ui.MinContrast.value(), self.ui.MaxContrast.value())
-            # clear content on the waveformLabel
-            self.ui.XYplane.clear()
-            # update iamge on the waveformLabel
-            self.ui.XYplane.setPixmap(pixmap)
-        elif self.ui.ACQMode.currentText() in ['SurfScan','SurfScan+Slice', 'SingleCscan']:
-            if self.ui.LOG.currentText() == '10log10':
-                data=10*np.log10(self.Cscan+0.000001)
-            else:
-                data = self.Cscan
-            plane = (data[:,1,:]).copy()
-            pixmap = ImagePlot(plane, self.ui.MinContrast.value(), self.ui.MaxContrast.value())
-            # clear content on the waveformLabel
-            self.ui.YZplane.clear()
-            # update iamge on the waveformLabel
-            self.ui.YZplane.setPixmap(pixmap)
-            
-            plane = np.transpose(data[1,:,:]).copy()
-            pixmap = ImagePlot(plane, self.ui.MinContrast.value(), self.ui.MaxContrast.value())
+            # if self.ui.LOG.currentText() == '10log10':
+            #     data=10*np.log10(data+0.000001)
+            pixmap = LinePlot(data, [], self.ui.XYmin.value(), self.ui.XYmax.value())
             # clear content on the waveformLabel
             self.ui.XZplane.clear()
             # update iamge on the waveformLabel
             self.ui.XZplane.setPixmap(pixmap)
+        elif self.ui.ACQMode.currentText() in ['SingleBline', 'RptBline']:
+            data = np.float32(np.mean(self.Bline,0))
+            data = np.transpose(data).copy()
+            # data = np.flip(data, 1).copy()
+            # if self.ui.LOG.currentText() == '10log10':
+            #     data=np.float32(10*np.log10(data+0.000001))
+            pixmap = ImagePlot(data, self.ui.XYmin.value(), self.ui.XYmax.value())
+            # clear content on the waveformLabel
+            self.ui.XZplane.clear()
+            # update iamge on the waveformLabel
+            self.ui.XZplane.setPixmap(pixmap)
+        elif self.ui.ACQMode.currentText() in ['SurfScan','SurfScan+Slice', 'SingleCscan']:
+            data = self.Cscan
             
-            #data = ctypes.cast(data_address, ctypes.py_object).value 
+            plane = np.transpose(data[0,:,:]).copy()# has to be first index, otherwise the memory space is not continuous
+            pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
+            # clear content on the waveformLabel
+            self.ui.XZplane.clear()
+            # update image on the waveformLabel
+            self.ui.XZplane.setPixmap(pixmap)
+            
             plane = np.mean(data,2)# has to be first index, otherwise the memory space is not continuous
-            pixmap = ImagePlot(plane, self.ui.MinContrast.value(), self.ui.MaxContrast.value()/4)
+            pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value()/4)
             # clear content on the waveformLabel
             self.ui.XYplane.clear()
             # update image on the waveformLabel
             self.ui.XYplane.setPixmap(pixmap)
+            
+    def Update_contrast_Surf(self):
+        
+        pixmap = ImagePlot(self.surf, self.ui.Surfmin.value(), self.ui.Surfmax.value())
+        # clear content on the waveformLabel
+        self.ui.SampleMosaic.clear()
+        # update iamge on the waveformLabel
+        self.ui.SampleMosaic.setPixmap(pixmap)
             
             
     def SurfFilename(self, shape):
@@ -328,38 +344,50 @@ class DnSThread(QThread):
         
     def dispersion_compensation(self):
         S = self.Aline.shape
-        ALINE = self.Aline.reshape([S[0]*S[1],S[2]])-0.5
-
-        Aline = ALINE[0,:]
+        # print(S)
+        ALINE = self.Aline.reshape([S[0]*S[1],S[2]])
+        Aline = np.float32(ALINE[0,:])-2048
+        plt.figure()
+        plt.plot(np.abs(Aline))
+        
         L=len(Aline)
         fR=np.fft.fft(Aline)/L # FFT of interference signal
-        import matplotlib.pyplot as plt
-        # plt.figure()
-        # plt.plot(range(L),np.abs(fR))
-        z = np.argmax(np.abs(fR[20:L//2-20]))
-        low_position = max(10,z-100)
-        high_position = min(L//2,z+100)
+
+        plt.figure()
+        plt.plot(np.abs(fR[20:]))
+        
+        z = np.argmax(np.abs(fR[50:300]))+50
+        low_position = max(10,z-75)
+        high_position = min(L//2,z+75)
+
         fR[0:low_position]=0
         fR[high_position:L-high_position]=0
-        fR[L-low_position:-1]=0
+        fR[L-low_position:]=0
+        
+        plt.figure()
+        plt.plot(np.abs(fR))
         
         Aline = np.fft.ifft(fR)
-        from scipy.signal import hilbert
+
         hR=hilbert(np.real(Aline))
         hR_phi=np.unwrap(np.angle(hR))
         
         phi_delta=np.linspace(hR_phi[0],hR_phi[L-1],L)
         phi_diff=np.float32(phi_delta-hR_phi)
         ALINE = ALINE*np.exp(1j*phi_diff)
- 
-        fR = np.fft.fft(ALINE, axis=1)/L
+        
+        plt.figure()
+        plt.plot(phi_diff)
+        # plt.figure()
+        print('max phase difference is: ',np.max(np.abs(phi_diff)))
+        # fR = np.fft.fft(ALINE, axis=1)/L
 
-        fR = np.abs(fR[:,self.ui.DepthStart.value():self.ui.DepthStart.value()+self.ui.DepthRange.value()])
-        self.ui.MaxContrast.setValue(0.1)
-        self.Display_aline(fR, raw = False)
+        # fR = np.abs(fR[:,self.ui.DepthStart.value():self.ui.DepthStart.value()+self.ui.DepthRange.value()])
+        # # self.ui.MaxContrast.setValue(0.1)
+        # self.Display_aline(fR, raw = False)
         
         filePath = self.ui.DIR.toPlainText()
-        import datetime
+
         current_time = datetime.datetime.now()
         filePath = filePath + "/" + 'dispersion_compensation_'+\
             str(current_time.year)+'-'+\
@@ -371,6 +399,23 @@ class DnSThread(QThread):
         fp = open(filePath, 'wb')
         phi_diff.tofile(fp)
         fp.close()
-        
+        print('dispersion compensasion success\n')
         self.ui.Disp_DIR.setText(filePath)
         
+    def getBackground(self):
+        background = np.float32(np.mean(self.Bline,1))
+        
+        filePath = self.ui.DIR.toPlainText()
+        current_time = datetime.datetime.now()
+        filePath = filePath + "/" + 'background_'+\
+            str(current_time.year)+'-'+\
+            str(current_time.month)+'-'+\
+            str(current_time.day)+'-'+\
+            str(current_time.hour)+'-'+\
+            str(current_time.minute)+\
+            '.bin'
+        fp = open(filePath, 'wb')
+        background.tofile(fp)
+        fp.close()
+        print('background measruement success\n')
+        self.ui.BG_DIR.setText(filePath)
