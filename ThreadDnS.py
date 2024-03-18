@@ -182,14 +182,17 @@ class DnSThread(QThread):
         self.ui.XYplane.clear()
         # update image on the waveformLabel
         self.ui.XYplane.setPixmap(pixmap)
-        #TODO: Qgraphicsview display 3D interactive image
+        ###################### plot 3D visulaization
+        self.ui.mayavi_widget.visualization.update_data(self.Cscan/500)
         if self.ui.Save.isChecked():
             if raw:
                 data = np.uint16(self.Cscan)
             else:
                 data = np.uint16(self.Cscan/SCALE*65535)
             self.WriteData(data, self.CscanFilename([Ypixels,Xpixels,Zpixels]))
-
+        
+        
+        
         
     def Display_SurfScan(self, data, raw = False, args = []):
         if not raw:
@@ -243,7 +246,8 @@ class DnSThread(QThread):
         
         scale = 2
 
-        
+        ###################### plot 3D visulaization
+        self.ui.mayavi_widget.visualization.update_data(self.Cscan/500)
         
         self.totalTiles = args[1][1]
         if not np.any(self.surf):
@@ -310,7 +314,9 @@ class DnSThread(QThread):
         # update iamge on the waveformLabel
         self.ui.SampleMosaic.setPixmap(pixmap)
             
-            
+    def Update_contrast_XYZ(self):
+        self.ui.mayavi_widget.visualization.update_contrast(self.ui.XYZmin.value(), self.ui.XYZmax.value())
+        
     def SurfFilename(self, shape):
         if self.tileNum <= self.totalTiles:
             filename = 'slice-'+str(self.sliceNum)+'-tile-'+str(self.tileNum)+'-Y'+str(shape[0])+'-X'+str(shape[1])+'-Z'+str(shape[2])+'.bin'

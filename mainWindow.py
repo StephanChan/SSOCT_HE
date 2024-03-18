@@ -7,18 +7,98 @@ Created on Tue Dec 12 16:35:04 2023
 
 from GUI import Ui_MainWindow
 import os
-from PyQt5.QtWidgets import  QMainWindow, QFileDialog
+from PyQt5.QtWidgets import  QMainWindow, QFileDialog, QWidget, QVBoxLayout
 import PyQt5.QtCore as qc
 import numpy as np
 from Actions import *
 from Generaic_functions import *
 import traceback
 
+try:
+    from traits.api import HasTraits, Instance, on_trait_change
+    from traitsui.api import View, Item
+    from mayavi.core.ui.api import MayaviScene, MlabSceneModel, \
+            SceneEditor
+    from mayavi import mlab 
+    print('using maya for 3D visulizaiton')
+    maya_installed = True
+except:
+    print('maya import failed, no 3D visulization')
+    maya_installed = False
+
+if maya_installed:
+    class Visualization(HasTraits):
+        scene = Instance(MlabSceneModel, ())
+        def __init__(self, data):
+            HasTraits.__init__(self)
+            self.data = data
+            
+        def update_contrast(self, low, high):
+            pass
+            # calculate data according to low and high
+            # self.plot.mlab_source.scalars = data-low+1000-high
+            # M=np.max(self.plot.mlab_source.scalars)
+            # self.plot.current_range=(low,M*high/1000)
+            # # print(low, high)
+            # print(self.plot.current_range)
+            
+        def update_data(self, data):
+            self.plot.mlab_source.scalars = data
+            # print(data.shape)
+            # print(self.plot.current_range)
+            # print(np.max(self.plot.mlab_source.scalars))
+            # print(data[1,1,:])
+            self.plot.current_range=(2, self.plot.current_range[1]*0.1)
+            # print(self.plot.current_range)
+            
+        @on_trait_change('scene.activated')
+        def inital_plot(self):
+            self.plot = mlab.pipeline.volume(mlab.pipeline.scalar_field(self.data))
+            self.scene.background=(0,0,0)
+            # print(self.plot.current_range)
+            # self.plot.lut_manager.lut_mode = 'grey'
+            # a=self.plot.lut_manager
+            # print(self.plot.mlab_source.all_trait_names())
+            # print(self.plot.all_trait_names())
+
+        # the layout of the dialog screated
+        view = View(Item('scene', editor=SceneEditor(scene_class=MayaviScene),
+                          height=250, width=300, show_label=False),
+                    resizable=True # We need this to resize with the parent widget
+                    )
+        
+    # The QWidget containing the visualization, this is pure PyQt4 code.
+    class MayaviQWidget(QWidget):
+        def __init__(self, data = None):
+            super().__init__()
+            
+            data = np.random.random((200,1000,300))
+            self.visualization = Visualization(data)
+            layout = QVBoxLayout(self)
+            # layout.setContentsMargins(0,0,0,0)
+            # layout.setSpacing(0)
+            # The edit_traits call will generate the widget to embed.
+            self.ui = self.visualization.edit_traits(parent=self,
+                                                      kind='subpanel').control
+            layout.addWidget(self.ui)
+            # self.setLayout(layout)
+            # self.ui.setParent(self)
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        if maya_installed:
+            self.ui.mayavi_widget = MayaviQWidget()
+            self.ui.mayavi_widget.setMinimumSize(qc.QSize(100, 100))
+            self.ui.mayavi_widget.setMaximumSize(qc.QSize(600, 600))
+            self.ui.mayavi_widget.setObjectName("XYZView")
+            
+            # self.ui.verticalLayout_2.removeWidget(self.ui.tmp_label)
+            # self.ui.verticalLayout_2.addWidget(self.ui.mayavi_widget)
+            self.ui.verticalLayout_2.replaceWidget(self.ui.tmp_label, self.ui.mayavi_widget)
+        #################### load configuration settings
         settings = qc.QSettings("config.ini", qc.QSettings.IniFormat)
         
         try:
@@ -69,6 +149,7 @@ class MainWindow(QMainWindow):
         self.ui.LoadDispersion.clicked.connect(self.chooseCompenstaion)
         self.ui.LoadBG.clicked.connect(self.chooseBackground)
         self.ui.ConfigButton.clicked.connect(self.LoadConfig)
+
 
     def chooseDir(self):
         if self.ui.Save.isChecked():
