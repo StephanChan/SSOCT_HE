@@ -75,13 +75,13 @@ class GPUThread(QThread):
         Pixel_range = self.ui.DepthRange.value()
         # print(Pixel_start, Pixel_range)
         # copy data from global memory
-        data_CPU = np.float32(self.Memory[memoryLoc].copy())
+        self.data_CPU = np.float32(self.Memory[memoryLoc].copy())
         # reshape data as [Alines, Samples]
-        Alines =np.uint32((data_CPU.shape[1])/samples) * data_CPU.shape[0]
-        data_CPU=data_CPU.reshape([Alines, samples])
+        Alines =np.uint32((self.data_CPU.shape[1])/samples) * self.data_CPU.shape[0]
+        self.data_CPU=self.data_CPU.reshape([Alines, samples])
         # rescale data to [0,1] range
         if self.Digitizer == 'ART8912':
-            data_CPU = data_CPU[:,self.ui.DelaySamples.value():]-self.background
+            self.data_CPU = self.data_CPU[:,self.ui.DelaySamples.value():]-self.background
             samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()
         fftAxis = 1
 
@@ -94,7 +94,7 @@ class GPUThread(QThread):
         #     data_padded = data_CPU
         # start = time.time()
         # transfer data to GPU
-        data_GPU  = cupy.array(data_CPU)
+        data_GPU  = cupy.array(self.data_CPU)
         dispersion_GPU = cupy.array(self.dispersion)
         # window function and dispersion compensation
         data_GPU = self.winfunc(data_GPU, dispersion_GPU)
@@ -104,14 +104,17 @@ class GPUThread(QThread):
         # calculate absolute value and only keep depth range specified
         data_GPU = cupy.absolute(data_GPU[:,Pixel_start:Pixel_start+Pixel_range])
         # transfer data back to computer
-        data_CPU = cupy.asnumpy(data_GPU)*AMPLIFICATION
+        self.data_CPU = cupy.asnumpy(data_GPU)*AMPLIFICATION
 
         # print('FFT took ',time.time()-start,' seconds\n')
         # data_CPU = data_CPU.reshape([shape[0],Pixel_range * np.uint32(Alines/shape[0])])
         # display and save data, data type is float32
-        an_action = DnSAction(mode, data = data_CPU, args = args) # data in Memory[memoryLoc]
+        an_action = DnSAction(mode, data = self.data_CPU, args = args) # data in Memory[memoryLoc]
         self.DnSQueue.put(an_action)
-            
+        if self.ui.Gotozero.isChecked():
+            self.GPU2weaverQueue.put(self.data_CPU)
+        
+        
         
     def cpuFFT(self, mode, memoryLoc, args):
 
@@ -204,3 +207,5 @@ class GPUThread(QThread):
     def display_FFT_actions(self):
         print( self.FFT_actions, ' FFT actions taken place\n')
         self.FFT_actions = 0
+        
+   

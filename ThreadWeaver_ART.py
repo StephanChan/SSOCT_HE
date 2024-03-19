@@ -14,7 +14,13 @@ from Generaic_functions import *
 from Actions import DnSAction, AODOAction, GPUAction, DAction
 import traceback
 
-       
+import matplotlib.pyplot as plt
+from scipy.signal import hilbert
+import datetime
+
+global ZPIXELSIZE
+ZPIXELSIZE = 3 # um, axial pixel size
+
 class WeaverThread(QThread):
     def __init__(self):
         super().__init__()
@@ -44,6 +50,14 @@ class WeaverThread(QThread):
                     
                 elif self.item.action == 'SurfScan+Slice':
                     self.ui.statusbar.showMessage(self.SurfSlice())
+                elif self.item.action == 'Gotozero':
+                    self.ui.statusbar.showMessage(self.Gotozero())
+                elif self.item.action == 'ZstageRepeatibility':
+                    self.ui.statusbar.showMessage(self.ZstageRepeatibility())
+                elif self.item.action == 'dispersion_compensation':
+                    self.ui.statusbar.showMessage(self.dispersion_compensation())
+                elif self.item.action == 'get_background':
+                    self.ui.statusbar.showMessage(self.get_background())
                 else:
                     self.ui.statusbar.showMessage('King thread is doing something invalid: '+self.item.action)
             except Exception as error:
@@ -77,18 +91,18 @@ class WeaverThread(QThread):
         ############################################### display and save data
         if self.ui.FFTDevice.currentText() in ['None']:
             # In None mode, directly do display and save
-            data = self.Memory[memoryLoc].copy()
-            an_action = DnSAction(mode, data, raw=True) # data in Memory[memoryLoc]
+            self.data = self.Memory[memoryLoc].copy()
+            an_action = DnSAction(mode, self.data, raw=True) # data in Memory[memoryLoc]
             self.DnSQueue.put(an_action)
             
         elif self.ui.FFTDevice.currentText() in ['Alazar']:
             # in Alazar mode, directly do display and save
-            data = self.Memory[memoryLoc].copy()
+            self.data = self.Memory[memoryLoc].copy()
             # TODO: fix this
             # samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
             # Alines =np.uint32((data.shape[1])/samples) * data.shape[0]
             # data=data.reshape([Alines, samples])
-            an_action = DnSAction(mode, data) # data in Memory[memoryLoc]
+            an_action = DnSAction(mode, self.data) # data in Memory[memoryLoc]
             self.DnSQueue.put(an_action)
         else:
             # In other modes, do FFT first
@@ -350,12 +364,240 @@ class WeaverThread(QThread):
         self.ui.RunButton.setChecked(False)
         self.ui.RunButton.setText('Run')
         
+    def Gotozero(self):
+        mode = self.ui.ACQMode.currentText()
+        device = self.ui.FFTDevice.currentText()
+        self.ui.ACQMode.setCurrentText('SingleAline')
+        self.ui.FFTDevice.setCurrentText('GPU')
+        # where I want the glass signal be at
+        target_depth = self.ui.KnownDepth.value()
+        
+        self.ui.ZPosition.setValue(self.ui.defineZero.value())
+        an_action = AODOAction('Zmove2')
+        self.AODOQueue.put(an_action)
+        self.StagebackQueue.get()
 
+        self.ui.XPosition.setValue(30)
+        an_action = AODOAction('Xmove2')
+        self.AODOQueue.put(an_action)
+        self.StagebackQueue.get()
 
+        self.ui.YPosition.setValue(30)
+        an_action = AODOAction('Ymove2')
+        self.AODOQueue.put(an_action)
+        self.StagebackQueue.get()
         
 
+        z=0
+        total_distance = 0
+        while np.abs(z-target_depth) > 17 and self.ui.Gotozero.isChecked() and np.abs(total_distance)<0.5:
+            self.SingleScan('SingleAline')
+            data =self.GPU2weaverQueue.get()
 
+            Aline = data[0, 0: self.ui.DepthRange.value()]
+
+            # get start depth of finding peak
+            if self.ui.DepthStart.value() < 20:
+                start_depth = 20-self.ui.DepthStart.value()
+            else:
+                start_depth = 0
+            # get end depth of finding peak
+            if self.ui.DepthRange.value() < 280:
+                end_depth = self.ui.DepthRange.value()
+            else:
+                end_depth = 280
+            # peak depth starting from pixel 0 of FFT
+            z = np.argmax(Aline[start_depth:end_depth])+start_depth+self.ui.DepthStart.value()
+            m = np.max(Aline[start_depth:end_depth])
+            if m < 1:
+                print('did not find any peak within imaging depth, abort...')
+                break
+            print('find peak at : ', z, ' pixel,', np.abs(z-target_depth),' pixels away')
+            if z > target_depth and np.abs(z-target_depth)>10: # this means glass is at lower position
+                distance = (z-target_depth) * ZPIXELSIZE/1000
+                total_distance += distance
+                # move Z stage up by half this distance
+                self.ui.ZPosition.setValue(self.ui.ZPosition.value()+distance)
+                an_action = AODOAction('Zmove2')
+                self.AODOQueue.put(an_action)
+                self.StagebackQueue.get()
+            elif z < target_depth and np.abs(z-target_depth)>10:  # this means glass is at higher position
+                distance = (z-target_depth) * ZPIXELSIZE/1000
+                total_distance += distance
+                # move Z stage down by double this distance
+                self.ui.ZPosition.setValue(self.ui.ZPosition.value()+distance)
+                an_action = AODOAction('Zmove2')
+                self.AODOQueue.put(an_action)
+                self.StagebackQueue.get()
+            else:
+                break
         
+        if np.abs(total_distance) > 0.5:
+            message='total distance > 0.5mm, something is wrong...'
+        elif not self.ui.Gotozero.isChecked():
+            message='gotozero abored by user...'
+        else:
+            message = 'gotozero success...'
+            
+        self.ui.Gotozero.setChecked(False)
+        self.ui.ZPosition.setValue(self.ui.defineZero.value())
+        an_action = AODOAction('Init')
+        self.AODOQueue.put(an_action)
+        self.ui.ACQMode.setCurrentText(mode)
+        self.ui.FFTDevice.setCurrentText(device)
+        return message
+        
+    def ZstageRepeatibility(self):
+        mode = self.ui.ACQMode.currentText()
+        device = self.ui.FFTDevice.currentText()
+        self.ui.ACQMode.setCurrentText('SingleAline')
+        self.ui.FFTDevice.setCurrentText('GPU')
+        self.ui.ZstageTest.setChecked(True)
+        current_position = self.ui.ZPosition.value()
+        iteration = 5
+        for i in range(iteration):
+            # measure ALine
+            self.SingleScan('SingleAline')
+            time.sleep(1)
+            # print('waiting for dispaly done')
+            # try:
+            #     DnSbackQueue.get(timeout = 3)
+            # except:
+            #     pass
+            # move Z stage down
+            self.ui.ZPosition.setValue(13)
+            an_action = AODOAction('Zmove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            
+            self.ui.ZPosition.setValue(8)
+            an_action = AODOAction('Zmove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            
+            self.ui.ZPosition.setValue(5)
+            an_action = AODOAction('Zmove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            
+            self.ui.ZPosition.setValue(3)
+            an_action = AODOAction('Zmove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            
+            # move Z stage up
+            self.ui.ZPosition.setValue(current_position)
+            an_action = AODOAction('Zmove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            
+        self.ui.ZstageTest.setChecked(False)
+        # self.weaverBackQueue.put(0)
+        self.ui.ACQMode.setCurrentText(mode)
+        self.ui.FFTDevice.setCurrentText(device)
 
+    def dispersion_compensation(self):
+        mode = self.ui.ACQMode.currentText()
+        device = self.ui.FFTDevice.currentText()
+        self.ui.ACQMode.setCurrentText('SingleAline')
+        self.ui.FFTDevice.setCurrentText('None')
+        ############################# measure an Aline
+        self.SingleScan('SingleAline')
+        time.sleep(1.5)
+        #################################################################### do dispersion compenstation
+        Xpixels = 10
+        Yrpt = self.ui.BlineAVG.value()
+        ALINE = self.data.reshape([Xpixels*Yrpt,self.ui.PostSamples_2.value()])
+        ALINE = ALINE[:,self.ui.DelaySamples.value():]
+        Aline = np.float32(ALINE[0,:])-2048
 
+        plt.figure()
+        plt.plot(np.abs(Aline))
+        
+        L=len(Aline)
+        fR=np.fft.fft(Aline)/L # FFT of interference signal
 
+        plt.figure()
+        plt.plot(np.abs(fR[20:]))
+        
+        z = np.argmax(np.abs(fR[50:300]))+50
+        low_position = max(10,z-75)
+        high_position = min(L//2,z+75)
+
+        fR[0:low_position]=0
+        fR[high_position:L-high_position]=0
+        fR[L-low_position:]=0
+        
+        plt.figure()
+        plt.plot(np.abs(fR))
+        
+        Aline = np.fft.ifft(fR)
+
+        hR=hilbert(np.real(Aline))
+        hR_phi=np.unwrap(np.angle(hR))
+        
+        phi_delta=np.linspace(hR_phi[0],hR_phi[L-1],L)
+        phi_diff=np.float32(phi_delta-hR_phi)
+        ALINE = ALINE*np.exp(1j*phi_diff)
+        
+        plt.figure()
+        plt.plot(phi_diff)
+        # plt.figure()
+        print('max phase difference is: ',np.max(np.abs(phi_diff)))
+        # fR = np.fft.fft(ALINE, axis=1)/L
+
+        # fR = np.abs(fR[:,self.ui.DepthStart.value():self.ui.DepthStart.value()+self.ui.DepthRange.value()])
+        # # self.ui.MaxContrast.setValue(0.1)
+        # self.Display_aline(fR, raw = False)
+        
+        filePath = self.ui.DIR.toPlainText()
+
+        current_time = datetime.datetime.now()
+        filePath = filePath + "/" + 'dispersion_compensation_'+\
+            str(current_time.year)+'-'+\
+            str(current_time.month)+'-'+\
+            str(current_time.day)+'-'+\
+            str(current_time.hour)+'-'+\
+            str(current_time.minute)+\
+            '.bin'
+        fp = open(filePath, 'wb')
+        phi_diff.tofile(fp)
+        fp.close()
+        self.ui.Disp_DIR.setText(filePath)
+        self.ui.ACQMode.setCurrentText(mode)
+        self.ui.FFTDevice.setCurrentText(device)
+        return 'dispersion compensasion success...'
+        
+    def get_background(self):
+        mode = self.ui.ACQMode.currentText()
+        device = self.ui.FFTDevice.currentText()
+        self.ui.ACQMode.setCurrentText('SingleAline')
+        self.ui.FFTDevice.setCurrentText('None')
+        ############################# measure an Aline
+        self.SingleScan('SingleAline')
+        time.sleep(1.5)
+        #######################################################################
+        Xpixels = 10
+        Yrpt = self.ui.BlineAVG.value()
+        ALINE = self.data.reshape([Xpixels*Yrpt,self.ui.PostSamples_2.value()])
+        ALINE = ALINE[:,self.ui.DelaySamples.value():]
+        
+        background = np.float32(np.mean(ALINE,0))
+        # print(background.shape)
+        filePath = self.ui.DIR.toPlainText()
+        current_time = datetime.datetime.now()
+        filePath = filePath + "/" + 'background_'+\
+            str(current_time.year)+'-'+\
+            str(current_time.month)+'-'+\
+            str(current_time.day)+'-'+\
+            str(current_time.hour)+'-'+\
+            str(current_time.minute)+\
+            '.bin'
+        fp = open(filePath, 'wb')
+        background.tofile(fp)
+        fp.close()
+        
+        self.ui.BG_DIR.setText(filePath)
+        self.ui.ACQMode.setCurrentText(mode)
+        self.ui.FFTDevice.setCurrentText(device)
+        return 'background measruement success...'

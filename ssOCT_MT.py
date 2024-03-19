@@ -54,7 +54,9 @@ global PauseQueue
 global GPUQueue 
 global DQueue # D stands for digitizer
 global DbackQueue # Dback stands for digitizer respond back, digitizer respond back if data collection is done
+global DnSbackQueue # display thread respond back to weaver thread
 global StopDQueue # StopD stands for stop digitizer, for stopping digitizer in continuous acquisition
+global GPU2weaverQueue
 
 AODOQueue = Queue()
 StagebackQueue = Queue()
@@ -64,7 +66,9 @@ PauseQueue = Queue()
 GPUQueue = Queue()
 DQueue = Queue()
 DbackQueue = Queue()
+DnSbackQueue = Queue()
 StopDQueue = Queue()
+GPU2weaverQueue = Queue()
 
 # wrap GPU thread with Queues and Memory
 from ThreadGPU import GPUThread
@@ -77,6 +81,7 @@ class GPUThread_2(GPUThread):
             self.queue = GPUQueue
             self.DnSQueue = DnSQueue
             self.Digitizer = Digitizer
+            self.GPU2weaverQueue = GPU2weaverQueue
             
 # wrap digitzer thread with queues and Memory
 if Digitizer == 'ATS9351':
@@ -106,8 +111,10 @@ if Digitizer == 'ATS9351':
             self.PauseQueue = PauseQueue
             self.StopDQueue = StopDQueue
             self.DbackQueue = DbackQueue
+            self.DnSbackQueue = DnSbackQueue
             self.GPUQueue = GPUQueue
             self.DQueue = DQueue
+            self.GPU2weaverQueue = GPU2weaverQueue
             
             
 elif Digitizer == 'ART8912':
@@ -138,8 +145,10 @@ elif Digitizer == 'ART8912':
             self.PauseQueue = PauseQueue
             self.StopDQueue = StopDQueue
             self.DbackQueue = DbackQueue
+            self.DnSbackQueue = DnSbackQueue
             self.GPUQueue = GPUQueue
             self.DQueue = DQueue
+            self.GPU2weaverQueue = GPU2weaverQueue
 
 # wrap AODO thread with queue
 from ThreadAODO import AODOThread
@@ -159,6 +168,7 @@ class DnSThread_2(DnSThread):
         self.ui = ui
         self.queue = DnSQueue
         self.Digitizer = Digitizer
+        self.DnSbackQueue = DnSbackQueue
         
 # wrap MainWindow object with queues and threads        
 class GUI(MainWindow):
@@ -190,7 +200,15 @@ class GUI(MainWindow):
         self.ui.Xmove2.clicked.connect(self.Xmove2)
         self.ui.Ymove2.clicked.connect(self.Ymove2)
         self.ui.Zmove2.clicked.connect(self.Zmove2)
+        self.ui.XUP.clicked.connect(self.XUP)
+        self.ui.YUP.clicked.connect(self.YUP)
+        self.ui.ZUP.clicked.connect(self.ZUP)
+        self.ui.XDOWN.clicked.connect(self.XDOWN)
+        self.ui.YDOWN.clicked.connect(self.YDOWN)
+        self.ui.ZDOWN.clicked.connect(self.ZDOWN)
         self.ui.InitStageButton.clicked.connect(self.InitStages)
+        self.ui.ZstageTest.clicked.connect(self.ZstageTest)
+        self.ui.Gotozero.stateChanged.connect(self.Gotozero)
         self.Init_allThreads()
         
     def Init_allThreads(self):
@@ -268,6 +286,46 @@ class GUI(MainWindow):
         AODOQueue.put(an_action)
         StagebackQueue.get()
         
+    def XUP(self):
+        an_action = AODOAction('XUP')
+        AODOQueue.put(an_action)
+        StagebackQueue.get()
+    def YUP(self):
+        an_action = AODOAction('YUP')
+        AODOQueue.put(an_action)
+        StagebackQueue.get()
+    def ZUP(self):
+        an_action = AODOAction('ZUP')
+        AODOQueue.put(an_action)
+        StagebackQueue.get()
+        
+    def XDOWN(self):
+        an_action = AODOAction('XDOWN')
+        AODOQueue.put(an_action)
+        StagebackQueue.get()
+    def YDOWN(self):
+        an_action = AODOAction('YDOWN')
+        AODOQueue.put(an_action)
+        StagebackQueue.get()
+    def ZDOWN(self):
+        an_action = AODOAction('ZDOWN')
+        AODOQueue.put(an_action)
+        StagebackQueue.get()
+        
+    def ZstageTest(self):
+        
+
+        an_action = WeaverAction('ZstageRepeatibility')
+        WeaverQueue.put(an_action)
+        # wait until weaver done
+        
+
+    def Gotozero(self):
+        if self.ui.Gotozero.isChecked():
+            an_action = WeaverAction('Gotozero')
+            WeaverQueue.put(an_action)
+
+        
     def CenterGalvo(self):
         an_action = AODOAction('centergalvo')
         AODOQueue.put(an_action)
@@ -307,36 +365,14 @@ class GUI(MainWindow):
         DnSQueue.put(an_action)
         
     def redo_dispersion_compensation(self):
-        mode = self.ui.ACQMode.currentText()
-        device = self.ui.FFTDevice.currentText()
-        self.ui.ACQMode.setCurrentText('SingleAline')
-        self.ui.FFTDevice.setCurrentText('None')
-        an_action = WeaverAction(self.ui.ACQMode.currentText())
+        an_action = WeaverAction('dispersion_compensation')
         WeaverQueue.put(an_action)
-        time.sleep(3)
-        an_action = DnSAction('dispersionCompensation')
-        DnSQueue.put(an_action)
-        # time.sleep(3)
-        # self.update_Dispersion()
-        self.ui.ACQMode.setCurrentText(mode)
         
-        self.ui.FFTDevice.setCurrentText(device)
             
     def redo_background(self):
-        mode = self.ui.ACQMode.currentText()
-        device = self.ui.FFTDevice.currentText()
-        self.ui.ACQMode.setCurrentText('SingleBline')
-        self.ui.FFTDevice.setCurrentText('None')
-        an_action = WeaverAction(self.ui.ACQMode.currentText())
+        an_action = WeaverAction('get_background')
         WeaverQueue.put(an_action)
-        time.sleep(3)
-        an_action = DnSAction('getBackground')
-        DnSQueue.put(an_action)
-        # time.sleep(3)
-        # self.update_Dispersion()
-        self.ui.ACQMode.setCurrentText(mode)
         
-        self.ui.FFTDevice.setCurrentText(device)
     
     def closeEvent(self, event):
         self.ui.statusbar.showMessage('Exiting all threads')

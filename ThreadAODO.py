@@ -40,7 +40,14 @@ XFORWARD = 2
 global YFORWARD
 YFORWARD = 8
 global ZFORWARD
-ZFORWARD = 32
+ZFORWARD = 0
+
+global XBACKWARD
+XBACKWARD = 0
+global YBACKWARD
+YBACKWARD = 0
+global ZBACKWARD
+ZBACKWARD = 32
 # backward = 0
 
 # stage channel digital value
@@ -71,6 +78,19 @@ class AODOThread(QThread):
                     self.Move(axis = 'Y')
                 elif self.item.action == 'Zmove2':
                     self.Move(axis = 'Z')
+                elif self.item.action == 'XUP':
+                    self.StepMove(axis = 'X', Direction = 'UP')
+                elif self.item.action == 'YUP':
+                    self.StepMove(axis = 'Y', Direction = 'UP')
+                elif self.item.action == 'ZUP':
+                    self.StepMove(axis = 'Z', Direction = 'UP')
+                elif self.item.action == 'XDOWN':
+                    self.StepMove(axis = 'X', Direction = 'DOWN')
+                elif self.item.action == 'YDOWN':
+                    self.StepMove(axis = 'Y', Direction = 'DOWN')
+                elif self.item.action == 'ZDOWN':
+                    self.StepMove(axis = 'Z', Direction = 'DOWN')
+                    
                 elif self.item.action == 'Init':
                     self.Init_Stages()
                 elif self.item.action == 'ConfigAODO':
@@ -283,13 +303,14 @@ class AODOThread(QThread):
         # Y axis use port 2 line 2-3 for enable and direction, use port 0 line 1 for steps
         # Z axis use port 2 line 4-5 for enable and direction, use port 0 line 2 for steps
         # enable low enables, enable high disables
-        direction = 0
         if axis == 'X':
             line = XCH
             speed = self.ui.XSpeed.value()
             distance = self.ui.XPosition.value()-self.Xpos
             if distance > 0:
                 direction = XFORWARD
+            else:
+                direction = XBACKWARD
             enable = YDISABLE + ZDISABLE
         elif axis == 'Y':
             line = YCH
@@ -297,17 +318,22 @@ class AODOThread(QThread):
             distance = self.ui.YPosition.value()-self.Ypos
             if distance > 0:
                 direction = YFORWARD
+            else:
+                direction = YBACKWARD
             enable = XDISABLE + ZDISABLE
         elif axis == 'Z':
             line = ZCH
             speed = self.ui.ZSpeed.value()
             distance = self.ui.ZPosition.value()-self.Zpos
-            if distance < 0:
+            if distance > 0:
                 direction = ZFORWARD
+            else:
+                direction = ZBACKWARD
             enable = XDISABLE + YDISABLE
             
         if np.abs(distance) < 0.001:
             self.StagebackQueue.put(0)
+            print('move2 action exited')
             return
         with ni.Task('Move task') as DOtask, ni.Task('setting') as settingtask:
             settingtask.do_channels.add_do_chan(lines='AODO/port2/line0:7')
@@ -337,4 +363,80 @@ class AODOThread(QThread):
         elif axis == 'Z':
             self.Zpos = self.Zpos+distance
             # self.ui.ZPosition.setValue(self.Zpos)
+        self.StagebackQueue.put(0)
+        
+    def StepMove(self, axis, Direction):
+        ###########################
+        # you can only move one axis at a time
+        ###########################
+        # X axis use port 2 line 0-1 for enable and direction, use port 0 line 0 for steps
+        # Y axis use port 2 line 2-3 for enable and direction, use port 0 line 1 for steps
+        # Z axis use port 2 line 4-5 for enable and direction, use port 0 line 2 for steps
+        # enable low enables, enable high disables
+        
+        if axis == 'X':
+            line = XCH
+            speed = self.ui.XSpeed.value()
+            distance = self.ui.Xstagestepsize.value()
+            if Direction == 'UP':
+                direction = XFORWARD
+                sign = 1
+            else:
+                direction = XBACKWARD
+                sign = -1
+            enable = YDISABLE + ZDISABLE
+        elif axis == 'Y':
+            line = YCH
+            speed = self.ui.YSpeed.value()
+            distance = self.ui.Ystagestepsize.value()
+            if Direction == 'UP':
+                direction = YFORWARD
+                sign = 1
+            else:
+                direction = YBACKWARD
+                sign = -1
+            enable = XDISABLE + ZDISABLE
+        elif axis == 'Z':
+            line = ZCH
+            speed = self.ui.ZSpeed.value()
+            distance = self.ui.Zstagestepsize.value()
+            if Direction == 'UP':
+                direction = ZFORWARD
+                sign = 1
+            else:
+                direction = ZBACKWARD
+                sign = -1
+            enable = XDISABLE + YDISABLE
+            
+        if np.abs(distance) < 0.001:
+            self.StagebackQueue.put(0)
+            return
+        with ni.Task('Move task') as DOtask, ni.Task('setting') as settingtask:
+            settingtask.do_channels.add_do_chan(lines='AODO/port2/line0:7')
+            settingtask.write(direction + enable, auto_start = True)
+            DOwaveform = self.stagewave_ramp(distance)
+            DOwaveform = np.uint32(DOwaveform * line)
+            DOtask.do_channels.add_do_chan(lines='AODO/port0/line0:7')
+            DOtask.timing.cfg_samp_clk_timing(rate=STEPS*2//DISTANCE*speed, \
+                                              active_edge= Edge.FALLING,\
+                                              sample_mode=Atype.FINITE,samps_per_chan=len(DOwaveform))
+            DOtask.write(DOwaveform, auto_start = True)
+            print(axis,'real distance moved: ',np.sum(DOwaveform)/line/25000*1000*DISTANCE,'um')
+            DOtask.wait_until_done(timeout =60)
+                
+            DOtask.stop()
+            # DOtask.close()
+            settingtask.write(XDISABLE + YDISABLE + ZDISABLE, auto_start = True)
+            settingtask.stop()
+            # settingtask.close()
+            
+        if axis == 'X':
+            self.Xpos = self.Xpos+distance*sign
+            self.ui.XPosition.setValue(self.Xpos)
+        elif axis == 'Y':
+            self.Ypos = self.Ypos+distance*sign
+            self.ui.YPosition.setValue(self.Ypos)
+        elif axis == 'Z':
+            self.Zpos = self.Zpos+distance*sign
+            self.ui.ZPosition.setValue(self.Zpos)
         self.StagebackQueue.put(0)

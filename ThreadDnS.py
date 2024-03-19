@@ -13,7 +13,6 @@ import traceback
 global SCALE
 SCALE =65535
 import matplotlib.pyplot as plt
-from scipy.signal import hilbert
 import datetime
 
 class DnSThread(QThread):
@@ -22,6 +21,7 @@ class DnSThread(QThread):
         self.surf = []
         self.sliceNum = 1
         self.tileNum = 1
+        self.AlineNum = 1
         self.BlineNum = 1
         self.CscanNum = 1
         self.totalTiles = 0
@@ -33,6 +33,7 @@ class DnSThread(QThread):
     def QueueOut(self):
         num = 0
         self.item = self.queue.get()
+        self.DnSflag = 'busy'
         while self.item.action != 'exit':
             #self.ui.statusbar.showMessage('Display thread is doing ' + self.item.action)
             try:
@@ -57,10 +58,6 @@ class DnSThread(QThread):
                     self.Update_contrast_XYZ()
                 elif self.item.action == 'UpdateContrastSurf':
                     self.Update_contrast_Surf()
-                elif self.item.action == 'dispersionCompensation':
-                    self.dispersion_compensation()
-                elif self.item.action == 'getBackground':
-                    self.getBackground()
                 elif self.item.action == 'display_counts':
                     self.print_display_counts()
                     
@@ -72,6 +69,7 @@ class DnSThread(QThread):
                 print(traceback.format_exc())
             num+=1
             # print(num, 'th display\n')
+            self.DnSflag = 'idle'
             self.item = self.queue.get()
         current_message = self.ui.statusbar.currentMessage()
         self.ui.statusbar.showMessage(current_message+"Display and save Thread successfully exited...")
@@ -110,6 +108,14 @@ class DnSThread(QThread):
         self.ui.XZplane.clear()
         # update iamge on the waveformLabel
         self.ui.XZplane.setPixmap(pixmap)
+        
+        if self.ui.Save.isChecked():
+            if raw:
+                data = np.uint16(self.Aline)
+            else:
+                data = np.uint16(self.Aline/SCALE*65535)
+            self.WriteData(data, self.AlineFilename([Yrpt,Xpixels,Zpixels]))
+            
     
     def Display_bline(self, data, raw = False):
         if not raw:
@@ -147,6 +153,7 @@ class DnSThread(QThread):
             else:
                 data = np.uint16(self.Bline/SCALE*65535)
             self.WriteData(data, self.BlineFilename([Yrpt,Xpixels,Zpixels]))
+        
         
     def Display_Cscan(self, data, raw = False):
         if not raw:
@@ -190,8 +197,6 @@ class DnSThread(QThread):
             else:
                 data = np.uint16(self.Cscan/SCALE*65535)
             self.WriteData(data, self.CscanFilename([Ypixels,Xpixels,Zpixels]))
-        
-        
         
         
     def Display_SurfScan(self, data, raw = False, args = []):
@@ -336,6 +341,11 @@ class DnSThread(QThread):
         filename = 'Bline-'+str(self.BlineNum)+'-Yrpt'+str(shape[0])+'-X'+str(shape[1])+'-Z'+str(shape[2])+'.bin'
         self.BlineNum = self.BlineNum + 1
         return filename
+    
+    def AlineFilename(self, shape):
+        filename = 'Aline-'+str(self.AlineNum)+'-Yrpt'+str(shape[0])+'-Xrpt'+str(shape[1])+'-Z'+str(shape[2])+'.bin'
+        self.AlineNum = self.AlineNum + 1
+        return filename
 
     def WriteData(self, data, filename):
         filePath = self.ui.DIR.toPlainText()
@@ -348,80 +358,3 @@ class DnSThread(QThread):
         fp.close()
         print('time for saving: ', time.time()-start)
         
-    def dispersion_compensation(self):
-        S = self.Aline.shape
-        # print(S)
-        ALINE = self.Aline.reshape([S[0]*S[1],S[2]])
-        Aline = np.float32(ALINE[0,:])-2048
-        plt.figure()
-        plt.plot(np.abs(Aline))
-        
-        L=len(Aline)
-        fR=np.fft.fft(Aline)/L # FFT of interference signal
-
-        plt.figure()
-        plt.plot(np.abs(fR[20:]))
-        
-        z = np.argmax(np.abs(fR[50:300]))+50
-        low_position = max(10,z-75)
-        high_position = min(L//2,z+75)
-
-        fR[0:low_position]=0
-        fR[high_position:L-high_position]=0
-        fR[L-low_position:]=0
-        
-        plt.figure()
-        plt.plot(np.abs(fR))
-        
-        Aline = np.fft.ifft(fR)
-
-        hR=hilbert(np.real(Aline))
-        hR_phi=np.unwrap(np.angle(hR))
-        
-        phi_delta=np.linspace(hR_phi[0],hR_phi[L-1],L)
-        phi_diff=np.float32(phi_delta-hR_phi)
-        ALINE = ALINE*np.exp(1j*phi_diff)
-        
-        plt.figure()
-        plt.plot(phi_diff)
-        # plt.figure()
-        print('max phase difference is: ',np.max(np.abs(phi_diff)))
-        # fR = np.fft.fft(ALINE, axis=1)/L
-
-        # fR = np.abs(fR[:,self.ui.DepthStart.value():self.ui.DepthStart.value()+self.ui.DepthRange.value()])
-        # # self.ui.MaxContrast.setValue(0.1)
-        # self.Display_aline(fR, raw = False)
-        
-        filePath = self.ui.DIR.toPlainText()
-
-        current_time = datetime.datetime.now()
-        filePath = filePath + "/" + 'dispersion_compensation_'+\
-            str(current_time.year)+'-'+\
-            str(current_time.month)+'-'+\
-            str(current_time.day)+'-'+\
-            str(current_time.hour)+'-'+\
-            str(current_time.minute)+\
-            '.bin'
-        fp = open(filePath, 'wb')
-        phi_diff.tofile(fp)
-        fp.close()
-        print('dispersion compensasion success\n')
-        self.ui.Disp_DIR.setText(filePath)
-        
-    def getBackground(self):
-        background = np.float32(np.mean(self.Bline,1))
-        
-        filePath = self.ui.DIR.toPlainText()
-        current_time = datetime.datetime.now()
-        filePath = filePath + "/" + 'background_'+\
-            str(current_time.year)+'-'+\
-            str(current_time.month)+'-'+\
-            str(current_time.day)+'-'+\
-            str(current_time.hour)+'-'+\
-            str(current_time.minute)+\
-            '.bin'
-        fp = open(filePath, 'wb')
-        background.tofile(fp)
-        fp.close()
-        print('background measruement success\n')
-        self.ui.BG_DIR.setText(filePath)

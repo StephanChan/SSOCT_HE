@@ -34,11 +34,11 @@ if maya_installed:
             self.data = data
             
         def update_contrast(self, low, high):
-            pass
+            # pass
             # calculate data according to low and high
             # self.plot.mlab_source.scalars = data-low+1000-high
-            # M=np.max(self.plot.mlab_source.scalars)
-            # self.plot.current_range=(low,M*high/1000)
+            M=np.max(self.plot.mlab_source.scalars)
+            self.plot.current_range=(low,M*high/1000)
             # # print(low, high)
             # print(self.plot.current_range)
             
@@ -48,7 +48,8 @@ if maya_installed:
             # print(self.plot.current_range)
             # print(np.max(self.plot.mlab_source.scalars))
             # print(data[1,1,:])
-            self.plot.current_range=(2, self.plot.current_range[1]*0.1)
+            M=np.max(data)
+            self.plot.current_range=(2, M*0.1)
             # print(self.plot.current_range)
             
         @on_trait_change('scene.activated')
@@ -332,6 +333,8 @@ class MainWindow(QMainWindow):
         self.ui.YPosition.setValue(np.float32(settings.value('YPosition')))
         self.ui.ZPosition.setValue(np.float32(settings.value('ZPosition')))
         self.ui.BG_DIR.setText(settings.value('BG_DIR'))
+        self.ui.defineZero.setValue(np.float32(settings.value('defineZero')))
+        self.ui.KnownDepth.setValue(np.int16(settings.value('KnownDepth')))
         
     def save_settings(self,settings):
         settings.setValue("FFTresults",self.ui.FFTresults.currentText())
@@ -367,7 +370,8 @@ class MainWindow(QMainWindow):
         settings.setValue("YPosition",self.ui.YPosition.value())
         settings.setValue("ZPosition",self.ui.ZPosition.value())
         settings.setValue("BG_DIR",self.ui.BG_DIR.text())
-        
+        settings.setValue("defineZero",self.ui.defineZero.value())
+        settings.setValue("KnownDepth",self.ui.KnownDepth.value())
 
         
         
