@@ -48,8 +48,10 @@ class ART8912(QThread):
                     
                 else:
                     self.ui.statusbar.showMessage('Digitizer thread is doing something invalid: '+self.item.action)
+                    self.ui.PrintOut.append('Digitizer thread is doing something invalid: '+self.item.action)
             except Exception as error:
                 self.ui.statusbar.showMessage("\nAn error occurred:"+" skip the Digitizer action\n")
+                self.ui.PrintOut.append("\nAn error occurred:"+" skip the Digitizer action\n")
                 print(traceback.format_exc())
             self.item = self.queue.get()
         self.ui.statusbar.showMessage(self.exit_message)
@@ -156,8 +158,8 @@ class ART8912(QThread):
         if self.ui.ACQMode.currentText() in ['SingleAline', 'RptAline']:
             if self.ui.Laser.currentText() == 'Axsun100k':
                 self.Aline_frq = 100000
-                AlinesPerBline = np.int32(self.Aline_frq*0.1)
-            self.usefulLength = 10 * actualRecordLength.value * numWfms.value
+                AlinesPerBline = np.int32(self.Aline_frq/self.ui.FPSAline.value())
+            self.usefulLength = self.ui.XforAline.value() * actualRecordLength.value * numWfms.value
         else:
             AlinesPerBline = self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2+self.ui.PostClock.value()
             self.usefulLength = (self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2) * actualRecordLength.value * numWfms.value
@@ -194,15 +196,19 @@ class ART8912(QThread):
         NACQ = self.NBlines if self.NBlines != CONTINUOUS else self.ui.BlineAVG.value()
         #开始采集任务
         error_code = Functions.ArtScope_StartAcquisition(self.taskHandle)
+        print('start acquiring')
+        self.ui.PrintOut.append('start acquiring')
         while blinesCompleted < self.NBlines:
             # 8位的卡需要调用ArtScope_FetchBinary8，同时定义数据缓冲区数据类型为无符号8位数据
             try:
                 error_code = Functions.ArtScope_FetchBinary16(self.taskHandle, timeout, readLength, self.waveformPtr, wfmInfo)
             except Exception as error:
                 # TODO: if timeout, break this inner while loop
-                print('Blines collected: ', blinesCompleted, \
-                      'Blines configured: ', NACQ, \
-                      '\n', error, '\nstopping acquisition for Digitizer\n')
+                message = 'Blines collected: '+str( blinesCompleted)+ \
+                      'Blines configured: '+str( NACQ)+ \
+                      '\n'+ error+ '\nstopping acquisition for Digitizer\n'
+                print(message)
+                self.ui.PrintOut.append(message)
                 break
             
             if error_code < 0:
@@ -222,10 +228,11 @@ class ART8912(QThread):
             # get stop commend from BONE thread
             try:
                 self.StopDQueue.get(timeout=0.001)
-                current_message = self.ui.statusbar.currentMessage()
-                self.ui.statusbar.showMessage(current_message+'successfully stopped Digitizer...')
+                self.ui.statusbar.showMessage('successfully stopped Digitizer...')
+                self.ui.PrintOut.append('successfully stopped Digitizer...')
                 self.CloseTask()
-                print( num, ' data packages returned by digitizer\n')
+                print(str( num)+ ' data packages returned by digitizer\n')
+                self.ui.PrintOut.append(str( num)+ ' data packages returned by digitizer\n')
                 break
             except:
                 pass

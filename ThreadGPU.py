@@ -11,9 +11,6 @@ import numpy as np
 from Actions import DnSAction
 import os
 import traceback
-# signal amplification
-global AMPLIFICATION
-AMPLIFICATION = 5000
 
 class GPUThread(QThread):
     def __init__(self):
@@ -58,8 +55,10 @@ class GPUThread(QThread):
                     self.ui.statusbar.showMessage('GPU thread is doing something invalid '+self.item.action)
                 if time.time()-start > 1:
                     print('an FFT action took ',time.time()-start,' seconds\n')
+                    self.ui.PrintOut.append('an FFT action took '+str(time.time()-start)+' seconds\n')
             except Exception as error:
                 self.ui.statusbar.showMessage("An error occurred:"+" skip the FFT action\n")
+                self.ui.PrintOut.append("An error occurred:"+" skip the FFT action\n")
                 print(traceback.format_exc())
             self.item = self.queue.get()
         self.ui.statusbar.showMessage(self.exit_message)
@@ -79,10 +78,10 @@ class GPUThread(QThread):
         # reshape data as [Alines, Samples]
         Alines =np.uint32((self.data_CPU.shape[1])/samples) * self.data_CPU.shape[0]
         self.data_CPU=self.data_CPU.reshape([Alines, samples])
-        # rescale data to [0,1] range
+        # subtract background and remove first 100 samples
         if self.Digitizer == 'ART8912':
-            self.data_CPU = self.data_CPU[:,self.ui.DelaySamples.value():]-self.background
-            samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()
+            self.data_CPU = self.data_CPU[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]-self.background
+            samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
         fftAxis = 1
 
         # # zero-padding data before FFT
@@ -104,7 +103,7 @@ class GPUThread(QThread):
         # calculate absolute value and only keep depth range specified
         data_GPU = cupy.absolute(data_GPU[:,Pixel_start:Pixel_start+Pixel_range])
         # transfer data back to computer
-        self.data_CPU = cupy.asnumpy(data_GPU)*AMPLIFICATION
+        self.data_CPU = cupy.asnumpy(data_GPU)*self.AMPLIFICATION
 
         # print('FFT took ',time.time()-start,' seconds\n')
         # data_CPU = data_CPU.reshape([shape[0],Pixel_range * np.uint32(Alines/shape[0])])
@@ -154,7 +153,7 @@ class GPUThread(QThread):
         if self.Digitizer == 'ATS9351':
             samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
         elif self.Digitizer == 'ART8912':
-            samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()
+            samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
         # print('GPU dispersion samples: ',samples)
             
         self.window = np.float32(np.hanning(samples))
@@ -166,14 +165,17 @@ class GPUThread(QThread):
             self.dispersion = np.float32(np.fromfile(dispersion_path, dtype=np.float32))
             self.dispersion = np.complex64(np.exp(1j*self.dispersion))
             
-            self.ui.statusbar.showMessage(current_message+"load disperison compensation success...", 1000)
+            self.ui.statusbar.showMessage(current_message+"load disperison compensation success...")
+            self.ui.PrintOut.append("load disperison compensation success...")
         else:
             self.dispersion = np.complex64(np.ones(samples))
             self.ui.statusbar.showMessage('no disperison compensation...')
+            self.ui.PrintOut.append("no disperison compensation...")
         if len(self.window) == len(self.dispersion):
             self.dispersion = np.complex64(self.dispersion * self.window)
         else:
-            self.ui.statusbar.showMessage('dispersion length unmatch current sample size, using no dispersion compensation...')
+            self.ui.statusbar.showMessage('dispersion length unmatch sample size, using no dispersion compensation...')
+            self.ui.PrintOut.append('dispersion length unmatch sample size, using no dispersion compensation...')
             self.dispersion = np.complex64(np.ones(samples))
             self.dispersion = np.complex64(self.dispersion * self.window)
         self.dispersion = self.dispersion.reshape([1,len(self.dispersion)])
@@ -182,17 +184,18 @@ class GPUThread(QThread):
         if self.Digitizer == 'ATS9351':
             samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
         elif self.Digitizer == 'ART8912':
-            samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()
-
+            samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
         background_path = self.ui.BG_DIR.text()
 
         if os.path.isfile(background_path):
             self.background = np.fromfile(background_path, dtype=np.float32)
             current_message = self.ui.statusbar.currentMessage()
-            self.ui.statusbar.showMessage(current_message+"load background success...",1000)
+            self.ui.statusbar.showMessage(current_message+"load background success...")
+            self.ui.PrintOut.append("load background success...")
         else:
             current_message = self.ui.statusbar.currentMessage()
             self.ui.statusbar.showMessage('using 2048 as background...')
+            self.ui.PrintOut.append('using 2048 as background...')
             self.background = np.float32(np.ones(samples)*2048)
         
     def update_FFTlength(self):
@@ -200,12 +203,13 @@ class GPUThread(QThread):
         if self.Digitizer == 'ATS9351':
             samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
         elif self.Digitizer == 'ART8912':
-            samples = self.ui.PostSamples_2.value()
+            samples = self.ui.PostSamples_2.value()-self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
         while self.length_FFT < samples:
             self.length_FFT *=2
 
     def display_FFT_actions(self):
         print( self.FFT_actions, ' FFT actions taken place\n')
+        self.ui.PrintOut.append(str(self.FFT_actions)+ ' FFT actions taken place\n')
         self.FFT_actions = 0
         
    

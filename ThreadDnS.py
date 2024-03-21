@@ -11,7 +11,7 @@ from Generaic_functions import LinePlot, ImagePlot
 import numpy as np
 import traceback
 global SCALE
-SCALE =65535
+SCALE =10000
 import matplotlib.pyplot as plt
 import datetime
 
@@ -64,18 +64,19 @@ class DnSThread(QThread):
                 else:
                     
                     self.ui.statusbar.showMessage('Display and save thread is doing something invalid' + self.item.action)
+                    self.ui.PrintOut.append('Display and save thread is doing something invalid' + self.item.action)
             except Exception as error:
                 self.ui.statusbar.showMessage("\nAn error occurred:"+" skip the display and save action\n")
+                self.ui.PrintOut.append("\nAn error occurred:"+" skip the display and save action\n")
                 print(traceback.format_exc())
             num+=1
             # print(num, 'th display\n')
-            self.DnSflag = 'idle'
             self.item = self.queue.get()
-        current_message = self.ui.statusbar.currentMessage()
-        self.ui.statusbar.showMessage(current_message+"Display and save Thread successfully exited...")
+        self.ui.statusbar.showMessage("Display and save Thread successfully exited...")
             
     def print_display_counts(self):
         print( self.display_actions, ' Blines displayed\n')
+        self.ui.PrintOut.append(str(self.display_actions)+ ' Blines displayed\n')
         self.display_actions = 0
         
     def Display_aline(self, data, raw = False):
@@ -91,17 +92,17 @@ class DnSThread(QThread):
             elif self.Digitizer == 'ART8912':
                 Zpixels = self.ui.PostSamples_2.value()
                 # data = np.float32(data/pow(2,12))
-        Xpixels = 10
+        Xpixels = self.ui.XforAline.value()
         Yrpt = self.ui.BlineAVG.value()
-        data = data.reshape([Yrpt,Xpixels,Zpixels])
+        data = data.reshape([Yrpt*Xpixels,Zpixels])
         # data in original state
         if self.Digitizer == 'ART8912' and raw:
-            Zpixels = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()
-            data = data[:,:,self.ui.DelaySamples.value():]
+            Zpixels = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
+            data = data[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]
+
         self.Aline = data
-        
         data = np.float32(np.mean(data,0))
-        data = data[1,:]
+
         # float32 data type
         pixmap = LinePlot(data, [], self.ui.XYmin.value(), self.ui.XYmax.value())
         # clear content on the waveformLabel
@@ -109,7 +110,7 @@ class DnSThread(QThread):
         # update iamge on the waveformLabel
         self.ui.XZplane.setPixmap(pixmap)
         
-        if self.ui.Save.isChecked():
+        if self.ui.Save.isChecked() and not self.ui.Gotozero.isChecked():
             if raw:
                 data = np.uint16(self.Aline)
             else:
@@ -134,8 +135,8 @@ class DnSThread(QThread):
         
         data = data.reshape([Yrpt,Xpixels,Zpixels])
         if self.Digitizer == 'ART8912' and raw:
-            Zpixels = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()
-            data = data[:,:,self.ui.DelaySamples.value():]
+            Zpixels = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
+            data = data[:,:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]
         # data in original state
         self.Bline = data
         data = np.float32(np.mean(data,0))
@@ -171,8 +172,8 @@ class DnSThread(QThread):
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
         data = data.reshape([Ypixels,Xpixels,Zpixels])
         if self.Digitizer == 'ART8912' and raw:
-            Zpixels = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()
-            data = data[:,:,self.ui.DelaySamples.value():]
+            Zpixels = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
+            data = data[:,:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]
         # data in original state
         self.Cscan = data
 
@@ -216,8 +217,8 @@ class DnSThread(QThread):
         data = data.reshape([Ypixels,Xpixels,Zpixels])
         
         if self.Digitizer == 'ART8912' and raw:
-            Zpixels = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()
-            data = data[:,:,self.ui.DelaySamples.value():]
+            Zpixels = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
+            data = data[:,:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]
         
         #######################################
         # for even strips, need to flip data in Y dimension because scanning was in backward direction
@@ -275,7 +276,6 @@ class DnSThread(QThread):
     def Update_contrast_XY(self):
         if self.ui.ACQMode.currentText() in ['SingleAline', 'RptAline']:
             data = np.float32(np.mean(self.Aline,0))
-            data = data[0,:]
             # if self.ui.LOG.currentText() == '10log10':
             #     data=10*np.log10(data+0.000001)
             pixmap = LinePlot(data, [], self.ui.XYmin.value(), self.ui.XYmax.value())
@@ -357,4 +357,5 @@ class DnSThread(QThread):
         data.tofile(fp)
         fp.close()
         print('time for saving: ', time.time()-start)
+        self.ui.PrintOut.append('time for saving: '+str( time.time()-start))
         

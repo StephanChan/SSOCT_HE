@@ -19,7 +19,7 @@ from scipy.signal import hilbert
 import datetime
 
 global ZPIXELSIZE
-ZPIXELSIZE = 3 # um, axial pixel size
+ZPIXELSIZE = 5 # um, axial pixel size
 
 class WeaverThread(QThread):
     def __init__(self):
@@ -37,32 +37,52 @@ class WeaverThread(QThread):
             current_message = self.ui.statusbar.currentMessage()
             try:
                 if self.item.action in ['RptAline','RptBline','RptCscan']:
-                    self.ui.statusbar.showMessage(self.RptScan(self.item.action))
+                    message = self.RptScan(self.item.action)
+                    self.ui.statusbar.showMessage(message)
+                    self.ui.PrintOut.append(message)
     
                     
                 elif self.item.action in ['SingleBline', 'SingleAline', 'SingleCscan']:
+                    message = self.SingleScan(self.item.action)
+                    self.ui.statusbar.showMessage(message)
+                    self.ui.PrintOut.append(message)
                     
-                    self.ui.statusbar.showMessage(self.SingleScan(self.item.action))
-                
                 elif self.item.action == 'SurfScan':
                     interrupt, status = self.SurfScan()
                     self.ui.statusbar.showMessage(status)
+                    self.ui.PrintOut.append(status)
                     
                 elif self.item.action == 'SurfScan+Slice':
-                    self.ui.statusbar.showMessage(self.SurfSlice())
+                    message = self.SurfSlice()
+                    self.ui.statusbar.showMessage(message)
+                    self.ui.PrintOut.append(message)
                 elif self.item.action == 'Gotozero':
-                    self.ui.statusbar.showMessage(self.Gotozero())
+                    message = self.Gotozero()
+                    self.ui.statusbar.showMessage(message)
+                    self.ui.PrintOut.append(message)
                 elif self.item.action == 'ZstageRepeatibility':
-                    self.ui.statusbar.showMessage(self.ZstageRepeatibility())
+                    message = self.ZstageRepeatibility()
+                    self.ui.statusbar.showMessage(message)
+                    self.ui.PrintOut.append(message)
+                elif self.item.action == 'ZstageRepeatibility2':
+                    message = self.ZstageRepeatibility2()
+                    self.ui.statusbar.showMessage(message)
+                    self.ui.PrintOut.append(message)
                 elif self.item.action == 'dispersion_compensation':
-                    self.ui.statusbar.showMessage(self.dispersion_compensation())
+                    message = self.dispersion_compensation()
+                    self.ui.statusbar.showMessage(message)
+                    self.ui.PrintOut.append(message)
                 elif self.item.action == 'get_background':
-                    self.ui.statusbar.showMessage(self.get_background())
+                    message = self.get_background()
+                    self.ui.statusbar.showMessage(message)
+                    self.ui.PrintOut.append(message)
                 else:
-                    self.ui.statusbar.showMessage('King thread is doing something invalid: '+self.item.action)
+                    message = 'King thread is doing something invalid: '+self.item.action
+                    self.ui.statusbar.showMessage(message)
+                    self.ui.PrintOut.append(message)
             except Exception as error:
                 self.ui.statusbar.showMessage("An error occurred,"+"skip the acquisition action\n")
-
+                self.ui.PrintOut.append("An error occurred,"+"skip the acquisition action\n")
                 print(traceback.format_exc())
             self.item = self.queue.get()
             
@@ -89,15 +109,24 @@ class WeaverThread(QThread):
         an_action = self.DbackQueue.get() # never time out
         memoryLoc = an_action.action
         ############################################### display and save data
+        self.data = self.Memory[memoryLoc].copy()
+        if np.sum(self.data)<10:
+            print('spectral data all zeros!')
+            self.ui.PrintOut.append('spectral data all zeros!')
+            an_action = AODOAction('CloseTask')
+            self.AODOQueue.put(an_action)
+            an_action = DAction('CloseTask')
+            self.DQueue.put(an_action)
+            return mode + " got all zeros..."
         if self.ui.FFTDevice.currentText() in ['None']:
             # In None mode, directly do display and save
-            self.data = self.Memory[memoryLoc].copy()
+
             an_action = DnSAction(mode, self.data, raw=True) # data in Memory[memoryLoc]
             self.DnSQueue.put(an_action)
             
         elif self.ui.FFTDevice.currentText() in ['Alazar']:
             # in Alazar mode, directly do display and save
-            self.data = self.Memory[memoryLoc].copy()
+            # self.data = self.Memory[memoryLoc].copy()
             # TODO: fix this
             # samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
             # Alines =np.uint32((data.shape[1])/samples) * data.shape[0]
@@ -207,6 +236,7 @@ class WeaverThread(QThread):
                     self.AODOQueue.put(an_action)
                     
                     print(data_backs, ' data received by weaver\n')
+                    self.ui.PrintOut.append(str(data_backs) + ' data received by weaver\n')
                     an_action = GPUAction('display_FFT_actions')
                     self.GPUQueue.put(an_action)
                     an_action = DnSAction('display_counts')
@@ -369,51 +399,68 @@ class WeaverThread(QThread):
         device = self.ui.FFTDevice.currentText()
         self.ui.ACQMode.setCurrentText('SingleAline')
         self.ui.FFTDevice.setCurrentText('GPU')
-        # where I want the glass signal be at
+        # what pixel depth I want the glass signal be at in the Aline image
         target_depth = self.ui.KnownDepth.value()
-        
-        self.ui.ZPosition.setValue(self.ui.defineZero.value())
+        # move to defined zero
+        self.ui.ZPosition.setValue(self.ui.definedZero.value())
         an_action = AODOAction('Zmove2')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
-
-        self.ui.XPosition.setValue(30)
+        # move to defined X position for measuring defined zero
+        self.ui.XPosition.setValue(self.ui.XdefinedZero.value())
         an_action = AODOAction('Xmove2')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
-
-        self.ui.YPosition.setValue(30)
+        # move to defined Y position for measuring defined zero
+        self.ui.YPosition.setValue(self.ui.YdefinedZero.value())
         an_action = AODOAction('Ymove2')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
         
-
-        z=0
-        total_distance = 0
-        while np.abs(z-target_depth) > 17 and self.ui.Gotozero.isChecked() and np.abs(total_distance)<0.5:
-            self.SingleScan('SingleAline')
+        # check OCT ALine if stage is really at defined zero. error range set to be +-17 pixels
+        z=-100 # init peak depth
+        total_distance = 0 # init total distance moved in this process
+        while np.abs(z-target_depth) > self.ui.DefinedZeroRange.value() and self.ui.Gotozero.isChecked() and np.abs(total_distance)<1: # unit mm
+            # do a SingleAline measurement
+            message = self.SingleScan(self.ui.ACQMode.currentText())
+            while message != self.ui.ACQMode.currentText()+" successfully finished...":
+                message = self.SingleScan(self.ui.ACQMode.currentText())
+                time.sleep(1)
+            time.sleep(0.1)
+            # get Aline data
             data =self.GPU2weaverQueue.get()
+            # average all Alines
+            Aline = np.float32(np.mean(data,0))
 
-            Aline = data[0, 0: self.ui.DepthRange.value()]
-
-            # get start depth of finding peak
-            if self.ui.DepthStart.value() < 20:
-                start_depth = 20-self.ui.DepthStart.value()
+            # define start pixel depth for finding peak in the Aline
+            if self.ui.DepthStart.value() < self.ui.AlineCleanTop.value():
+                start_depth = self.ui.AlineCleanTop.value()-self.ui.DepthStart.value()
             else:
                 start_depth = 0
-            # get end depth of finding peak
-            if self.ui.DepthRange.value() < 280:
+            # define end pixel depth for finding peak in the Aline
+            if self.ui.DepthRange.value() + self.ui.DepthStart.value()< self.ui.AlineCleanBot.value(): 
                 end_depth = self.ui.DepthRange.value()
             else:
-                end_depth = 280
-            # peak depth starting from pixel 0 of FFT
+                end_depth = self.ui.AlineCleanBot.value()-self.ui.DepthStart.value()
+            # find peak depth in the Aline just measured
             z = np.argmax(Aline[start_depth:end_depth])+start_depth+self.ui.DepthStart.value()
             m = np.max(Aline[start_depth:end_depth])
-            if m < 1:
-                print('did not find any peak within imaging depth, abort...')
-                break
-            print('find peak at : ', z, ' pixel,', np.abs(z-target_depth),' pixels away')
-            if z > target_depth and np.abs(z-target_depth)>10: # this means glass is at lower position
+            message = 'peak at:'+str(z)+ ' pixel, m='+str(m)+ ' '+str(z-target_depth)+' pixels away'
+            print(message)
+            self.ui.PrintOut.append(message)
+            # handle error condistions
+            if m < self.ui.AlinePeakMin.value():
+                message = 'peak height='+str(m)+ ' peak too small, abort...'
+                print(message)
+                self.ui.PrintOut.append(message)
+                return ' peak too small, abort...'
+            elif m>=self.ui.AlinePeakMax.value():
+                message = 'peak height='+str(m)+' this means spectral samples are all 0s, increase XforAline, abort...'
+                print(message)
+                self.ui.PrintOut.append(message)
+                return ' peak too large, abort...'
+            # no error do this
+            if z > target_depth and np.abs(z-target_depth)>self.ui.DefinedZeroRange.value(): # this means glass is at lower position
                 distance = (z-target_depth) * ZPIXELSIZE/1000
                 total_distance += distance
                 # move Z stage up by half this distance
@@ -421,7 +468,7 @@ class WeaverThread(QThread):
                 an_action = AODOAction('Zmove2')
                 self.AODOQueue.put(an_action)
                 self.StagebackQueue.get()
-            elif z < target_depth and np.abs(z-target_depth)>10:  # this means glass is at higher position
+            elif z < target_depth and np.abs(z-target_depth)>self.ui.DefinedZeroRange.value():  # this means glass is at higher position
                 distance = (z-target_depth) * ZPIXELSIZE/1000
                 total_distance += distance
                 # move Z stage down by double this distance
@@ -432,19 +479,23 @@ class WeaverThread(QThread):
             else:
                 break
         
-        if np.abs(total_distance) > 0.5:
-            message='total distance > 0.5mm, something is wrong...'
+        if np.abs(total_distance) > 1: 
+            message='total distance > 1mm, something is wrong...'
         elif not self.ui.Gotozero.isChecked():
             message='gotozero abored by user...'
         else:
             message = 'gotozero success...'
             
-        self.ui.Gotozero.setChecked(False)
-        self.ui.ZPosition.setValue(self.ui.defineZero.value())
-        an_action = AODOAction('Init')
-        self.AODOQueue.put(an_action)
+        if message == 'gotozero success...':
+            self.ui.ZPosition.setValue(self.ui.definedZero.value())
+            an_action = AODOAction('Init')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            print('update pos to: '+str( self.ui.ZPosition.value()))
+            self.ui.PrintOut.append('update pos to: '+str( self.ui.ZPosition.value()))
         self.ui.ACQMode.setCurrentText(mode)
         self.ui.FFTDevice.setCurrentText(device)
+        self.ui.Gotozero.setChecked(False)
         return message
         
     def ZstageRepeatibility(self):
@@ -452,18 +503,14 @@ class WeaverThread(QThread):
         device = self.ui.FFTDevice.currentText()
         self.ui.ACQMode.setCurrentText('SingleAline')
         self.ui.FFTDevice.setCurrentText('GPU')
-        self.ui.ZstageTest.setChecked(True)
         current_position = self.ui.ZPosition.value()
         iteration = 5
         for i in range(iteration):
+            if not self.ui.ZstageTest.isChecked():
+                break
             # measure ALine
-            self.SingleScan('SingleAline')
+            self.SingleScan(self.ui.ACQMode.currentText())
             time.sleep(1)
-            # print('waiting for dispaly done')
-            # try:
-            #     DnSbackQueue.get(timeout = 3)
-            # except:
-            #     pass
             # move Z stage down
             self.ui.ZPosition.setValue(13)
             an_action = AODOAction('Zmove2')
@@ -495,6 +542,66 @@ class WeaverThread(QThread):
         # self.weaverBackQueue.put(0)
         self.ui.ACQMode.setCurrentText(mode)
         self.ui.FFTDevice.setCurrentText(device)
+        
+    def ZstageRepeatibility2(self):
+        mode = self.ui.ACQMode.currentText()
+        device = self.ui.FFTDevice.currentText()
+        self.ui.FFTDevice.setCurrentText('GPU')
+        self.ui.ACQMode.setCurrentText('SingleAline')
+        current_position = self.ui.ZPosition.value() # this is the target Z pos in this test
+        iteration = 100
+        for i in range(iteration):
+            if not self.ui.ZstageTest2.isChecked():
+                break
+            # measure ALine
+            message = self.SingleScan(self.ui.ACQMode.currentText())
+            while message != self.ui.ACQMode.currentText()+" successfully finished...":
+                message = self.SingleScan(self.ui.ACQMode.currentText())
+                self.ui.PrintOut.append(message)
+            time.sleep(1) # let GUI update Aline 
+            # move Z stage down
+            
+            self.ui.ZPosition.setValue(3)
+            an_action = AODOAction('Zmove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            
+            self.ui.XPosition.setValue(70)
+            an_action = AODOAction('Xmove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            self.ui.YPosition.setValue(20)
+            an_action = AODOAction('Ymove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            
+            self.ui.ZPosition.setValue(15)
+            an_action = AODOAction('Zmove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            
+            # go to defined zero
+            self.ui.Gotozero.setChecked(True)
+            message = self.Gotozero()
+            self.ui.statusbar.showMessage(message)
+            if message != 'gotozero success...':
+                print('go to zero failed, abort test...')
+                self.ui.PrintOut.append('go to zero failed, abort test...')
+                break
+            else:
+                # move to target height
+                self.ui.ZPosition.setValue(current_position)
+                an_action = AODOAction('Zmove2')
+                self.AODOQueue.put(an_action)
+                self.StagebackQueue.get()
+            self.ui.ACQMode.setCurrentText('SingleAline')
+            self.ui.FFTDevice.setCurrentText('GPU')
+            
+            
+        self.ui.ZstageTest2.setChecked(False)
+        # self.weaverBackQueue.put(0)
+        self.ui.ACQMode.setCurrentText(mode)
+        self.ui.FFTDevice.setCurrentText(device)
 
     def dispersion_compensation(self):
         mode = self.ui.ACQMode.currentText()
@@ -505,10 +612,10 @@ class WeaverThread(QThread):
         self.SingleScan('SingleAline')
         time.sleep(1.5)
         #################################################################### do dispersion compenstation
-        Xpixels = 10
+        Xpixels = self.ui.XforAline.value()
         Yrpt = self.ui.BlineAVG.value()
         ALINE = self.data.reshape([Xpixels*Yrpt,self.ui.PostSamples_2.value()])
-        ALINE = ALINE[:,self.ui.DelaySamples.value():]
+        ALINE = ALINE[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]
         Aline = np.float32(ALINE[0,:])-2048
 
         plt.figure()
@@ -544,6 +651,7 @@ class WeaverThread(QThread):
         plt.plot(phi_diff)
         # plt.figure()
         print('max phase difference is: ',np.max(np.abs(phi_diff)))
+        self.ui.PrintOut.append('max phase difference is: '+str(np.max(np.abs(phi_diff))))
         # fR = np.fft.fft(ALINE, axis=1)/L
 
         # fR = np.abs(fR[:,self.ui.DepthStart.value():self.ui.DepthStart.value()+self.ui.DepthRange.value()])
@@ -577,10 +685,10 @@ class WeaverThread(QThread):
         self.SingleScan('SingleAline')
         time.sleep(1.5)
         #######################################################################
-        Xpixels = 10
+        Xpixels = self.ui.XforAline.value()
         Yrpt = self.ui.BlineAVG.value()
         ALINE = self.data.reshape([Xpixels*Yrpt,self.ui.PostSamples_2.value()])
-        ALINE = ALINE[:,self.ui.DelaySamples.value():]
+        ALINE = ALINE[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]
         
         background = np.float32(np.mean(ALINE,0))
         # print(background.shape)
@@ -591,7 +699,8 @@ class WeaverThread(QThread):
             str(current_time.month)+'-'+\
             str(current_time.day)+'-'+\
             str(current_time.hour)+'-'+\
-            str(current_time.minute)+\
+            str(current_time.minute)+'-'+\
+            str(current_time.second)+\
             '.bin'
         fp = open(filePath, 'wb')
         background.tofile(fp)
@@ -601,3 +710,4 @@ class WeaverThread(QThread):
         self.ui.ACQMode.setCurrentText(mode)
         self.ui.FFTDevice.setCurrentText(device)
         return 'background measruement success...'
+    

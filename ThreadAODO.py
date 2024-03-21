@@ -66,6 +66,7 @@ class AODOThread(QThread):
     
     def run(self):
         self.Init_Stages()
+        self.StagebackQueue.get()
         self.QueueOut()
         
     def QueueOut(self):
@@ -93,6 +94,8 @@ class AODOThread(QThread):
                     
                 elif self.item.action == 'Init':
                     self.Init_Stages()
+                elif self.item.action == 'Uninit':
+                    self.Uninit()
                 elif self.item.action == 'ConfigAODO':
                     self.ConfigAODO()
 
@@ -110,6 +113,7 @@ class AODOThread(QThread):
                     self.centergalvo()
                 else:
                     self.ui.statusbar.showMessage('AODO thread is doing something undefined: '+self.item.action)
+                    print('AODO thread is doing something undefined: '+self.item.action)
             except Exception:
                 self.ui.statusbar.showMessage("\nAn error occurred,"+" skip the AODO action\n")
                 print(traceback.format_exc())
@@ -122,10 +126,20 @@ class AODOThread(QThread):
         self.Zpos = self.ui.ZPosition.value()
         current_message = self.ui.statusbar.currentMessage()
         self.ui.statusbar.showMessage(current_message+"Stage position updated...")
+        self.ui.PrintOut.append("Stage position updated...X"+str(self.Xpos)+'Y'+str(self.Ypos)+'Z'+str(self.Zpos))
+        self.StagebackQueue.put(0)
         # print('X pos: ',self.Xpos)
         # print('Y pos: ',self.Ypos)
         # print('Z pos: ',self.Zpos)
-        
+    
+    def Uninit(self):
+        settingtask = ni.Task('setting')
+        settingtask.do_channels.add_do_chan(lines='AODO/port2/line0:7')
+        tmp = np.uint32(YDISABLE + XDISABLE + ZDISABLE)
+        settingtask.write(tmp, auto_start = True)
+        settingtask.stop()
+        settingtask.close()
+        self.StagebackQueue.put(0)
     def ConfigAODO(self):
         if self.ui.Laser.currentText() == 'Axsun100k':
             self.Aline_freq = 100000
@@ -144,7 +158,9 @@ class AODOThread(QThread):
                                                postclocks = self.ui.PostClock.value(), \
                                                YStepSize = self.ui.YStepSize.value(), \
                                                YSteps =  self.ui.Ysteps.value(), \
-                                               BVG = self.ui.BlineAVG.value())
+                                               BVG = self.ui.BlineAVG.value(),
+                                               FPSAline = self.ui.FPSAline.value(),
+                                               XforAline = self.ui.XforAline.value())
         self.AOtask = ni.Task('AOtask')
         
         # Configure Analog output task for Galvo control
@@ -192,6 +208,7 @@ class AODOThread(QThread):
             # print(DOwaveform.shape)
             steps = np.sum(DOwaveform)/25000.0*2/pow(2,1)
             print('distance per Cscan: ',steps,'mm')
+            self.ui.PrintOut.append('distance per Cscan: '+str(steps)+'mm')
         return 'AODO configuration success'
     
             
@@ -199,7 +216,7 @@ class AODOThread(QThread):
         if self.ui.ACQMode.currentText() in ['SingleCscan','SurfScan','SurfScan+Slice'] or self.Digitizer == 'ATS9351':
             settingtask = ni.Task('setting')
             settingtask.do_channels.add_do_chan(lines='AODO/port2/line0:7')
-            tmp = np.uint32(direction * YFORWARD + XDISABLE + ZDISABLE)
+            tmp = np.uint32(direction * YFORWARD)# + XDISABLE + ZDISABLE)
             settingtask.write(tmp, auto_start = True)
             self.DOtask.start()
         self.AOtask.start()
@@ -208,7 +225,7 @@ class AODOThread(QThread):
         self.AOtask.stop()
         if self.ui.ACQMode.currentText() in ['SingleCscan','SurfScan','SurfScan+Slice'] or self.Digitizer == 'ATS9351':
             self.DOtask.stop()
-            settingtask.write(XDISABLE+ YDISABLE+ ZDISABLE, auto_start = True)
+            # settingtask.write(XDISABLE+ YDISABLE+ ZDISABLE, auto_start = True)
             settingtask.stop()
             settingtask.close()
             # update GUI Y stage position
@@ -309,32 +326,39 @@ class AODOThread(QThread):
             distance = self.ui.XPosition.value()-self.Xpos
             if distance > 0:
                 direction = XFORWARD
+                sign = 1
             else:
                 direction = XBACKWARD
-            enable = YDISABLE + ZDISABLE
+                sign = -1
+            enable = 0#YDISABLE + ZDISABLE
         elif axis == 'Y':
             line = YCH
             speed = self.ui.YSpeed.value()
             distance = self.ui.YPosition.value()-self.Ypos
             if distance > 0:
                 direction = YFORWARD
+                sign = 1
             else:
                 direction = YBACKWARD
-            enable = XDISABLE + ZDISABLE
+                sign = -1
+            enable = 0#XDISABLE + ZDISABLE
         elif axis == 'Z':
             line = ZCH
             speed = self.ui.ZSpeed.value()
             distance = self.ui.ZPosition.value()-self.Zpos
             if distance > 0:
                 direction = ZFORWARD
+                sign = 1
             else:
                 direction = ZBACKWARD
-            enable = XDISABLE + YDISABLE
+                sign = -1
+            enable = 0#XDISABLE + YDISABLE
             
         if np.abs(distance) < 0.001:
             self.StagebackQueue.put(0)
-            print('move2 action exited')
-            return
+            print('move2 action aborted ', axis)
+            self.ui.PrintOut.append('move2 action aborted '+axis)
+            return 0
         with ni.Task('Move task') as DOtask, ni.Task('setting') as settingtask:
             settingtask.do_channels.add_do_chan(lines='AODO/port2/line0:7')
             settingtask.write(direction + enable, auto_start = True)
@@ -345,12 +369,14 @@ class AODOThread(QThread):
                                               active_edge= Edge.FALLING,\
                                               sample_mode=Atype.FINITE,samps_per_chan=len(DOwaveform))
             DOtask.write(DOwaveform, auto_start = True)
-            print(axis,'real distance moved: ',np.sum(DOwaveform)/line/25000*1000*DISTANCE,'um')
+            message = axis+'real distance moved: '+str(np.sum(DOwaveform)/line/25000*DISTANCE*sign)+'mm'
+            print(message)
+            self.ui.PrintOut.append(message)
             DOtask.wait_until_done(timeout =60)
                 
             DOtask.stop()
             # DOtask.close()
-            settingtask.write(XDISABLE + YDISABLE + ZDISABLE, auto_start = True)
+            # settingtask.write(XDISABLE + YDISABLE + ZDISABLE, auto_start = True)
             settingtask.stop()
             # settingtask.close()
             
@@ -384,7 +410,7 @@ class AODOThread(QThread):
             else:
                 direction = XBACKWARD
                 sign = -1
-            enable = YDISABLE + ZDISABLE
+            enable = 0#YDISABLE + ZDISABLE
         elif axis == 'Y':
             line = YCH
             speed = self.ui.YSpeed.value()
@@ -395,7 +421,7 @@ class AODOThread(QThread):
             else:
                 direction = YBACKWARD
                 sign = -1
-            enable = XDISABLE + ZDISABLE
+            enable = 0#XDISABLE + ZDISABLE
         elif axis == 'Z':
             line = ZCH
             speed = self.ui.ZSpeed.value()
@@ -406,7 +432,7 @@ class AODOThread(QThread):
             else:
                 direction = ZBACKWARD
                 sign = -1
-            enable = XDISABLE + YDISABLE
+            enable = 0#XDISABLE + YDISABLE
             
         if np.abs(distance) < 0.001:
             self.StagebackQueue.put(0)
@@ -421,12 +447,14 @@ class AODOThread(QThread):
                                               active_edge= Edge.FALLING,\
                                               sample_mode=Atype.FINITE,samps_per_chan=len(DOwaveform))
             DOtask.write(DOwaveform, auto_start = True)
-            print(axis,'real distance moved: ',np.sum(DOwaveform)/line/25000*1000*DISTANCE,'um')
+            message = axis+'real distance moved: '+str(np.sum(DOwaveform)/line/25000*DISTANCE*sign)+'mm'
+            print(message)
+            self.ui.PrintOut.append(message)
             DOtask.wait_until_done(timeout =60)
                 
             DOtask.stop()
             # DOtask.close()
-            settingtask.write(XDISABLE + YDISABLE + ZDISABLE, auto_start = True)
+            # settingtask.write(XDISABLE + YDISABLE + ZDISABLE, auto_start = True)
             settingtask.stop()
             # settingtask.close()
             

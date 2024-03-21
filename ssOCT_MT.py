@@ -44,6 +44,8 @@ global Digitizer
 
 Digitizer = 'ART8912'
 
+global XforAline
+XforAline = 100
 # init all Queues as global variable
 # for any queue, you can do queue-in at multiple places, but you can only do queue-out at one place
 global AODOQueue # AODO stands for analog output and digital output
@@ -70,21 +72,12 @@ DnSbackQueue = Queue()
 StopDQueue = Queue()
 GPU2weaverQueue = Queue()
 
-# wrap GPU thread with Queues and Memory
-from ThreadGPU import GPUThread
-class GPUThread_2(GPUThread):
-    def __init__(self, ui):
-            super().__init__()
-            global Memory
-            self.Memory = Memory
-            self.ui = ui
-            self.queue = GPUQueue
-            self.DnSQueue = DnSQueue
-            self.Digitizer = Digitizer
-            self.GPU2weaverQueue = GPU2weaverQueue
+
             
 # wrap digitzer thread with queues and Memory
 if Digitizer == 'ATS9351':
+    # ATS9351 outputs 16bit data range
+    AMPLIFICATION = 1*5
     from ThreadATS9351 import ATS9351
     class Digitizer_2(ATS9351):
         def __init__(self, ui):
@@ -96,6 +89,7 @@ if Digitizer == 'ATS9351':
             self.queue = DQueue
             self.DbackQueue = DbackQueue
             self.StopDQueue = StopDQueue
+            self.XforAline = XforAline
     
     from ThreadWeaver_ATS import WeaverThread
     class WeaverThread_2(WeaverThread):
@@ -115,9 +109,12 @@ if Digitizer == 'ATS9351':
             self.GPUQueue = GPUQueue
             self.DQueue = DQueue
             self.GPU2weaverQueue = GPU2weaverQueue
+            self.XforAline = XforAline
             
             
 elif Digitizer == 'ART8912':
+    # ART8912 outputs 12bit data range
+    AMPLIFICATION = 16*5
     from ThreadART8912 import ART8912
     class Digitizer_2(ART8912):
         def __init__(self, ui):
@@ -129,6 +126,7 @@ elif Digitizer == 'ART8912':
             self.queue = DQueue
             self.DbackQueue = DbackQueue
             self.StopDQueue = StopDQueue
+            self.XforAline = XforAline
 
     # since ART8912 is master, AODO is slave,we need a separate king thread to organize them
     from ThreadWeaver_ART import WeaverThread
@@ -149,7 +147,22 @@ elif Digitizer == 'ART8912':
             self.GPUQueue = GPUQueue
             self.DQueue = DQueue
             self.GPU2weaverQueue = GPU2weaverQueue
+            self.XforAline = XforAline
 
+# wrap GPU thread with Queues and Memory
+from ThreadGPU import GPUThread
+class GPUThread_2(GPUThread):
+    def __init__(self, ui):
+            super().__init__()
+            global Memory
+            self.Memory = Memory
+            self.ui = ui
+            self.queue = GPUQueue
+            self.DnSQueue = DnSQueue
+            self.Digitizer = Digitizer
+            self.GPU2weaverQueue = GPU2weaverQueue
+            self.XforAline = XforAline
+            self.AMPLIFICATION = AMPLIFICATION
 # wrap AODO thread with queue
 from ThreadAODO import AODOThread
 class AODOThread_2(AODOThread):
@@ -159,6 +172,7 @@ class AODOThread_2(AODOThread):
         self.queue = AODOQueue
         self.Digitizer = Digitizer
         self.StagebackQueue = StagebackQueue
+        self.XforAline = XforAline
 
 # wrap Display and save thread with queue        
 from ThreadDnS import DnSThread
@@ -169,6 +183,7 @@ class DnSThread_2(DnSThread):
         self.queue = DnSQueue
         self.Digitizer = Digitizer
         self.DnSbackQueue = DnSbackQueue
+        self.XforAline = XforAline
         
 # wrap MainWindow object with queues and threads        
 class GUI(MainWindow):
@@ -185,6 +200,7 @@ class GUI(MainWindow):
         self.ui.PreSamples.valueChanged.connect(self.update_Dispersion)
         self.ui.PostSamples_2.valueChanged.connect(self.update_Dispersion)
         self.ui.DelaySamples.valueChanged.connect(self.update_Dispersion)
+        self.ui.TrimSamples.valueChanged.connect(self.update_Dispersion)
         
         self.ui.XYmax.valueChanged.connect(self.Update_contrast_XY)
         self.ui.XYmin.valueChanged.connect(self.Update_contrast_XY)
@@ -207,8 +223,10 @@ class GUI(MainWindow):
         self.ui.YDOWN.clicked.connect(self.YDOWN)
         self.ui.ZDOWN.clicked.connect(self.ZDOWN)
         self.ui.InitStageButton.clicked.connect(self.InitStages)
+        self.ui.StageUninit.clicked.connect(self.Uninit)
         self.ui.ZstageTest.clicked.connect(self.ZstageTest)
-        self.ui.Gotozero.stateChanged.connect(self.Gotozero)
+        self.ui.ZstageTest2.clicked.connect(self.ZstageTest2)
+        # self.ui.Gotozero.stateChanged.connect(self.Gotozero)
         self.Init_allThreads()
         
     def Init_allThreads(self):
@@ -270,6 +288,12 @@ class GUI(MainWindow):
     def InitStages(self):
         an_action = AODOAction('Init')
         AODOQueue.put(an_action)
+        StagebackQueue.get()
+        
+    def Uninit(self):
+        an_action = AODOAction('Uninit')
+        AODOQueue.put(an_action)
+        StagebackQueue.get()
         
     def Xmove2(self):
         an_action = AODOAction('Xmove2')
@@ -289,6 +313,7 @@ class GUI(MainWindow):
     def XUP(self):
         an_action = AODOAction('XUP')
         AODOQueue.put(an_action)
+        
         StagebackQueue.get()
     def YUP(self):
         an_action = AODOAction('YUP')
@@ -313,12 +338,15 @@ class GUI(MainWindow):
         StagebackQueue.get()
         
     def ZstageTest(self):
-        
-
-        an_action = WeaverAction('ZstageRepeatibility')
-        WeaverQueue.put(an_action)
+        if self.ui.ZstageTest.isChecked():
+            an_action = WeaverAction('ZstageRepeatibility')
+            WeaverQueue.put(an_action)
         # wait until weaver done
         
+    def ZstageTest2(self):
+        if self.ui.ZstageTest2.isChecked():
+            an_action = WeaverAction('ZstageRepeatibility2')
+            WeaverQueue.put(an_action)
 
     def Gotozero(self):
         if self.ui.Gotozero.isChecked():
@@ -351,12 +379,12 @@ class GUI(MainWindow):
         GPUQueue.put(an_action)
         
     def Update_contrast_XY(self):
-        if not self.ui.RunButton.isChecked():
+        # if not self.ui.RunButton.isChecked():
             an_action = DnSAction('UpdateContrastXY')
             DnSQueue.put(an_action)
 
     def Update_contrast_XYZ(self):
-        if not self.ui.RunButton.isChecked():
+        # if not self.ui.RunButton.isChecked():
             an_action = DnSAction('UpdateContrastXYZ')
             DnSQueue.put(an_action)
             
