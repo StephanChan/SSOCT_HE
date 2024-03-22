@@ -54,11 +54,15 @@ class GPUThread(QThread):
                 else:
                     self.ui.statusbar.showMessage('GPU thread is doing something invalid '+self.item.action)
                 if time.time()-start > 1:
-                    print('an FFT action took ',time.time()-start,' seconds\n')
-                    self.ui.PrintOut.append('an FFT action took '+str(time.time()-start)+' seconds\n')
+                    message = 'an FFT action took '+str(time.time()-start)+' seconds\n'
+                    print(message)
+                    self.ui.PrintOut.append(message)
+                    self.log.write(message)
             except Exception as error:
-                self.ui.statusbar.showMessage("An error occurred:"+" skip the FFT action\n")
-                self.ui.PrintOut.append("An error occurred:"+" skip the FFT action\n")
+                message = "An error occurred, skip the FFT action\n"
+                self.ui.statusbar.showMessage(message)
+                self.ui.PrintOut.append(message)
+                self.log.write(message)
                 print(traceback.format_exc())
             self.item = self.queue.get()
         self.ui.statusbar.showMessage(self.exit_message)
@@ -160,22 +164,28 @@ class GPUThread(QThread):
         # update dispersion and window
         dispersion_path = self.ui.Disp_DIR.text()
         # print(dispersion_path)
-        current_message = self.ui.statusbar.currentMessage()
         if os.path.isfile(dispersion_path):
             self.dispersion = np.float32(np.fromfile(dispersion_path, dtype=np.float32))
             self.dispersion = np.complex64(np.exp(1j*self.dispersion))
             
-            self.ui.statusbar.showMessage(current_message+"load disperison compensation success...")
+            self.ui.statusbar.showMessage("load disperison compensation success...")
             self.ui.PrintOut.append("load disperison compensation success...")
+            self.log.write("load disperison compensation success...")
         else:
             self.dispersion = np.complex64(np.ones(samples))
-            self.ui.statusbar.showMessage('no disperison compensation...')
-            self.ui.PrintOut.append("no disperison compensation...")
+            self.ui.statusbar.showMessage('no disperison compensation found...')
+            self.ui.PrintOut.append("no disperison compensation found...")
+            self.log.write("no disperison compensation found...")
         if len(self.window) == len(self.dispersion):
             self.dispersion = np.complex64(self.dispersion * self.window)
+            message = 'using dispersion compensation...'
+            print(message)
+            self.ui.PrintOut.append(message)
+            self.log.write(message)
         else:
-            self.ui.statusbar.showMessage('dispersion length unmatch sample size, using no dispersion compensation...')
-            self.ui.PrintOut.append('dispersion length unmatch sample size, using no dispersion compensation...')
+            self.ui.statusbar.showMessage('however, dispersion length unmatch sample size, no dispersion compensation...')
+            self.ui.PrintOut.append('however, dispersion length unmatch sample size, no dispersion compensation...')
+            self.log.write('however, dispersion length unmatch sample size, no dispersion compensation...')
             self.dispersion = np.complex64(np.ones(samples))
             self.dispersion = np.complex64(self.dispersion * self.window)
         self.dispersion = self.dispersion.reshape([1,len(self.dispersion)])
@@ -192,10 +202,12 @@ class GPUThread(QThread):
             current_message = self.ui.statusbar.currentMessage()
             self.ui.statusbar.showMessage(current_message+"load background success...")
             self.ui.PrintOut.append("load background success...")
+            self.log.write("load background success...")
         else:
             current_message = self.ui.statusbar.currentMessage()
             self.ui.statusbar.showMessage('using 2048 as background...')
             self.ui.PrintOut.append('using 2048 as background...')
+            self.log.write('using 2048 as background...')
             self.background = np.float32(np.ones(samples)*2048)
         
     def update_FFTlength(self):
@@ -208,8 +220,9 @@ class GPUThread(QThread):
             self.length_FFT *=2
 
     def display_FFT_actions(self):
-        print( self.FFT_actions, ' FFT actions taken place\n')
-        self.ui.PrintOut.append(str(self.FFT_actions)+ ' FFT actions taken place\n')
+        message = str(self.FFT_actions)+ ' FFT actions taken place\n'
+        self.ui.PrintOut.append(message)
+        self.log.write(message)
         self.FFT_actions = 0
         
    

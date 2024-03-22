@@ -36,7 +36,7 @@ class ART8912():
         
         #配置垂直参数
 
-        channelName = '0' 
+        channelName = '0,1' 
             
         verticalRange = InputRange.RANGE_2VPP       
                        # 通道量程

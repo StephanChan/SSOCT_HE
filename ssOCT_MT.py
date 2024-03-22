@@ -32,6 +32,7 @@ from PyQt5.QtWidgets import QApplication
 import PyQt5.QtCore as qc
 from mainWindow import MainWindow
 from Actions import *
+from Generaic_functions import LOG
 import time
 # init global memory for temporary storage of generated raw data
 global memoryCount
@@ -44,8 +45,6 @@ global Digitizer
 
 Digitizer = 'ART8912'
 
-global XforAline
-XforAline = 100
 # init all Queues as global variable
 # for any queue, you can do queue-in at multiple places, but you can only do queue-out at one place
 global AODOQueue # AODO stands for analog output and digital output
@@ -71,16 +70,14 @@ DbackQueue = Queue()
 DnSbackQueue = Queue()
 StopDQueue = Queue()
 GPU2weaverQueue = Queue()
-
-
-            
+     
 # wrap digitzer thread with queues and Memory
 if Digitizer == 'ATS9351':
     # ATS9351 outputs 16bit data range
     AMPLIFICATION = 1*5
     from ThreadATS9351 import ATS9351
     class Digitizer_2(ATS9351):
-        def __init__(self, ui):
+        def __init__(self, ui, log):
             super().__init__()
             global Memory
             self.memoryCount = memoryCount
@@ -89,11 +86,11 @@ if Digitizer == 'ATS9351':
             self.queue = DQueue
             self.DbackQueue = DbackQueue
             self.StopDQueue = StopDQueue
-            self.XforAline = XforAline
+            self.log = log
     
     from ThreadWeaver_ATS import WeaverThread
     class WeaverThread_2(WeaverThread):
-        def __init__(self, ui):
+        def __init__(self, ui, log):
             super().__init__()
             global Memory
             self.Memory = Memory
@@ -109,7 +106,7 @@ if Digitizer == 'ATS9351':
             self.GPUQueue = GPUQueue
             self.DQueue = DQueue
             self.GPU2weaverQueue = GPU2weaverQueue
-            self.XforAline = XforAline
+            self.log = log
             
             
 elif Digitizer == 'ART8912':
@@ -117,7 +114,7 @@ elif Digitizer == 'ART8912':
     AMPLIFICATION = 16*5
     from ThreadART8912 import ART8912
     class Digitizer_2(ART8912):
-        def __init__(self, ui):
+        def __init__(self, ui, log):
             super().__init__()
             global Memory
             self.memoryCount = memoryCount
@@ -126,12 +123,12 @@ elif Digitizer == 'ART8912':
             self.queue = DQueue
             self.DbackQueue = DbackQueue
             self.StopDQueue = StopDQueue
-            self.XforAline = XforAline
+            self.log = log
 
     # since ART8912 is master, AODO is slave,we need a separate king thread to organize them
     from ThreadWeaver_ART import WeaverThread
     class WeaverThread_2(WeaverThread):
-        def __init__(self, ui):
+        def __init__(self, ui, log):
             super().__init__()
             global Memory
             self.Memory = Memory
@@ -147,12 +144,12 @@ elif Digitizer == 'ART8912':
             self.GPUQueue = GPUQueue
             self.DQueue = DQueue
             self.GPU2weaverQueue = GPU2weaverQueue
-            self.XforAline = XforAline
+            self.log = log
 
 # wrap GPU thread with Queues and Memory
 from ThreadGPU import GPUThread
 class GPUThread_2(GPUThread):
-    def __init__(self, ui):
+    def __init__(self, ui, log):
             super().__init__()
             global Memory
             self.Memory = Memory
@@ -161,35 +158,35 @@ class GPUThread_2(GPUThread):
             self.DnSQueue = DnSQueue
             self.Digitizer = Digitizer
             self.GPU2weaverQueue = GPU2weaverQueue
-            self.XforAline = XforAline
+            self.log = log
             self.AMPLIFICATION = AMPLIFICATION
 # wrap AODO thread with queue
 from ThreadAODO import AODOThread
 class AODOThread_2(AODOThread):
-    def __init__(self, ui):
+    def __init__(self, ui, log):
         super().__init__()
         self.ui = ui
         self.queue = AODOQueue
         self.Digitizer = Digitizer
         self.StagebackQueue = StagebackQueue
-        self.XforAline = XforAline
+        self.log = log
 
 # wrap Display and save thread with queue        
 from ThreadDnS import DnSThread
 class DnSThread_2(DnSThread):
-    def __init__(self, ui):
+    def __init__(self, ui, log):
         super().__init__()
         self.ui = ui
         self.queue = DnSQueue
         self.Digitizer = Digitizer
         self.DnSbackQueue = DnSbackQueue
-        self.XforAline = XforAline
+        self.log = log
         
 # wrap MainWindow object with queues and threads        
 class GUI(MainWindow):
     def __init__(self):
         super().__init__()
-
+        self.log = LOG(self.ui)
         self.ui.RunButton.clicked.connect(self.run_task)
         self.ui.PauseButton.clicked.connect(self.Pause_task)
         
@@ -230,11 +227,11 @@ class GUI(MainWindow):
         self.Init_allThreads()
         
     def Init_allThreads(self):
-        self.Weaver_thread = WeaverThread_2(self.ui)
-        self.AODO_thread = AODOThread_2(self.ui)
-        self.DnS_thread = DnSThread_2(self.ui)
-        self.GPU_thread = GPUThread_2(self.ui)
-        self.D_thread = Digitizer_2(self.ui)
+        self.Weaver_thread = WeaverThread_2(self.ui, self.log)
+        self.AODO_thread = AODOThread_2(self.ui, self.log)
+        self.DnS_thread = DnSThread_2(self.ui, self.log)
+        self.GPU_thread = GPUThread_2(self.ui, self.log)
+        self.D_thread = Digitizer_2(self.ui, self.log)
         
         self.D_thread.start()
         self.GPU_thread.start()

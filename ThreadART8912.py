@@ -198,6 +198,7 @@ class ART8912(QThread):
         error_code = Functions.ArtScope_StartAcquisition(self.taskHandle)
         print('start acquiring')
         self.ui.PrintOut.append('start acquiring')
+        self.log.write('start acquiring')
         while blinesCompleted < self.NBlines:
             # 8位的卡需要调用ArtScope_FetchBinary8，同时定义数据缓冲区数据类型为无符号8位数据
             try:
@@ -209,6 +210,7 @@ class ART8912(QThread):
                       '\n'+ error+ '\nstopping acquisition for Digitizer\n'
                 print(message)
                 self.ui.PrintOut.append(message)
+                self.log.write(message)
                 break
             
             if error_code < 0:
@@ -230,9 +232,12 @@ class ART8912(QThread):
                 self.StopDQueue.get(timeout=0.001)
                 self.ui.statusbar.showMessage('successfully stopped Digitizer...')
                 self.ui.PrintOut.append('successfully stopped Digitizer...')
+                self.log.write('successfully stopped Digitizer...')
                 self.CloseTask()
-                print(str( num)+ ' data packages returned by digitizer\n')
-                self.ui.PrintOut.append(str( num)+ ' data packages returned by digitizer\n')
+                message = str( num)+ ' data packages returned by digitizer\n'
+                print(message)
+                self.ui.PrintOut.append(message)
+                self.log.write(message)
                 break
             except:
                 pass

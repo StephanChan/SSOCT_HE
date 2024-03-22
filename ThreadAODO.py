@@ -112,10 +112,17 @@ class AODOThread(QThread):
                 elif self.item.action == 'centergalvo':
                     self.centergalvo()
                 else:
-                    self.ui.statusbar.showMessage('AODO thread is doing something undefined: '+self.item.action)
-                    print('AODO thread is doing something undefined: '+self.item.action)
+                    message = 'AODO thread is doing something undefined: '+self.item.action
+                    self.ui.statusbar.showMessage(message)
+                    print(message)
+                    self.ui.PrintOut.append(message)
+                    self.log.write(message)
             except Exception:
-                self.ui.statusbar.showMessage("\nAn error occurred,"+" skip the AODO action\n")
+                message = "\nAn error occurred,"+" skip the AODO action\n"
+                print(message)
+                self.ui.statusbar.showMessage(message)
+                self.ui.PrintOut.append(message)
+                self.log.write(message)
                 print(traceback.format_exc())
             self.item = self.queue.get()
         self.ui.statusbar.showMessage('AODO thread successfully exited')
@@ -124,9 +131,11 @@ class AODOThread(QThread):
         self.Xpos = self.ui.XPosition.value()
         self.Ypos = self.ui.YPosition.value()
         self.Zpos = self.ui.ZPosition.value()
-        current_message = self.ui.statusbar.currentMessage()
-        self.ui.statusbar.showMessage(current_message+"Stage position updated...")
-        self.ui.PrintOut.append("Stage position updated...X"+str(self.Xpos)+'Y'+str(self.Ypos)+'Z'+str(self.Zpos))
+        message = "Stage position updated...X"+str(self.Xpos)+'Y'+str(self.Ypos)+'Z'+str(self.Zpos)
+        self.ui.statusbar.showMessage(message)
+        self.ui.PrintOut.append(message)
+        self.log.write(message)
+        print(message)
         self.StagebackQueue.put(0)
         # print('X pos: ',self.Xpos)
         # print('Y pos: ',self.Ypos)
@@ -207,8 +216,10 @@ class AODOThread(QThread):
             self.DOtask.write(DOwaveform, auto_start = False)
             # print(DOwaveform.shape)
             steps = np.sum(DOwaveform)/25000.0*2/pow(2,1)
-            print('distance per Cscan: ',steps,'mm')
-            self.ui.PrintOut.append('distance per Cscan: '+str(steps)+'mm')
+            message = 'distance per Cscan: '+str(steps)+'mm'
+            self.ui.PrintOut.append(message)
+            print(message)
+            self.log.write(message)
         return 'AODO configuration success'
     
             
@@ -275,10 +286,10 @@ class AODOThread(QThread):
         # generate stage movement that ramps up and down speed so that motor won't miss signal at beginning and end
         # how to do that: motor is driving by low->high digital transition
         # ramping up: make the interval between two highs with long time at the beginning, then gradually goes down.vice versa for ramping down
-        if np.abs(distance) > 0.05:
-            max_interval = 1000
-        else:
-            max_interval = 5
+        # if np.abs(distance) > 0.05:
+        #     max_interval = 1000
+        # else:
+        max_interval = 1000
         ramp_up_interval = np.arange(max_interval,0,-10)
         ramp_down_interval = np.arange(1,max_interval+1,10)
         ramping_highs = np.sum(len(ramp_down_interval)+len(ramp_up_interval)) # number steps used in ramping up and down process
@@ -356,8 +367,10 @@ class AODOThread(QThread):
             
         if np.abs(distance) < 0.001:
             self.StagebackQueue.put(0)
-            print('move2 action aborted ', axis)
-            self.ui.PrintOut.append('move2 action aborted '+axis)
+            message = axis + ' move2 action aborted'
+            self.ui.PrintOut.append(message)
+            print(message)
+            self.log.write(message)
             return 0
         with ni.Task('Move task') as DOtask, ni.Task('setting') as settingtask:
             settingtask.do_channels.add_do_chan(lines='AODO/port2/line0:7')
@@ -372,6 +385,7 @@ class AODOThread(QThread):
             message = axis+'real distance moved: '+str(np.sum(DOwaveform)/line/25000*DISTANCE*sign)+'mm'
             print(message)
             self.ui.PrintOut.append(message)
+            self.log.write(maessage)
             DOtask.wait_until_done(timeout =60)
                 
             DOtask.stop()
@@ -450,6 +464,7 @@ class AODOThread(QThread):
             message = axis+'real distance moved: '+str(np.sum(DOwaveform)/line/25000*DISTANCE*sign)+'mm'
             print(message)
             self.ui.PrintOut.append(message)
+            self.log.write(message)
             DOtask.wait_until_done(timeout =60)
                 
             DOtask.stop()

@@ -22,6 +22,25 @@ global Galvo_bias
 Galvo_bias = 3 # V
 global XforAline
 XforAline = 100
+
+class LOG():
+    def __init__(self, ui):
+        super().__init__()
+        import datetime
+        current_time = datetime.datetime.now()
+        self.filePath = ui.DIR.toPlainText() +  "/" + 'log_'+\
+            str(current_time.year)+'-'+\
+            str(current_time.month)+'-'+\
+            str(current_time.day)+'-'+\
+            str(current_time.hour)+'-'+\
+            str(current_time.minute)+'-'+\
+            str(current_time.second)+'.txt'
+    def write(self, message):
+        fp = open(self.filePath, 'a')
+        fp.write(message+'\n')
+        fp.close()
+
+
 def GenGalvoWave(StepSize = 1, Steps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma5X', preclocks = 50, postclocks = 200):
     
     # total number of steps is the product of steps and aline average number

@@ -40,49 +40,61 @@ class WeaverThread(QThread):
                     message = self.RptScan(self.item.action)
                     self.ui.statusbar.showMessage(message)
                     self.ui.PrintOut.append(message)
+                    self.log.write(message)
     
                     
                 elif self.item.action in ['SingleBline', 'SingleAline', 'SingleCscan']:
                     message = self.SingleScan(self.item.action)
                     self.ui.statusbar.showMessage(message)
                     self.ui.PrintOut.append(message)
+                    self.log.write(message)
                     
                 elif self.item.action == 'SurfScan':
                     interrupt, status = self.SurfScan()
                     self.ui.statusbar.showMessage(status)
                     self.ui.PrintOut.append(status)
+                    self.log.write(status)
                     
                 elif self.item.action == 'SurfScan+Slice':
                     message = self.SurfSlice()
                     self.ui.statusbar.showMessage(message)
                     self.ui.PrintOut.append(message)
+                    self.log.write(message)
                 elif self.item.action == 'Gotozero':
                     message = self.Gotozero()
                     self.ui.statusbar.showMessage(message)
                     self.ui.PrintOut.append(message)
+                    self.log.write(message)
                 elif self.item.action == 'ZstageRepeatibility':
                     message = self.ZstageRepeatibility()
                     self.ui.statusbar.showMessage(message)
                     self.ui.PrintOut.append(message)
+                    self.log.write(message)
                 elif self.item.action == 'ZstageRepeatibility2':
                     message = self.ZstageRepeatibility2()
                     self.ui.statusbar.showMessage(message)
                     self.ui.PrintOut.append(message)
+                    self.log.write(message)
                 elif self.item.action == 'dispersion_compensation':
                     message = self.dispersion_compensation()
                     self.ui.statusbar.showMessage(message)
                     self.ui.PrintOut.append(message)
+                    self.log.write(message)
                 elif self.item.action == 'get_background':
                     message = self.get_background()
                     self.ui.statusbar.showMessage(message)
                     self.ui.PrintOut.append(message)
+                    self.log.write(message)
                 else:
                     message = 'King thread is doing something invalid: '+self.item.action
                     self.ui.statusbar.showMessage(message)
                     self.ui.PrintOut.append(message)
+                    self.log.write(message)
             except Exception as error:
-                self.ui.statusbar.showMessage("An error occurred,"+"skip the acquisition action\n")
-                self.ui.PrintOut.append("An error occurred,"+"skip the acquisition action\n")
+                message = "An error occurred,"+"skip the acquisition action\n"
+                self.ui.statusbar.showMessage(message)
+                self.ui.PrintOut.append(message)
+                self.log.write(message)
                 print(traceback.format_exc())
             self.item = self.queue.get()
             
@@ -113,6 +125,7 @@ class WeaverThread(QThread):
         if np.sum(self.data)<10:
             print('spectral data all zeros!')
             self.ui.PrintOut.append('spectral data all zeros!')
+            self.log.write('spectral data all zeros!')
             an_action = AODOAction('CloseTask')
             self.AODOQueue.put(an_action)
             an_action = DAction('CloseTask')
@@ -235,8 +248,9 @@ class WeaverThread(QThread):
                     an_action = AODOAction('CloseTask')
                     self.AODOQueue.put(an_action)
                     
-                    print(data_backs, ' data received by weaver\n')
-                    self.ui.PrintOut.append(str(data_backs) + ' data received by weaver\n')
+                    message = str(data_backs)+ ' data received by weaver'
+                    self.ui.PrintOut.append(message)
+                    self.log.write(message)
                     an_action = GPUAction('display_FFT_actions')
                     self.GPUQueue.put(an_action)
                     an_action = DnSAction('display_counts')
@@ -423,8 +437,10 @@ class WeaverThread(QThread):
         while np.abs(z-target_depth) > self.ui.DefinedZeroRange.value() and self.ui.Gotozero.isChecked() and np.abs(total_distance)<1: # unit mm
             # do a SingleAline measurement
             message = self.SingleScan(self.ui.ACQMode.currentText())
+            self.log.write(message)
             while message != self.ui.ACQMode.currentText()+" successfully finished...":
                 message = self.SingleScan(self.ui.ACQMode.currentText())
+                self.log.write(message)
                 time.sleep(1)
             time.sleep(0.1)
             # get Aline data
@@ -448,16 +464,19 @@ class WeaverThread(QThread):
             message = 'peak at:'+str(z)+ ' pixel, m='+str(m)+ ' '+str(z-target_depth)+' pixels away'
             print(message)
             self.ui.PrintOut.append(message)
+            self.log.write(message)
             # handle error condistions
             if m < self.ui.AlinePeakMin.value():
                 message = 'peak height='+str(m)+ ' peak too small, abort...'
                 print(message)
                 self.ui.PrintOut.append(message)
+                self.log.write(message)
                 return ' peak too small, abort...'
             elif m>=self.ui.AlinePeakMax.value():
                 message = 'peak height='+str(m)+' this means spectral samples are all 0s, increase XforAline, abort...'
                 print(message)
                 self.ui.PrintOut.append(message)
+                self.log.write(message)
                 return ' peak too large, abort...'
             # no error do this
             if z > target_depth and np.abs(z-target_depth)>self.ui.DefinedZeroRange.value(): # this means glass is at lower position
@@ -491,8 +510,6 @@ class WeaverThread(QThread):
             an_action = AODOAction('Init')
             self.AODOQueue.put(an_action)
             self.StagebackQueue.get()
-            print('update pos to: '+str( self.ui.ZPosition.value()))
-            self.ui.PrintOut.append('update pos to: '+str( self.ui.ZPosition.value()))
         self.ui.ACQMode.setCurrentText(mode)
         self.ui.FFTDevice.setCurrentText(device)
         self.ui.Gotozero.setChecked(False)
@@ -555,10 +572,13 @@ class WeaverThread(QThread):
                 break
             # measure ALine
             message = self.SingleScan(self.ui.ACQMode.currentText())
+            self.log.write(message)
             while message != self.ui.ACQMode.currentText()+" successfully finished...":
                 message = self.SingleScan(self.ui.ACQMode.currentText())
+                self.log.write(message)
                 self.ui.PrintOut.append(message)
-            time.sleep(1) # let GUI update Aline 
+                time.sleep(1)
+            time.sleep(0.1) # let GUI update Aline 
             # move Z stage down
             
             self.ui.ZPosition.setValue(3)
@@ -574,6 +594,8 @@ class WeaverThread(QThread):
             an_action = AODOAction('Ymove2')
             self.AODOQueue.put(an_action)
             self.StagebackQueue.get()
+            # remeasure background
+            self.get_background()
             
             self.ui.ZPosition.setValue(15)
             an_action = AODOAction('Zmove2')
@@ -585,8 +607,10 @@ class WeaverThread(QThread):
             message = self.Gotozero()
             self.ui.statusbar.showMessage(message)
             if message != 'gotozero success...':
-                print('go to zero failed, abort test...')
-                self.ui.PrintOut.append('go to zero failed, abort test...')
+                message = 'go to zero failed, abort test...'
+                print(message)
+                self.ui.PrintOut.append(message)
+                self.log.write(message)
                 break
             else:
                 # move to target height
@@ -610,7 +634,7 @@ class WeaverThread(QThread):
         self.ui.FFTDevice.setCurrentText('None')
         ############################# measure an Aline
         self.SingleScan('SingleAline')
-        time.sleep(1.5)
+        time.sleep(0.1)
         #################################################################### do dispersion compenstation
         Xpixels = self.ui.XforAline.value()
         Yrpt = self.ui.BlineAVG.value()
@@ -650,8 +674,9 @@ class WeaverThread(QThread):
         plt.figure()
         plt.plot(phi_diff)
         # plt.figure()
-        print('max phase difference is: ',np.max(np.abs(phi_diff)))
-        self.ui.PrintOut.append('max phase difference is: '+str(np.max(np.abs(phi_diff))))
+        message = 'max phase difference is: '+str(np.max(np.abs(phi_diff)))+'\n'
+        self.ui.PrintOut.append(message)
+        self.log.write(message)
         # fR = np.fft.fft(ALINE, axis=1)/L
 
         # fR = np.abs(fR[:,self.ui.DepthStart.value():self.ui.DepthStart.value()+self.ui.DepthRange.value()])
@@ -683,7 +708,7 @@ class WeaverThread(QThread):
         self.ui.FFTDevice.setCurrentText('None')
         ############################# measure an Aline
         self.SingleScan('SingleAline')
-        time.sleep(1.5)
+        time.sleep(0.1)
         #######################################################################
         Xpixels = self.ui.XforAline.value()
         Yrpt = self.ui.BlineAVG.value()

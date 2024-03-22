@@ -62,12 +62,16 @@ class DnSThread(QThread):
                     self.print_display_counts()
                     
                 else:
-                    
-                    self.ui.statusbar.showMessage('Display and save thread is doing something invalid' + self.item.action)
-                    self.ui.PrintOut.append('Display and save thread is doing something invalid' + self.item.action)
+                    message = 'Display and save thread is doing something invalid' + self.item.action
+                    self.ui.statusbar.showMessage(message)
+                    self.ui.PrintOut.append(message)
+                    self.log.write(message)
             except Exception as error:
-                self.ui.statusbar.showMessage("\nAn error occurred:"+" skip the display and save action\n")
-                self.ui.PrintOut.append("\nAn error occurred:"+" skip the display and save action\n")
+                message = "\nAn error occurred:"+" skip the display and save action\n"
+                print(message)
+                self.ui.statusbar.showMessage(message)
+                self.ui.PrintOut.append(message)
+                self.log.write(message)
                 print(traceback.format_exc())
             num+=1
             # print(num, 'th display\n')
@@ -75,8 +79,10 @@ class DnSThread(QThread):
         self.ui.statusbar.showMessage("Display and save Thread successfully exited...")
             
     def print_display_counts(self):
-        print( self.display_actions, ' Blines displayed\n')
-        self.ui.PrintOut.append(str(self.display_actions)+ ' Blines displayed\n')
+        message = str(self.display_actions)+ ' Blines displayed\n'
+        print(message)
+        self.ui.PrintOut.append(message)
+        self.log.write(message)
         self.display_actions = 0
         
     def Display_aline(self, data, raw = False):
@@ -99,10 +105,8 @@ class DnSThread(QThread):
         if self.Digitizer == 'ART8912' and raw:
             Zpixels = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
             data = data[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]
-
         self.Aline = data
         data = np.float32(np.mean(data,0))
-
         # float32 data type
         pixmap = LinePlot(data, [], self.ui.XYmin.value(), self.ui.XYmax.value())
         # clear content on the waveformLabel
@@ -356,6 +360,8 @@ class DnSThread(QThread):
         fp = open(filePath, 'wb')
         data.tofile(fp)
         fp.close()
-        print('time for saving: ', time.time()-start)
-        self.ui.PrintOut.append('time for saving: '+str( time.time()-start))
+        message = 'time for saving: '+str( time.time()-start)
+        print(message)
+        self.ui.PrintOut.append(message)
+        self.log.write(message)
         
