@@ -60,6 +60,8 @@ class DnSThread(QThread):
                     self.Update_contrast_Surf()
                 elif self.item.action == 'display_counts':
                     self.print_display_counts()
+                elif self.item.action == 'restart_tilenum':
+                    self.restart_tilenum()
                     
                 else:
                     message = 'Display and save thread is doing something invalid' + self.item.action
@@ -325,6 +327,10 @@ class DnSThread(QThread):
             
     def Update_contrast_XYZ(self):
         self.ui.mayavi_widget.visualization.update_contrast(self.ui.XYZmin.value(), self.ui.XYZmax.value())
+    
+    def restart_tilenum(self):
+        self.tileNum = 1
+        self.sliceNum = self.sliceNum+1
         
     def SurfFilename(self, shape):
         if self.tileNum <= self.totalTiles:
@@ -334,6 +340,8 @@ class DnSThread(QThread):
             self.sliceNum = self.sliceNum + 1
             self.tileNum = 1
             filename = 'slice-'+str(self.sliceNum)+'-tile-'+str(self.tileNum)+'-Y'+str(shape[0])+'-X'+str(shape[1])+'-Z'+str(shape[2])+'.bin'
+            self.tileNum = self.tileNum + 1
+        print(filename)
         return filename
     
     def CscanFilename(self, shape):

@@ -223,6 +223,7 @@ class GUI(MainWindow):
         self.ui.StageUninit.clicked.connect(self.Uninit)
         self.ui.ZstageTest.clicked.connect(self.ZstageTest)
         self.ui.ZstageTest2.clicked.connect(self.ZstageTest2)
+        self.ui.SliceDir.clicked.connect(self.SliceDirection)
         # self.ui.Gotozero.stateChanged.connect(self.Gotozero)
         self.Init_allThreads()
         
@@ -248,6 +249,9 @@ class GUI(MainWindow):
         DQueue.put(exit_element)
         
     def run_task(self):
+        while PauseQueue.qsize()>0:
+            PauseQueue.get()
+        self.ui.PrintOut.append('Pause Queue inited...')
         # RptAline and SingleAline is for checking Aline profile, we don't need to capture each Aline, only display 30 Alines per second\
         
         # RptBline and SingleBline will collect each Bline, but FFT will be slow in this mode. To check image quality, recommend using Alazar FFT.
@@ -261,9 +265,10 @@ class GUI(MainWindow):
         
         # Slice is for cut one slice only
 
-        if self.ui.ACQMode.currentText() in ['RptAline','RptBline','RptCscan','SurfScan','SurfScan+Slice']:
+        if self.ui.ACQMode.currentText() in ['RptAline','RptBline','RptCscan','SurfScan','SurfScan+Slice','RptSlice']:
             if self.ui.RunButton.isChecked():
                 self.ui.RunButton.setText('Stop')
+                
                 an_action = WeaverAction(self.ui.ACQMode.currentText())
                 WeaverQueue.put(an_action)
             else:
@@ -272,7 +277,7 @@ class GUI(MainWindow):
                 self.Stop_task()
                 
                 # self.CenterGalvo()
-        elif self.ui.ACQMode.currentText() in ['SingleAline','SingleBline','SingleCscan']:
+        elif self.ui.ACQMode.currentText() in ['SingleAline','SingleBline','SingleCscan','SingleSlice']:
             an_action = WeaverAction(self.ui.ACQMode.currentText())
             WeaverQueue.put(an_action)
             # time.sleep(0.5)
@@ -334,6 +339,12 @@ class GUI(MainWindow):
         AODOQueue.put(an_action)
         StagebackQueue.get()
         
+    def SliceDirection(self):
+        if self.ui.SliceDir.isChecked():
+            self.ui.SliceDir.setText('Backward')
+        else:
+            self.ui.SliceDir.setText('Forward')
+            
     def ZstageTest(self):
         if self.ui.ZstageTest.isChecked():
             an_action = WeaverAction('ZstageRepeatibility')
@@ -358,9 +369,11 @@ class GUI(MainWindow):
     def Pause_task(self):
         if self.ui.PauseButton.isChecked():
             PauseQueue.put('Pause')
+            self.ui.PauseButton.setText('Unpause')
             self.ui.statusbar.showMessage('acquisition paused...')
         else:
             PauseQueue.put('unPause')
+            self.ui.PauseButton.setText('Pause')
             self.ui.statusbar.showMessage('acquisition resumed...')
       
     def Stop_task(self):

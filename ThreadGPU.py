@@ -114,7 +114,7 @@ class GPUThread(QThread):
         # display and save data, data type is float32
         an_action = DnSAction(mode, data = self.data_CPU, args = args) # data in Memory[memoryLoc]
         self.DnSQueue.put(an_action)
-        if self.ui.Gotozero.isChecked():
+        if self.ui.Gotozero.isChecked() and self.ui.ACQMode.currentText() == 'SingleAline':
             self.GPU2weaverQueue.put(self.data_CPU)
         
         

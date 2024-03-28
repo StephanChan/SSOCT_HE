@@ -286,10 +286,12 @@ class AODOThread(QThread):
         # generate stage movement that ramps up and down speed so that motor won't miss signal at beginning and end
         # how to do that: motor is driving by low->high digital transition
         # ramping up: make the interval between two highs with long time at the beginning, then gradually goes down.vice versa for ramping down
-        # if np.abs(distance) > 0.05:
-        #     max_interval = 1000
-        # else:
-        max_interval = 1000
+        if np.abs(distance) > 0.2:
+            max_interval = 1000
+        elif np.abs(distance) > 0.05:
+            max_interval = 100
+        elif np.abs(distance) > 0.001:
+            max_interval = 10
         ramp_up_interval = np.arange(max_interval,0,-10)
         ramp_down_interval = np.arange(1,max_interval+1,10)
         ramping_highs = np.sum(len(ramp_down_interval)+len(ramp_up_interval)) # number steps used in ramping up and down process
@@ -334,6 +336,13 @@ class AODOThread(QThread):
         if axis == 'X':
             line = XCH
             speed = self.ui.XSpeed.value()
+            if self.ui.XPosition.value()>self.ui.Xmax.value() or self.ui.XPosition.value()<self.ui.Xmin.value():
+                message = 'X target postion invalid, abort...'
+                self.ui.PrintOut.append(message)
+                self.log.write(message)
+                print(message)
+                self.StagebackQueue.put(0)
+                return message
             distance = self.ui.XPosition.value()-self.Xpos
             if distance > 0:
                 direction = XFORWARD
@@ -345,6 +354,13 @@ class AODOThread(QThread):
         elif axis == 'Y':
             line = YCH
             speed = self.ui.YSpeed.value()
+            if self.ui.YPosition.value()>self.ui.Ymax.value() or self.ui.YPosition.value()<self.ui.Ymin.value():
+                message = 'Y target postion invalid, abort...'
+                self.ui.PrintOut.append(message)
+                self.log.write(message)
+                print(message)
+                self.StagebackQueue.put(0)
+                return message
             distance = self.ui.YPosition.value()-self.Ypos
             if distance > 0:
                 direction = YFORWARD
@@ -356,6 +372,13 @@ class AODOThread(QThread):
         elif axis == 'Z':
             line = ZCH
             speed = self.ui.ZSpeed.value()
+            if self.ui.ZPosition.value()>self.ui.Zmax.value() or self.ui.ZPosition.value()<self.ui.Zmin.value():
+                message = 'Z target postion invalid, abort...'
+                self.ui.PrintOut.append(message)
+                self.log.write(message)
+                print(message)
+                self.StagebackQueue.put(0)
+                return message
             distance = self.ui.ZPosition.value()-self.Zpos
             if distance > 0:
                 direction = ZFORWARD
@@ -385,7 +408,7 @@ class AODOThread(QThread):
             message = axis+'real distance moved: '+str(np.sum(DOwaveform)/line/25000*DISTANCE*sign)+'mm'
             print(message)
             self.ui.PrintOut.append(message)
-            self.log.write(maessage)
+            self.log.write(message)
             DOtask.wait_until_done(timeout =60)
                 
             DOtask.stop()
@@ -417,6 +440,7 @@ class AODOThread(QThread):
         if axis == 'X':
             line = XCH
             speed = self.ui.XSpeed.value()
+            
             distance = self.ui.Xstagestepsize.value()
             if Direction == 'UP':
                 direction = XFORWARD
@@ -425,9 +449,17 @@ class AODOThread(QThread):
                 direction = XBACKWARD
                 sign = -1
             enable = 0#YDISABLE + ZDISABLE
+            if self.ui.XPosition.value()+sign*distance>self.ui.Xmax.value() or self.ui.XPosition.value()+sign*distance<self.ui.Xmin.value():
+                message = 'X target postion invalid, abort...'
+                self.ui.PrintOut.append(message)
+                self.log.write(message)
+                print(message)
+                self.StagebackQueue.put(0)
+                return 
         elif axis == 'Y':
             line = YCH
             speed = self.ui.YSpeed.value()
+            
             distance = self.ui.Ystagestepsize.value()
             if Direction == 'UP':
                 direction = YFORWARD
@@ -436,9 +468,17 @@ class AODOThread(QThread):
                 direction = YBACKWARD
                 sign = -1
             enable = 0#XDISABLE + ZDISABLE
+            if self.ui.YPosition.value()+sign*distance>self.ui.Ymax.value() or self.ui.YPosition.value()+sign*distance<self.ui.Ymin.value():
+                message = 'Y target postion invalid, abort...'
+                self.ui.PrintOut.append(message)
+                self.log.write(message)
+                print(message)
+                self.StagebackQueue.put(0)
+                return 
         elif axis == 'Z':
             line = ZCH
             speed = self.ui.ZSpeed.value()
+            
             distance = self.ui.Zstagestepsize.value()
             if Direction == 'UP':
                 direction = ZFORWARD
@@ -447,7 +487,13 @@ class AODOThread(QThread):
                 direction = ZBACKWARD
                 sign = -1
             enable = 0#XDISABLE + YDISABLE
-            
+            if self.ui.ZPosition.value()+sign*distance>self.ui.Zmax.value() or self.ui.ZPosition.value()+sign*distance<self.ui.Zmin.value():
+                message = 'Z target postion invalid, abort...'
+                self.ui.PrintOut.append(message)
+                self.log.write(message)
+                print(message)
+                self.StagebackQueue.put(0)
+                return 
         if np.abs(distance) < 0.001:
             self.StagebackQueue.put(0)
             return

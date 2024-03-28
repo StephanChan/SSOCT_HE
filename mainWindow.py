@@ -49,7 +49,7 @@ if maya_installed:
             # print(np.max(self.plot.mlab_source.scalars))
             # print(data[1,1,:])
             M=np.max(data)
-            self.plot.current_range=(2, M*0.1)
+            self.plot.current_range=(0, M*0.2)
             # print(self.plot.current_range)
             
         @on_trait_change('scene.activated')
@@ -345,6 +345,17 @@ class MainWindow(QMainWindow):
         self.ui.XforAline.setValue(np.int16(settings.value('XforAline')))
         self.ui.FPSAline.setValue(np.int16(settings.value('FPSAline')))
         self.ui.TrimSamples.setValue(np.int16(settings.value('TrimSamples')))
+        self.ui.Xmin.setValue(np.int16(settings.value('Xmin')))
+        self.ui.Ymin.setValue(np.int16(settings.value('Ymin')))
+        self.ui.Zmin.setValue(np.int16(settings.value('Zmin')))
+        self.ui.Xmax.setValue(np.int16(settings.value('Xmax')))
+        self.ui.Ymax.setValue(np.int16(settings.value('Ymax')))
+        self.ui.Zmax.setValue(np.int16(settings.value('Zmax')))
+        self.ui.SliceX.setValue(np.float32(settings.value('SliceX')))
+        self.ui.SliceY.setValue(np.float32(settings.value('SliceY')))
+        self.ui.SliceZStart.setValue(np.float32(settings.value('SliceZStart')))
+        self.ui.SliceSpeed.setValue(np.float32(settings.value('SliceSpeed')))
+        self.ui.SliceLength.setValue(np.float32(settings.value('SliceLength')))
         
     def save_settings(self,settings):
         settings.setValue("FFTresults",self.ui.FFTresults.currentText())
@@ -392,6 +403,17 @@ class MainWindow(QMainWindow):
         settings.setValue("XforAline",self.ui.XforAline.value())
         settings.setValue("FPSAline",self.ui.FPSAline.value())
         settings.setValue("TrimSamples",self.ui.TrimSamples.value())
+        settings.setValue("Xmin",self.ui.Xmin.value())
+        settings.setValue("Ymin",self.ui.Ymin.value())
+        settings.setValue("Zmin",self.ui.Zmin.value())
+        settings.setValue("Xmax",self.ui.Xmax.value())
+        settings.setValue("Ymax",self.ui.Ymax.value())
+        settings.setValue("Zmax",self.ui.Zmax.value())
+        settings.setValue("SliceX",self.ui.SliceX.value())
+        settings.setValue("SliceY",self.ui.SliceY.value())
+        settings.setValue("SliceZStart",self.ui.SliceZStart.value())
+        settings.setValue("SliceSpeed",self.ui.SliceSpeed.value())
+        settings.setValue("SliceLength",self.ui.SliceLength.value())
 
         
         
