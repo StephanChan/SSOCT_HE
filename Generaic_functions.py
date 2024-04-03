@@ -22,13 +22,17 @@ global Galvo_bias
 Galvo_bias = 3 # V
 global XforAline
 XforAline = 100
+import os
 
 class LOG():
     def __init__(self, ui):
         super().__init__()
         import datetime
         current_time = datetime.datetime.now()
-        self.filePath = ui.DIR.toPlainText() +  "/" + 'log_'+\
+        self.dir = 'D:/SSOCT_HE/data/log_files'
+        if not os.path.exists(self.dir):
+            os.makedirs(self.dir)
+        self.filePath = self.dir +  "/" + 'log_'+\
             str(current_time.year)+'-'+\
             str(current_time.month)+'-'+\
             str(current_time.day)+'-'+\

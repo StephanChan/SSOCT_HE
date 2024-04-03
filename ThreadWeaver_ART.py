@@ -519,12 +519,18 @@ class WeaverThread(QThread):
         return 'Mosaic+slice successful...'
         
     def SingleSlice(self, zpos):
-        self.ui.Gotozero.setChecked(True)
-        message = self.Gotozero()
-        if message != 'gotozero success...':
-            return message
-        self.ui.statusbar.showMessage(message)
+        # self.ui.Gotozero.setChecked(True)
+        # message = self.Gotozero()
+        # if message != 'gotozero success...':
+        #     return message
+        # self.ui.statusbar.showMessage(message)
         # go to start X
+        
+        self.ui.VibEnabled.setText('Stop Vibratome')
+        an_action = AODOAction('startVibratome')
+        self.AODOQueue.put(an_action)
+        self.StagebackQueue.get()
+        
         self.ui.XPosition.setValue(self.ui.SliceX.value())
         an_action = AODOAction('Xmove2')
         self.AODOQueue.put(an_action)
@@ -546,6 +552,11 @@ class WeaverThread(QThread):
         ########################################################
         # slicing
         # start vibratome
+        self.ui.VibEnabled.setText('Stop Vibratome')
+        self.ui.VibEnabled.setChecked(True)
+        an_action = AODOAction('startVibratome')
+        self.AODOQueue.put(an_action)
+        self.StagebackQueue.get()
         if self.ui.SliceDir.isChecked():
             sign = -1
         else:
@@ -558,6 +569,11 @@ class WeaverThread(QThread):
         self.StagebackQueue.get()
         self.ui.YSpeed.setValue(speed)
         # stop vibratome
+        self.ui.VibEnabled.setText('Start Vibratome')
+        self.ui.VibEnabled.setChecked(False)
+        an_action = AODOAction('stopVibratome')
+        self.AODOQueue.put(an_action)
+        self.StagebackQueue.get()
         return 'Slice success'
         
     def RptSlice(self):
@@ -583,6 +599,11 @@ class WeaverThread(QThread):
         self.StagebackQueue.get()
         # slicing
         # start vibratome
+        self.ui.VibEnabled.setText('Stop Vibratome')
+        self.ui.VibEnabled.setChecked(True)
+        an_action = AODOAction('startVibratome')
+        self.AODOQueue.put(an_action)
+        self.StagebackQueue.get()
         for ii in range(self.ui.SliceZnumber.value()):
             ##################################################
             message = self.check_interrupt()
@@ -613,6 +634,11 @@ class WeaverThread(QThread):
             
             
         # stop vibratome
+        self.ui.VibEnabled.setText('Start Vibratome')
+        self.ui.VibEnabled.setChecked(False)
+        an_action = AODOAction('stopVibratome')
+        self.AODOQueue.put(an_action)
+        self.StagebackQueue.get()
         return 'Slice done'
         
         
@@ -679,7 +705,7 @@ class WeaverThread(QThread):
             else:
                 end_depth = self.ui.AlineCleanBot.value()-self.ui.DepthStart.value()
             # find peak depth in the Aline just measured
-            z = np.argmax(Aline[start_depth:end_depth])+start_depth#+self.ui.DepthStart.value()
+            z = np.argmax(Aline[start_depth:end_depth])+start_depth+self.ui.DepthStart.value()
             m = np.max(Aline[start_depth:end_depth])
             message = 'peak at:'+str(z)+ ' pixel, m='+str(m)+ ' '+str(z-target_depth)+' pixels away'
             print(message)
@@ -837,7 +863,7 @@ class WeaverThread(QThread):
             # remeasure background
             self.get_background()
             
-            self.ui.ZPosition.setValue(15)
+            self.ui.ZPosition.setValue(7)
             an_action = AODOAction('Zmove2')
             self.AODOQueue.put(an_action)
             self.StagebackQueue.get()
@@ -931,7 +957,8 @@ class WeaverThread(QThread):
             str(current_time.month)+'-'+\
             str(current_time.day)+'-'+\
             str(current_time.hour)+'-'+\
-            str(current_time.minute)+\
+            str(current_time.minute)+'-'+\
+            str(current_time.second)+\
             '.bin'
         fp = open(filePath, 'wb')
         phi_diff.tofile(fp)

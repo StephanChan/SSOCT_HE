@@ -441,7 +441,7 @@
          </font>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>4</number>
         </property>
         <widget class="QWidget" name="FOVTab">
          <attribute name="title">
@@ -2149,10 +2149,10 @@ p, li { white-space: pre-wrap; }
              <item row="5" column="1">
               <widget class="QDoubleSpinBox" name="XSpeed">
                <property name="maximum">
-                <double>8.000000000000000</double>
+                <double>3.000000000000000</double>
                </property>
                <property name="value">
-                <double>5.000000000000000</double>
+                <double>3.000000000000000</double>
                </property>
               </widget>
              </item>
@@ -2609,6 +2609,22 @@ p, li { white-space: pre-wrap; }
          </attribute>
          <layout class="QHBoxLayout" name="horizontalLayout_10">
           <item>
+           <widget class="QPushButton" name="VibEnabled">
+            <property name="maximumSize">
+             <size>
+              <width>300</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Start Vibratome</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QGroupBox" name="groupBox_3">
             <property name="maximumSize">
              <size>
@@ -2620,14 +2636,14 @@ p, li { white-space: pre-wrap; }
              <string>SliceSettings</string>
             </property>
             <layout class="QGridLayout" name="gridLayout_16">
-             <item row="4" column="0">
+             <item row="4" column="1">
               <widget class="QLabel" name="label_21">
                <property name="text">
                 <string>VibEnable</string>
                </property>
               </widget>
              </item>
-             <item row="0" column="2">
+             <item row="0" column="3">
               <widget class="QDoubleSpinBox" name="SliceX">
                <property name="maximum">
                 <double>150.000000000000000</double>
@@ -2637,28 +2653,14 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_18">
-               <property name="text">
-                <string>StartX</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="label_19">
-               <property name="text">
-                <string>StartY</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="0">
+             <item row="3" column="1">
               <widget class="QLabel" name="label_22">
                <property name="text">
                 <string>Speed(mm/s)</string>
                </property>
               </widget>
              </item>
-             <item row="1" column="2">
+             <item row="1" column="3">
               <widget class="QDoubleSpinBox" name="SliceY">
                <property name="maximum">
                 <double>50.000000000000000</double>
@@ -2668,7 +2670,38 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="2" column="2">
+             <item row="3" column="3">
+              <widget class="QDoubleSpinBox" name="SliceSpeed">
+               <property name="value">
+                <double>0.300000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="3">
+              <widget class="QLineEdit" name="VibEnable">
+               <property name="text">
+                <string>/AODO/PFI2</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QLabel" name="label_20">
+               <property name="text">
+                <string>SliceLength</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="4">
+              <widget class="QPushButton" name="SliceDir">
+               <property name="text">
+                <string>Forward</string>
+               </property>
+               <property name="checkable">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="3">
               <widget class="QDoubleSpinBox" name="SliceLength">
                <property name="maximum">
                 <double>50.000000000000000</double>
@@ -2678,34 +2711,17 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="3" column="2">
-              <widget class="QDoubleSpinBox" name="SliceSpeed">
-               <property name="value">
-                <double>0.300000000000000</double>
+             <item row="0" column="1">
+              <widget class="QLabel" name="label_18">
+               <property name="text">
+                <string>StartX</string>
                </property>
               </widget>
              </item>
-             <item row="4" column="2">
-              <widget class="QLineEdit" name="VibEnable">
+             <item row="1" column="1">
+              <widget class="QLabel" name="label_19">
                <property name="text">
-                <string>/AODO/PFI2</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="label_20">
-               <property name="text">
-                <string>SliceLength</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="3">
-              <widget class="QPushButton" name="SliceDir">
-               <property name="text">
-                <string>Forward</string>
-               </property>
-               <property name="checkable">
-                <bool>true</bool>
+                <string>StartY</string>
                </property>
               </widget>
              </item>
@@ -3184,7 +3200,7 @@ p, li { white-space: pre-wrap; }
              <item row="5" column="0">
               <widget class="QLabel" name="label">
                <property name="text">
-                <string>Aline peak pos (pixel)</string>
+                <string>Aline peak pos (pixel)（from pixel 0!!!)</string>
                </property>
               </widget>
              </item>

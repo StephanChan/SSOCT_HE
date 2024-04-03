@@ -98,6 +98,10 @@ class AODOThread(QThread):
                     self.Uninit()
                 elif self.item.action == 'ConfigAODO':
                     self.ConfigAODO()
+                elif self.item.action == 'startVibratome':
+                    self.startVibratome()
+                elif self.item.action == 'stopVibratome':
+                    self.stopVibratome()
 
                 elif self.item.action == 'StartOnce':
                     self.StartOnce(self.item.direction)
@@ -222,6 +226,23 @@ class AODOThread(QThread):
             self.log.write(message)
         return 'AODO configuration success'
     
+    def startVibratome(self):
+        settingtask = ni.Task('vibratome')
+        settingtask.do_channels.add_do_chan(lines='AODO/PFI2')
+        settingtask.write(True, auto_start = True)
+        time.sleep(0.1)
+        settingtask.stop()
+        settingtask.close()
+        self.StagebackQueue.put(0)
+        
+    def stopVibratome(self):
+        settingtask = ni.Task('vibratome')
+        settingtask.do_channels.add_do_chan(lines='AODO/PFI2')
+        settingtask.write(False, auto_start = True)
+        time.sleep(0.1)
+        settingtask.stop()
+        settingtask.close()
+        self.StagebackQueue.put(0)
             
     def StartOnce(self, direction):
         if self.ui.ACQMode.currentText() in ['SingleCscan','SurfScan','SurfScan+Slice'] or self.Digitizer == 'ATS9351':
@@ -409,7 +430,7 @@ class AODOThread(QThread):
             print(message)
             self.ui.PrintOut.append(message)
             self.log.write(message)
-            DOtask.wait_until_done(timeout =60)
+            DOtask.wait_until_done(timeout =300)
                 
             DOtask.stop()
             # DOtask.close()

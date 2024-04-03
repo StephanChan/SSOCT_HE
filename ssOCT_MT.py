@@ -224,6 +224,7 @@ class GUI(MainWindow):
         self.ui.ZstageTest.clicked.connect(self.ZstageTest)
         self.ui.ZstageTest2.clicked.connect(self.ZstageTest2)
         self.ui.SliceDir.clicked.connect(self.SliceDirection)
+        self.ui.VibEnabled.clicked.connect(self.Vibratome)
         # self.ui.Gotozero.stateChanged.connect(self.Gotozero)
         self.Init_allThreads()
         
@@ -338,6 +339,18 @@ class GUI(MainWindow):
         an_action = AODOAction('ZDOWN')
         AODOQueue.put(an_action)
         StagebackQueue.get()
+        
+    def Vibratome(self):
+        if self.ui.VibEnabled.isChecked():
+            self.ui.VibEnabled.setText('Stop Vibratome')
+            an_action = AODOAction('startVibratome')
+            AODOQueue.put(an_action)
+            StagebackQueue.get()
+        else:
+            self.ui.VibEnabled.setText('Start Vibratome')
+            an_action = AODOAction('stopVibratome')
+            AODOQueue.put(an_action)
+            StagebackQueue.get()
         
     def SliceDirection(self):
         if self.ui.SliceDir.isChecked():
