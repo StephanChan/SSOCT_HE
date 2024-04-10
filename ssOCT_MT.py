@@ -27,7 +27,7 @@ Created on Sun Dec 10 20:14:40 2023
 # between threads, using Queue to pass variables, variables gets duplicated in memory when passed as arguments
 
 import sys
-from multiprocessing import Queue
+from queue import Queue
 from PyQt5.QtWidgets import QApplication
 import PyQt5.QtCore as qc
 from mainWindow import MainWindow
@@ -36,7 +36,7 @@ from Generaic_functions import LOG
 import time
 # init global memory for temporary storage of generated raw data
 global memoryCount
-memoryCount = 2
+memoryCount = 3
 
 global Memory
 Memory = list(range(memoryCount))
@@ -59,17 +59,17 @@ global DnSbackQueue # display thread respond back to weaver thread
 global StopDQueue # StopD stands for stop digitizer, for stopping digitizer in continuous acquisition
 global GPU2weaverQueue
 
-AODOQueue = Queue()
-StagebackQueue = Queue()
-WeaverQueue = Queue()
-DnSQueue = Queue()
-PauseQueue = Queue()
-GPUQueue = Queue()
-DQueue = Queue()
-DbackQueue = Queue()
-DnSbackQueue = Queue()
-StopDQueue = Queue()
-GPU2weaverQueue = Queue()
+AODOQueue = Queue(maxsize = 10)
+StagebackQueue = Queue(maxsize = 10)
+WeaverQueue = Queue(maxsize = 10)
+DnSQueue = Queue(maxsize = 10)
+PauseQueue = Queue(maxsize = 10)
+GPUQueue = Queue(maxsize = 10)
+DQueue = Queue(maxsize = 10)
+DbackQueue = Queue(maxsize = 10)
+DnSbackQueue = Queue(maxsize = 10)
+StopDQueue = Queue(maxsize = 10)
+GPU2weaverQueue = Queue(maxsize = 10)
      
 # wrap digitzer thread with queues and Memory
 if Digitizer == 'ATS9351':
@@ -225,6 +225,7 @@ class GUI(MainWindow):
         self.ui.ZstageTest2.clicked.connect(self.ZstageTest2)
         self.ui.SliceDir.clicked.connect(self.SliceDirection)
         self.ui.VibEnabled.clicked.connect(self.Vibratome)
+        self.ui.SliceN.valueChanged.connect(self.change_slice_number)
         # self.ui.Gotozero.stateChanged.connect(self.Gotozero)
         self.Init_allThreads()
         
@@ -358,6 +359,10 @@ class GUI(MainWindow):
         else:
             self.ui.SliceDir.setText('Forward')
             
+    def change_slice_number(self):
+        an_action = DnSAction('change_slice_number')
+        DnSQueue.put(an_action)
+        
     def ZstageTest(self):
         if self.ui.ZstageTest.isChecked():
             an_action = WeaverAction('ZstageRepeatibility')

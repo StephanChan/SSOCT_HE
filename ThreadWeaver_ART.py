@@ -273,6 +273,15 @@ class WeaverThread(QThread):
 
             
     def SurfScan(self):
+        # fast scan to differentiate agar and tissue
+        interrupt = self.SurfPreScan()
+        if interrupt == 'Stop':
+            # reset RUN button
+            self.ui.RunButton.setChecked(False)
+            self.ui.RunButton.setText('Run')
+            self.ui.PauseButton.setChecked(False)
+            self.ui.PauseButton.setText('Pause')
+            return interrupt, 'SurfPreScan stopped by user...'
         # clear display windows
         an_action = DnSAction('Clear')
         self.DnSQueue.put(an_action)
@@ -286,9 +295,9 @@ class WeaverThread(QThread):
                                         self.ui.Overlap.value())
 
         # calculate the number of Cscans per stripe
-        Ystep = self.ui.YStepSize.value()*self.ui.BlineAVG.value()*self.ui.Ysteps.value()
+        Ystep = self.ui.YStepSize.value()*self.ui.Ysteps.value()
         CscansPerStripe = np.int16((self.ui.YStop.value()-self.ui.YStart.value())*1000\
-            /(self.ui.YStepSize.value()*self.ui.BlineAVG.value()*self.ui.Ysteps.value()))
+            /Ystep)
         if CscansPerStripe <=0:
             return 'invalid Mosaic positions, abort aquisition...'
         # calculate the total number of tiles per slice
@@ -314,26 +323,208 @@ class WeaverThread(QThread):
         self.StagebackQueue.get()
         scan_direction = 0 # init scan direction to be backward
         ############################################################# Iterate through strips for one surfscan
+        agarTiles = 0
         while np.any(self.Mosaic) and interrupt != 'Stop': 
-            files = 0
+            cscans = 0
             # stage move to start of this stripe
             self.ui.XPosition.setValue(self.Mosaic[0].x)
             an_action = AODOAction('Xmove2')
             self.AODOQueue.put(an_action)
             self.StagebackQueue.get()
-            # configure AODO
-            an_action = AODOAction('ConfigAODO')
-            self.AODOQueue.put(an_action)
-            # print('start acquiring\n')
+            #######################################################################
+                
             scan_direction = np.uint32(np.mod(scan_direction+1,2))
             ############################################################  iterate through Cscans in one stripe
-            while files < CscansPerStripe and interrupt != 'Stop': 
+            agarTiles = agarTiles * -1
+            while cscans < CscansPerStripe and interrupt != 'Stop': 
+                if self.tile_flag[(stripes-1)][cscans] == 0: # next tile is agar
+                    if self.ui.Save.isChecked():
+                        an_action = DnSAction('agarTile') # data in Memory[memoryLoc]
+                        self.DnSQueue.put(an_action)
+                    agarTiles += 1
+                    cscans += 1
+                else:
+                    ###################################### move to next tissue tile
+                    # print(self.ui.YPosition.value(), self.ui.YPosition.value()+Ystep/1000 * agarTiles * (-1)**(scan_direction+1), agarTiles * (-1)**(scan_direction+1), agarTiles, scan_direction)
+                    self.ui.YPosition.setValue(self.ui.YPosition.value()+Ystep/1000 * agarTiles * (-1)**(scan_direction+1))
+                    an_action = AODOAction('Ymove2')
+                    self.AODOQueue.put(an_action)
+                    self.StagebackQueue.get()
+                    # reset agar tiles
+                    agarTiles = 0
+                    ###################################### start one Cscan
+                    # start AODO for one Cscan acquisition
+                    # configure AODO
+                    an_action = AODOAction('ConfigAODO')
+                    self.AODOQueue.put(an_action)
+    
+                    an_action = AODOAction('StartOnce', scan_direction)
+                    self.AODOQueue.put(an_action)
+                    # close AODO tasks
+                    an_action = AODOAction('CloseTask')
+                    self.AODOQueue.put(an_action)
+                    # time.sleep(0.1) # wait 0.1 seconds to make sure board started before ART8912 start
+                    
+                    # start ATS9351 for one Cscan acquisition
+                    an_action = DAction('ConfigureBoard')
+                    self.DQueue.put(an_action)
+                    an_action = DAction('StartAcquire')
+                    self.DQueue.put(an_action)
+                    an_action = DAction('CloseTask')
+                    self.DQueue.put(an_action)
+                    start = time.time()
+                    ###################################### collecting data
+                    # collect data from digitizer
+                    an_action = self.DbackQueue.get() # never time out
+                    message = 'time to fetch data: '+str(round(time.time()-start,3))+'s'
+                    self.ui.PrintOut.append(message)
+                    print(message)
+                    self.log.write(message)
+                    start = time.time()
+                    memoryLoc = an_action.action
+                    ####################################### display data 
+                    if self.ui.FFTDevice.currentText() in ['Alazar', 'None']:
+                        # directly do display and save
+                        # args = [cscans, stripes], [total scans per stripe, total tiles], [X pixels, Z pixels]
+                        args = [[cscans, stripes], [CscansPerStripe, self.totalTiles],[self.ui.Xsteps.value()*self.ui.AlineAVG.value(),self.ui.DepthRange.value()]]
+                        data = self.Memory[memoryLoc].copy()
+                        
+                        # samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
+                        # Alines =np.uint32((data.shape[1])/samples) * data.shape[0]
+                        # data=data.reshape([Alines, samples])
+                        
+                        an_action = DnSAction('SurfScan', data, args=args) # data in Memory[memoryLoc]
+                        self.DnSQueue.put(an_action)
+                    else:
+                        # need to do FFT before display and save
+                        args = [[cscans, stripes], [CscansPerStripe, self.totalTiles],[self.ui.Xsteps.value()*self.ui.AlineAVG.value(),self.ui.PreSamples.value()+self.ui.PostSamples.value()]]
+                        an_action = GPUAction(self.ui.FFTDevice.currentText(), 'SurfScan', memoryLoc, args=args)
+                        self.GPUQueue.put(an_action)
+                    # increment files imaged
+                    cscans +=1
+                    self.ui.statusbar.showMessage('Imaging '+str(stripes)+'th strip, '+str(cscans+1)+'th Cscan ')
+                
+                ############################ get user input
+                try:
+                    # check if Pause button is clicked
+                   interrupt = self.PauseQueue.get(timeout=0.05)  # time out 0.001 s
+                   # print(interrupt)
+                   ##################################### if Pause button is clicked
+                   if interrupt == 'Pause':
+                       # self.ui.PauseButton.setChecked(True)
+                       # wait until unpause button or stop button is clicked
+                       interrupt = self.PauseQueue.get()  # never time out
+                       # print('queue output:',interrupt)
+                       # if unpause button is clicked        
+                       if interrupt == 'unPause':
+                           # self.ui.PauseButton.setChecked(False)
+                           interrupt = None
+                except:
+                    pass
+            # user stopped process
+            if interrupt == 'Stop':
+                an_action = DnSAction('restart_tilenum') # data in Memory[memoryLoc]
+                self.DnSQueue.put(an_action)
+            
+            # finishing this stripe, delete one MOSAIC object from the mosaic pattern
+            self.Mosaic = np.delete(self.Mosaic, 0)
+            stripes = stripes + 1
+
+        if self.ui.Save.isChecked():
+            an_action = DnSAction('restart_tilenum') # data in Memory[memoryLoc]
+            self.DnSQueue.put(an_action)
+        # reset RUN button
+        self.ui.RunButton.setChecked(False)
+        self.ui.RunButton.setText('Run')
+        self.ui.PauseButton.setChecked(False)
+        self.ui.PauseButton.setText('Pause')
+        return interrupt, 'SurfScan successfully finished...'
+        
+    def SurfPreScan(self):
+        # clear display windows
+        an_action = DnSAction('Clear')
+        self.DnSQueue.put(an_action)
+        self.ui.DSing.setChecked(True)
+        # save FOV settings
+        Xsteps = self.ui.Xsteps.value()
+        Ysteps = self.ui.Ysteps.value()
+        XStepSize = self.ui.XStepSize.value()
+        YStepSize = self.ui.YStepSize.value()
+        AlineAVG = self.ui.AlineAVG.value()
+        BlineAVG = self.ui.BlineAVG.value()
+        save = self.ui.Save.isChecked()
+        FFTDevice = self.ui.FFTDevice.currentText()
+        scale = self.ui.scale.value()
+        # set downsampled FOV
+        self.ui.Xsteps.setValue(Xsteps)
+        self.ui.Ysteps.setValue(Ysteps//10)
+        self.ui.XStepSize.setValue(XStepSize)
+        self.ui.YStepSize.setValue(YStepSize*10)
+        self.ui.AlineAVG.setValue(1)
+        self.ui.BlineAVG.setValue(1)
+        self.ui.Save.setChecked(False)
+        self.ui.FFTDevice.setCurrentText('GPU')
+        self.ui.scale.setValue(1)
+        # generate Mosaic pattern, a Mosaic pattern consists of a list of MOSAIC object, 
+        # each MOSAIC object defines a stripe of scanning area, which is defined by the X stage position, and Y stage start and stop position
+        self.Mosaic, status = GenMosaic_XGalvo(self.ui.XStart.value(),\
+                                        self.ui.XStop.value(),\
+                                        self.ui.YStart.value(),\
+                                        self.ui.YStop.value(),\
+                                        self.ui.Xsteps.value()*self.ui.XStepSize.value()/1000,\
+                                        self.ui.Overlap.value())
+
+        # calculate the number of Cscans per stripe
+        Ystep = self.ui.YStepSize.value()*self.ui.Ysteps.value()
+        CscansPerStripe = np.int16((self.ui.YStop.value()-self.ui.YStart.value())*1000\
+            /Ystep)
+        if CscansPerStripe <=0:
+            return 'invalid Mosaic positions, abort aquisition...'
+        # calculate the total number of tiles per slice
+        self.totalTiles = CscansPerStripe*len(self.Mosaic)
+        if self.totalTiles <=0:
+            return 'invalid Mosaic positions, abort aquisition...'
+
+        # init tile threshold array
+        self.tile_flag = np.zeros((len(self.Mosaic),CscansPerStripe),dtype = np.uint8)
+
+        interrupt = None
+        stripes = 1
+        # stage move to start of this stripe
+        self.ui.XPosition.setValue(self.Mosaic[0].x)
+        self.ui.YPosition.setValue(self.Mosaic[0].ystart)
+        an_action = AODOAction('Xmove2')
+        self.AODOQueue.put(an_action)
+        self.StagebackQueue.get()
+        an_action = AODOAction('Ymove2')
+        self.AODOQueue.put(an_action)
+        #TODO: stage back queue tell weaver stage is done moving
+        self.StagebackQueue.get()
+        scan_direction = 0 # init scan direction to be backward
+        ############################################################# Iterate through strips for one surfscan
+        while np.any(self.Mosaic) and interrupt != 'Stop': 
+            cscans = 0
+            # stage move to start of this stripe
+            self.ui.XPosition.setValue(self.Mosaic[0].x)
+            an_action = AODOAction('Xmove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            
+            scan_direction = np.uint32(np.mod(scan_direction+1,2))
+            ############################################################  iterate through Cscans in one stripe
+            while cscans < CscansPerStripe and interrupt != 'Stop': 
                 ###################################### start one Cscan
                 # start AODO for one Cscan acquisition
+                # configure AODO
+                an_action = AODOAction('ConfigAODO')
+                self.AODOQueue.put(an_action)
 
                 an_action = AODOAction('StartOnce', scan_direction)
                 self.AODOQueue.put(an_action)
                 # time.sleep(0.1) # wait 0.1 seconds to make sure board started before ART8912 start
+                # close AODO tasks
+                an_action = AODOAction('CloseTask')
+                self.AODOQueue.put(an_action)
                 
                 # start ATS9351 for one Cscan acquisition
                 an_action = DAction('ConfigureBoard')
@@ -342,33 +533,31 @@ class WeaverThread(QThread):
                 self.DQueue.put(an_action)
                 an_action = DAction('CloseTask')
                 self.DQueue.put(an_action)
-                
+                start = time.time()
                 ###################################### collecting data
                 # collect data from digitizer
                 an_action = self.DbackQueue.get() # never time out
+                message = 'time to fetch data: '+str(round(time.time()-start,3))+'s'
+                self.ui.PrintOut.append(message)
+                print(message)
+                self.log.write(message)
                 memoryLoc = an_action.action
-                self.ui.YPosition.setValue(self.ui.YPosition.value()+Ystep/1000.0)
                 ####################################### display data 
-                if self.ui.FFTDevice.currentText() in ['Alazar', 'None']:
-                    # directly do display and save
-                    # args = [files, stripes], [total scans per stripe, total tiles], [X pixels, Z pixels]
-                    args = [[files, stripes], [CscansPerStripe, self.totalTiles],[self.ui.Xsteps.value()*self.ui.AlineAVG.value(),self.ui.DepthRange.value()]]
-                    data = self.Memory[memoryLoc].copy()
-                    
-                    # samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
-                    # Alines =np.uint32((data.shape[1])/samples) * data.shape[0]
-                    # data=data.reshape([Alines, samples])
-                    
-                    an_action = DnSAction('SurfScan', data, args=args) # data in Memory[memoryLoc]
-                    self.DnSQueue.put(an_action)
-                else:
-                    # need to do FFT before display and save
-                    args = [[files, stripes], [CscansPerStripe, self.totalTiles],[self.ui.Xsteps.value()*self.ui.AlineAVG.value(),self.ui.PreSamples.value()+self.ui.PostSamples.value()]]
-                    an_action = GPUAction(self.ui.FFTDevice.currentText(), 'SurfScan', memoryLoc, args=args)
-                    self.GPUQueue.put(an_action)
+                # need to do FFT before display and save
+                args = [[cscans, stripes], [CscansPerStripe, self.totalTiles],[self.ui.Xsteps.value()*self.ui.AlineAVG.value(),self.ui.PreSamples.value()+self.ui.PostSamples.value()]]
+                an_action = GPUAction(self.ui.FFTDevice.currentText(), 'SurfScan', memoryLoc, args=args)
+                self.GPUQueue.put(an_action)
+                # get cscan data
+                while self.GPU2weaverQueue.qsize()>1:
+                    cscan =self.GPU2weaverQueue.get()
+                cscan = self.GPU2weaverQueue.get()
+                value = np.mean(cscan)
+                if value > self.ui.AgarValue.value():
+                    self.tile_flag[stripes - 1][cscans] = 1
+                
                 # increment files imaged
-                files +=1
-                self.ui.statusbar.showMessage('Imaging '+str(stripes)+'th strip, '+str(files+1)+'th Cscan ')
+                cscans +=1
+                self.ui.statusbar.showMessage('finished '+str(stripes)+'th strip, '+str(cscans)+'th Cscan ')
                 ######################################## check if Pause button is clicked
                 try:
                     # check if Pause button is clicked
@@ -396,18 +585,21 @@ class WeaverThread(QThread):
             self.Mosaic = np.delete(self.Mosaic, 0)
             stripes = stripes + 1
             
-        # close AODO tasks
-        an_action = AODOAction('CloseTask')
-        self.AODOQueue.put(an_action)
-        # an_action = DAction('CloseTask')
-        # self.DQueue.put(an_action)
-        # reset RUN button
-        self.ui.RunButton.setChecked(False)
-        self.ui.RunButton.setText('Run')
-        self.ui.PauseButton.setChecked(False)
-        self.ui.PauseButton.setText('Pause')
-        return interrupt, 'SurfScan successfully finished...'
-        
+        self.ui.DSing.setChecked(False)
+        # reset FOV
+        self.ui.Xsteps.setValue(Xsteps)
+        self.ui.Ysteps.setValue(Ysteps)
+        self.ui.XStepSize.setValue(XStepSize)
+        self.ui.YStepSize.setValue(YStepSize)
+        self.ui.AlineAVG.setValue(AlineAVG)
+        self.ui.BlineAVG.setValue(BlineAVG)
+        self.ui.Save.setChecked(save)
+        self.ui.FFTDevice.setCurrentText(FFTDevice)
+        self.ui.scale.setValue(scale)
+        # self.tile_flag = self.tile_flag.flatten()
+        print(self.tile_flag)
+        return interrupt
+    
     def SurfSlice(self):
         # determine if one image per cut
         if self.ui.ImageZDepth.value() - self.ui.SliceZDepth.value() >1: # unit: um
@@ -489,11 +681,15 @@ class WeaverThread(QThread):
                 return message
             ########################################################
             # move to defined zero
-            self.ui.Gotozero.setChecked(True)
-            message = self.Gotozero()
-            self.ui.statusbar.showMessage(message)
-            if message != 'gotozero success...':
-                return message
+            self.ui.ZPosition.setValue(self.ui.definedZero.value())
+            an_action = AODOAction('Zmove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            # self.ui.Gotozero.setChecked(True)
+            # message = self.Gotozero()
+            # self.ui.statusbar.showMessage(message)
+            # if message != 'gotozero success...':
+            #     return message
             # move to X Y Z
             self.ui.XPosition.setValue(self.ui.XStart.value())
             self.ui.YPosition.setValue(self.ui.YStart.value())
@@ -516,17 +712,27 @@ class WeaverThread(QThread):
                 self.ui.RunButton.setChecked(False)
                 self.ui.RunButton.setText('Run')
                 return 'user stopped acquisition...'
+        # LAST CUT 
+        message = self.SingleSlice(self.ui.SliceZStart.value()+(ii+1)*self.ui.SliceZDepth.value()/1000)
+        if message != 'Slice success':
+            return message
         return 'Mosaic+slice successful...'
         
     def SingleSlice(self, zpos):
+        # move to defined zero
+        self.ui.ZPosition.setValue(self.ui.definedZero.value())
+        an_action = AODOAction('Zmove2')
+        self.AODOQueue.put(an_action)
+        self.StagebackQueue.get()
         # self.ui.Gotozero.setChecked(True)
         # message = self.Gotozero()
         # if message != 'gotozero success...':
         #     return message
         # self.ui.statusbar.showMessage(message)
         # go to start X
-        
+        # start vibratome
         self.ui.VibEnabled.setText('Stop Vibratome')
+        self.ui.VibEnabled.setChecked(True)
         an_action = AODOAction('startVibratome')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
@@ -551,12 +757,7 @@ class WeaverThread(QThread):
             return message
         ########################################################
         # slicing
-        # start vibratome
-        self.ui.VibEnabled.setText('Stop Vibratome')
-        self.ui.VibEnabled.setChecked(True)
-        an_action = AODOAction('startVibratome')
-        self.AODOQueue.put(an_action)
-        self.StagebackQueue.get()
+       
         if self.ui.SliceDir.isChecked():
             sign = -1
         else:
@@ -577,11 +778,16 @@ class WeaverThread(QThread):
         return 'Slice success'
         
     def RptSlice(self):
-        self.ui.Gotozero.setChecked(True)
-        message = self.Gotozero()
-        if message != 'gotozero success...':
-            return message
-        self.ui.statusbar.showMessage(message)
+        # move to defined zero
+        self.ui.ZPosition.setValue(self.ui.definedZero.value())
+        an_action = AODOAction('Zmove2')
+        self.AODOQueue.put(an_action)
+        self.StagebackQueue.get()
+        # self.ui.Gotozero.setChecked(True)
+        # message = self.Gotozero()
+        # if message != 'gotozero success...':
+        #     return message
+        # self.ui.statusbar.showMessage(message)
         # go to start X
         self.ui.XPosition.setValue(self.ui.SliceX.value())
         an_action = AODOAction('Xmove2')
@@ -786,37 +992,99 @@ class WeaverThread(QThread):
         device = self.ui.FFTDevice.currentText()
         self.ui.ACQMode.setCurrentText('SingleAline')
         self.ui.FFTDevice.setCurrentText('GPU')
-        current_position = self.ui.ZPosition.value()
-        iteration = 5
+        current_Xposition = self.ui.XPosition.value()
+        current_Yposition = self.ui.YPosition.value()
+        current_Zposition = self.ui.ZPosition.value()
+        iteration = 50
         for i in range(iteration):
             if not self.ui.ZstageTest.isChecked():
+                message = 'Stage test stopped by user...'
                 break
             # measure ALine
-            self.SingleScan(self.ui.ACQMode.currentText())
-            time.sleep(1)
-            # move Z stage down
-            self.ui.ZPosition.setValue(13)
-            an_action = AODOAction('Zmove2')
-            self.AODOQueue.put(an_action)
-            self.StagebackQueue.get()
+            message = self.SingleScan(self.ui.ACQMode.currentText())
+            self.log.write(message)
+            self.ui.PrintOut.append(message)
+            failed_times = 0
+            while message != self.ui.ACQMode.currentText()+" successfully finished...":
+                failed_times+=1
+                if failed_times > 10:
+                    self.ui.ACQMode.setCurrentText(mode)
+                    self.ui.FFTDevice.setCurrentText(device)
+                    self.ui.Gotozero.setChecked(False)
+                    return message
+                message = self.SingleScan(self.ui.ACQMode.currentText())
+                self.log.write(message)
+                self.ui.PrintOut.append(message)
+                time.sleep(1)
+            time.sleep(0.1)
             
-            self.ui.ZPosition.setValue(8)
-            an_action = AODOAction('Zmove2')
-            self.AODOQueue.put(an_action)
-            self.StagebackQueue.get()
-            
+            if not self.ui.ZstageTest.isChecked():
+                message = 'Stage test stopped by user...'
+                break
             self.ui.ZPosition.setValue(5)
             an_action = AODOAction('Zmove2')
             self.AODOQueue.put(an_action)
             self.StagebackQueue.get()
-            
-            self.ui.ZPosition.setValue(3)
+            if not self.ui.ZstageTest.isChecked():
+                message = 'Stage test stopped by user...'
+                break
+            # move to clear XY position
+            self.ui.XPosition.setValue(45)
+            an_action = AODOAction('Xmove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            if not self.ui.ZstageTest.isChecked():
+                message = 'Stage test stopped by user...'
+                break
+            self.ui.YPosition.setValue(20)
+            an_action = AODOAction('Ymove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            if not self.ui.ZstageTest.isChecked():
+                message = 'Stage test stopped by user...'
+                break
+            # move Z stage 
+            self.ui.ZPosition.setValue(40)
             an_action = AODOAction('Zmove2')
             self.AODOQueue.put(an_action)
             self.StagebackQueue.get()
             
+            self.ui.ZPosition.setValue(40.1)
+            an_action = AODOAction('Zmove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            
+            self.ui.ZPosition.setValue(40.15)
+            an_action = AODOAction('Zmove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            if not self.ui.ZstageTest.isChecked():
+                message = 'Stage test stopped by user...'
+                break
+            self.ui.ZPosition.setValue(5)
+            an_action = AODOAction('Zmove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            if not self.ui.ZstageTest.isChecked():
+                message = 'Stage test stopped by user...'
+                break
+            # move to original XY position
+            self.ui.XPosition.setValue(current_Xposition)
+            an_action = AODOAction('Xmove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            if not self.ui.ZstageTest.isChecked():
+                message = 'Stage test stopped by user...'
+                break
+            self.ui.YPosition.setValue(current_Yposition)
+            an_action = AODOAction('Ymove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            if not self.ui.ZstageTest.isChecked():
+                message = 'Stage test stopped by user...'
+                break
             # move Z stage up
-            self.ui.ZPosition.setValue(current_position)
+            self.ui.ZPosition.setValue(current_Zposition)
             an_action = AODOAction('Zmove2')
             self.AODOQueue.put(an_action)
             self.StagebackQueue.get()
@@ -825,6 +1093,7 @@ class WeaverThread(QThread):
         # self.weaverBackQueue.put(0)
         self.ui.ACQMode.setCurrentText(mode)
         self.ui.FFTDevice.setCurrentText(device)
+        return 'Stage test successfully finished...'
         
     def ZstageRepeatibility2(self):
         mode = self.ui.ACQMode.currentText()

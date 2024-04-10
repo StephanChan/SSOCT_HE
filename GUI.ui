@@ -70,7 +70,7 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>600</width>
+              <width>500</width>
               <height>600</height>
              </size>
             </property>
@@ -94,6 +94,16 @@
            </widget>
           </item>
           <item>
+           <widget class="QDoubleSpinBox" name="tileMean">
+            <property name="maximumSize">
+             <size>
+              <width>100</width>
+              <height>16777215</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QLabel" name="XZplane">
             <property name="minimumSize">
              <size>
@@ -103,7 +113,7 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>600</width>
+              <width>500</width>
               <height>600</height>
              </size>
             </property>
@@ -276,7 +286,7 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>600</width>
+              <width>500</width>
               <height>600</height>
              </size>
             </property>
@@ -320,16 +330,16 @@
                 </size>
                </property>
                <property name="maximum">
-                <number>4096</number>
+                <number>30</number>
                </property>
                <property name="singleStep">
-                <number>10</number>
+                <number>1</number>
                </property>
                <property name="pageStep">
-                <number>100</number>
+                <number>5</number>
                </property>
                <property name="value">
-                <number>2000</number>
+                <number>30</number>
                </property>
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -345,13 +355,13 @@
                 </size>
                </property>
                <property name="maximum">
-                <number>4096</number>
+                <number>50</number>
                </property>
                <property name="singleStep">
-                <number>10</number>
+                <number>1</number>
                </property>
                <property name="pageStep">
-                <number>100</number>
+                <number>5</number>
                </property>
                <property name="value">
                 <number>0</number>
@@ -441,7 +451,7 @@
          </font>
         </property>
         <property name="currentIndex">
-         <number>4</number>
+         <number>0</number>
         </property>
         <widget class="QWidget" name="FOVTab">
          <attribute name="title">
@@ -1082,6 +1092,76 @@ p, li { white-space: pre-wrap; }
               <widget class="QDoubleSpinBox" name="Overlap">
                <property name="value">
                 <double>10.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="groupBox_6">
+            <property name="maximumSize">
+             <size>
+              <width>200</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="title">
+             <string>PreSurfBox</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_23">
+             <item>
+              <widget class="QLabel" name="label_24">
+               <property name="maximumSize">
+                <size>
+                 <width>200</width>
+                 <height>30</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Surf downsample</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="scale">
+               <property name="maximumSize">
+                <size>
+                 <width>100</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="minimum">
+                <number>1</number>
+               </property>
+               <property name="value">
+                <number>10</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_25">
+               <property name="text">
+                <string>agar value</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="AgarValue"/>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="DSing">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>200</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>DSing</string>
                </property>
               </widget>
              </item>
@@ -2149,7 +2229,7 @@ p, li { white-space: pre-wrap; }
              <item row="5" column="1">
               <widget class="QDoubleSpinBox" name="XSpeed">
                <property name="maximum">
-                <double>3.000000000000000</double>
+                <double>6.000000000000000</double>
                </property>
                <property name="value">
                 <double>3.000000000000000</double>
@@ -2293,7 +2373,7 @@ p, li { white-space: pre-wrap; }
                 <double>0.000000000000000</double>
                </property>
                <property name="maximum">
-                <double>8.000000000000000</double>
+                <double>5.000000000000000</double>
                </property>
                <property name="value">
                 <double>2.500000000000000</double>
@@ -2427,7 +2507,7 @@ p, li { white-space: pre-wrap; }
                 <double>0.000000000000000</double>
                </property>
                <property name="maximum">
-                <double>8.000000000000000</double>
+                <double>5.000000000000000</double>
                </property>
                <property name="value">
                 <double>2.500000000000000</double>
@@ -2909,34 +2989,7 @@ p, li { white-space: pre-wrap; }
           <string>Save</string>
          </attribute>
          <layout class="QGridLayout" name="gridLayout_10">
-          <item row="0" column="0">
-           <widget class="QCheckBox" name="Save">
-            <property name="text">
-             <string>Save?</string>
-            </property>
-            <property name="iconSize">
-             <size>
-              <width>30</width>
-              <height>30</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QPushButton" name="LoadDispersion">
-            <property name="text">
-             <string>Load Compensation</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <widget class="QPushButton" name="RedoDC">
-            <property name="text">
-             <string>REDO Compensation </string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
+          <item row="2" column="0">
            <widget class="QTextEdit" name="DIR">
             <property name="maximumSize">
              <size>
@@ -2954,20 +3007,20 @@ p, li { white-space: pre-wrap; }
            </widget>
           </item>
           <item row="0" column="2">
-           <widget class="QPushButton" name="LoadBG">
+           <widget class="QPushButton" name="LoadDispersion">
             <property name="text">
-             <string>Load Background</string>
+             <string>Load Compensation</string>
             </property>
            </widget>
           </item>
-          <item row="2" column="2">
+          <item row="3" column="3">
            <widget class="QPushButton" name="redoBG">
             <property name="text">
              <string>Reget background</string>
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
+          <item row="2" column="2">
            <widget class="QLineEdit" name="Disp_DIR">
             <property name="minimumSize">
              <size>
@@ -2977,13 +3030,54 @@ p, li { white-space: pre-wrap; }
             </property>
            </widget>
           </item>
-          <item row="1" column="2">
+          <item row="0" column="1">
+           <widget class="QLabel" name="label_23">
+            <property name="text">
+             <string>Start Slice#</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="2">
+           <widget class="QPushButton" name="RedoDC">
+            <property name="text">
+             <string>REDO Compensation </string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="Save">
+            <property name="text">
+             <string>Save?</string>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>30</width>
+              <height>30</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="3">
            <widget class="QLineEdit" name="BG_DIR">
             <property name="minimumSize">
              <size>
               <width>0</width>
               <height>100</height>
              </size>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <widget class="QPushButton" name="LoadBG">
+            <property name="text">
+             <string>Load Background</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QSpinBox" name="SliceN">
+            <property name="minimum">
+             <number>1</number>
             </property>
            </widget>
           </item>

@@ -17,11 +17,11 @@ DISTANCE = 2
 # scan direction suring Cscan is Y axis
 global CSCAN_AXIS
 CSCAN_AXIS = 1 
+global ATSenable
+ATSenable = 3
 import numpy as np
 global Galvo_bias
 Galvo_bias = 3 # V
-global XforAline
-XforAline = 100
 import os
 
 class LOG():
@@ -93,9 +93,10 @@ def GenStageWave(one_cycle_samples, Aline_frq, stageSpeed):
     if stageSpeed > 0.00001:
             time = one_cycle_samples/Aline_frq # time for one bline
             distance = time*stageSpeed # mm to move
-            # print(distance*1000000,'nm')
+            print(distance,'mm')
             steps = distance / DISTANCE * STEPS # how many steps needed to reach that distance
             stride = np.uint16(one_cycle_samples/steps)
+            print(steps, stride)
             stagewaveform = np.zeros(one_cycle_samples)
             for ii in range(0,one_cycle_samples,stride):
                 stagewaveform[ii] = 1
@@ -103,6 +104,63 @@ def GenStageWave(one_cycle_samples, Aline_frq, stageSpeed):
     else:
         stagewaveform = np.zeros(one_cycle_samples)
         return stagewaveform
+
+def GenStageWave_ramp(distance, AlineTriggers):
+    # distance: stage movement per Cscan , mm/s
+    # edges: Aline triggers
+    # how many motor steps to reach that distance
+    steps = (distance/DISTANCE*STEPS)
+    # how many Aline triggers per motor step
+    clocks_per_motor_step = np.int16(AlineTriggers/steps)
+    if clocks_per_motor_step < 2:
+        clocks_per_motor_step = 2
+    print('clocks per motor step: ',clocks_per_motor_step)
+    # generate stage movement that ramps up and down speed so that motor won't miss signal at beginning and end
+    # ramping up: the interval between two steps should be 100 clocks at the beginning, then gradually decrease.vice versa for ramping down
+    if np.abs(distance) > 0.01:
+        max_interval = 80
+    else:
+        max_interval = 40
+    # the interval for ramping up and down
+    ramp_up_interval = np.arange(max_interval,clocks_per_motor_step,-2)
+    ramp_down_interval = np.arange(clocks_per_motor_step,max_interval+1,2)
+    ramping_steps = np.sum(len(ramp_down_interval)+len(ramp_up_interval)) # number steps used in ramping up and down process
+    
+    # ramping up waveform generation
+    ramp_up_waveform = np.zeros(np.sum(ramp_up_interval))
+    if any(ramp_up_waveform):
+        ramp_up_waveform[0] = 1
+    time_lapse = -1
+    for interval in ramp_up_interval:
+        time_lapse = time_lapse + interval
+        ramp_up_waveform[time_lapse] = 1
+
+    # ramping down waveform generation
+    ramp_down_waveform = np.zeros(np.sum(ramp_down_interval))
+    if any(ramp_down_waveform):
+        ramp_down_waveform[0] = 1
+    time_lapse = -1
+    for interval in ramp_down_interval:
+        time_lapse = time_lapse + interval
+        ramp_down_waveform[time_lapse] = 1
+        
+    # normal speed waveform
+    steps_left = steps - ramping_steps
+    clocks_left = np.int32(AlineTriggers-len(ramp_down_waveform)-len(ramp_up_waveform))
+    stride = np.int16(clocks_left/steps_left)
+    if stride < 2:
+        stride = 2
+    clocks_left = np.int32(steps_left * stride)
+    stagewaveform = np.zeros(clocks_left)
+    for ii in range(0,clocks_left,stride):
+        stagewaveform[ii] = 1
+    
+    # append all arrays
+    DOwaveform = np.append(ramp_up_waveform,stagewaveform)
+    DOwaveform = np.append(DOwaveform,ramp_down_waveform)
+    if len(DOwaveform) < AlineTriggers:
+        DOwaveform = np.append(DOwaveform,np.zeros(AlineTriggers-len(DOwaveform),dtype = np.int16))
+    return DOwaveform
 
 def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma5X',\
             preclocks = 50, postclocks = 200, YStepSize = 1, YSteps = 200, BVG = 1, FPSAline=10, XforAline=100):
@@ -114,7 +172,7 @@ def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, A
         # 33 frames per second, how many samples for each frame
         one_cycle_samples = np.int32(Aline_frq/FPSAline)
         # trigger enbale waveform generation
-        DOwaveform = np.append(np.zeros(one_cycle_samples-XforAline), pow(2,3)*np.ones(XforAline))
+        DOwaveform = np.append(np.zeros(one_cycle_samples-XforAline), pow(2,ATSenable)*np.ones(XforAline))
         CscanAO = np.ones(BVG*len(DOwaveform)) * Galvo_bias
         CscanDO = np.zeros(BVG*len(DOwaveform))
         for ii in range(BVG):
@@ -131,7 +189,7 @@ def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, A
         # total number of Alines
         one_cycle_samples = XSteps*AVG
         # generate trigger waveforms
-        DOwaveform = np.append(np.zeros(preclocks), pow(2,3)*np.ones(one_cycle_samples))
+        DOwaveform = np.append(np.zeros(preclocks), pow(2,ATSenable)*np.ones(one_cycle_samples))
         DOwaveform = np.append(DOwaveform, np.zeros(preclocks+postclocks))
         CscanAO = np.zeros(BVG*len(AOwaveform))
         CscanDO = np.zeros(BVG*len(DOwaveform))
@@ -143,40 +201,62 @@ def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, A
     
     
     elif mode in ['SingleCscan','SurfScan','SurfScan+Slice']:
+            # # RptCscan is for acquiring Cscan at the same location repeatitively
+            # # generate AO waveform for Galvo control for one Bline
+            # AOwaveform, status = GenGalvoWave(XStepSize, XSteps, AVG, bias, obj, preclocks, postclocks)
+            # # total number of Alines
+            # one_cycle_samples = XSteps * AVG
+            # # generate trigger waveforms
+            # DOwaveform = np.append(np.zeros(preclocks), pow(2,3)*np.zeros(one_cycle_samples))
+            # DOwaveform = np.append(DOwaveform, np.zeros(preclocks+postclocks))
+            # # calculate stage speed for Cscan
+            # stageSpeed=YStepSize/1000.0/(one_cycle_samples/Aline_frq) # unit: mm/s
+            # # generate stage control waveforms for one step
+            # print(one_cycle_samples, Aline_frq, stageSpeed)
+            # stagewaveform = GenStageWave(one_cycle_samples, Aline_frq, stageSpeed)
+            # # append preclocks and postclocks
+            # stagewaveform = np.append(np.zeros(preclocks), pow(2,CSCAN_AXIS)*stagewaveform)
+            # stagewaveform = np.append(stagewaveform, np.zeros(preclocks+postclocks))
+            # print('distance per Bline: ',np.sum(stagewaveform)/STEPS*DISTANCE*1000/pow(2,CSCAN_AXIS),'um')
+            # # add stagewaveform with trigger enable waveform for DOwaveform
+            # DOwaveform = DOwaveform + stagewaveform
+            # # repeat the waveform for whole Cscan
+            # CscanAO = np.zeros(YSteps*BVG*len(AOwaveform))
+            # CscanDO = np.zeros(YSteps*BVG*len(DOwaveform))
+            # for ii in range(YSteps*BVG):
+            #     CscanAO[ii*len(AOwaveform):(ii+1)*len(AOwaveform)] = AOwaveform
+            #     CscanDO[ii*len(AOwaveform):(ii+1)*len(AOwaveform)] = DOwaveform
+            # status = 'waveform updated'
+            # return np.uint32(CscanDO), CscanAO, status
         # RptCscan is for acquiring Cscan at the same location repeatitively
         # generate AO waveform for Galvo control for one Bline
         AOwaveform, status = GenGalvoWave(XStepSize, XSteps, AVG, bias, obj, preclocks, postclocks)
-        # total number of Alines
-        one_cycle_samples = XSteps * AVG
-        # generate trigger waveforms
-        DOwaveform = np.append(np.zeros(preclocks), pow(2,3)*np.zeros(one_cycle_samples))
-        DOwaveform = np.append(DOwaveform, np.zeros(preclocks+postclocks))
-        # calculate stage speed for Cscan
-        stageSpeed=YStepSize/1000.0/(one_cycle_samples/Aline_frq) # unit: mm/s
-        # generate stage control waveforms for one step
-        stagewaveform = GenStageWave(one_cycle_samples, Aline_frq, stageSpeed)
-        # append preclocks and postclocks
-        stagewaveform = np.append(np.zeros(preclocks), pow(2,CSCAN_AXIS)*stagewaveform)
-        stagewaveform = np.append(stagewaveform, np.zeros(preclocks+postclocks))
-        print('distance per Bline: ',np.sum(stagewaveform)/STEPS*DISTANCE*1000/pow(2,CSCAN_AXIS),'um')
-        # add stagewaveform with trigger enable waveform for DOwaveform
-        DOwaveform = DOwaveform + stagewaveform
-        # repeat the waveform for whole Cscan
         CscanAO = np.zeros(YSteps*BVG*len(AOwaveform))
-        CscanDO = np.zeros(YSteps*BVG*len(DOwaveform))
         for ii in range(YSteps*BVG):
             CscanAO[ii*len(AOwaveform):(ii+1)*len(AOwaveform)] = AOwaveform
-            CscanDO[ii*len(AOwaveform):(ii+1)*len(AOwaveform)] = DOwaveform
+        # total number of Alines per Bline
+        one_cycle_samples = XSteps * AVG
+        # generate trigger waveforms
+        DOwaveform = np.append(np.zeros(preclocks), pow(2,ATSenable)*np.zeros(one_cycle_samples))
+        DOwaveform = np.append(DOwaveform, np.zeros(preclocks+postclocks))
+        
+        CscanDO = np.zeros(YSteps*BVG*len(DOwaveform))
+        for ii in range(YSteps*BVG):
+            CscanDO[ii*len(DOwaveform):(ii+1)*len(DOwaveform)] = DOwaveform
+            
+        stagewaveform = GenStageWave_ramp(YSteps * YStepSize/1000, (XSteps + 2 * preclocks + postclocks)* YSteps * BVG)
+        # append preclocks and postclocks
+        stagewaveform = pow(2,CSCAN_AXIS)*stagewaveform
+        print('distance per Cscan: ',np.sum(stagewaveform)/STEPS*DISTANCE*1000/pow(2,CSCAN_AXIS),'um')
+        # add stagewaveform with trigger enable waveform for DOwaveform
+        if len(stagewaveform) > len(CscanDO):
+            CscanDO = np.append(CscanDO, np.zeros(len(stagewaveform)-len(CscanDO), dtype = np.uint32))
+            CscanAO = np.append(CscanAO, CscanAO[-1]*np.ones(len(stagewaveform)-len(CscanAO), dtype = np.uint32))
+        CscanDO = CscanDO + stagewaveform
+        # repeat the waveform for whole Cscan
+        
         status = 'waveform updated'
         return np.uint32(CscanDO), CscanAO, status
-
-    
-    elif mode == 'Slice':
-        # for cutting once at current stage height
-        
-        DOwaveform, status = GenStageWave(one_cycle_samples, stageSpeed)
-        status = 'waveform updated'
-        return np.uint32(DOwaveform), None, status
     
     else:
         status = 'invalid task type! Abort action'

@@ -54,7 +54,7 @@ class GPUThread(QThread):
                 else:
                     self.ui.statusbar.showMessage('GPU thread is doing something invalid '+self.item.action)
                 if time.time()-start > 1:
-                    message = 'an FFT action took '+str(time.time()-start)+' seconds\n'
+                    message = 'an FFT action took '+str(round(time.time()-start,3))+' s\n'
                     print(message)
                     self.ui.PrintOut.append(message)
                     self.log.write(message)
@@ -115,6 +115,8 @@ class GPUThread(QThread):
         an_action = DnSAction(mode, data = self.data_CPU, args = args) # data in Memory[memoryLoc]
         self.DnSQueue.put(an_action)
         if self.ui.Gotozero.isChecked() and self.ui.ACQMode.currentText() == 'SingleAline':
+            self.GPU2weaverQueue.put(self.data_CPU)
+        if self.ui.DSing.isChecked():
             self.GPU2weaverQueue.put(self.data_CPU)
         
         

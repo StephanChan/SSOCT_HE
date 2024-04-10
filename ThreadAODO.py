@@ -115,6 +115,8 @@ class AODOThread(QThread):
                     self.CloseTask()
                 elif self.item.action == 'centergalvo':
                     self.centergalvo()
+                elif self.item.action == 'CscanDistance':
+                    self.CscanDistance()
                 else:
                     message = 'AODO thread is doing something undefined: '+self.item.action
                     self.ui.statusbar.showMessage(message)
@@ -153,6 +155,7 @@ class AODOThread(QThread):
         settingtask.stop()
         settingtask.close()
         self.StagebackQueue.put(0)
+        
     def ConfigAODO(self):
         if self.ui.Laser.currentText() == 'Axsun100k':
             self.Aline_freq = 100000
@@ -226,6 +229,30 @@ class AODOThread(QThread):
             self.log.write(message)
         return 'AODO configuration success'
     
+    def CscanDistance(self):
+        if self.ui.Laser.currentText() == 'Axsun100k':
+            self.Aline_freq = 100000
+        else:
+            return 'Laser invalid!'
+        self.CloseTask()
+
+        DOwaveform,AOwaveform,status = GenAODO(mode=self.ui.ACQMode.currentText(), \
+                                               Aline_frq = self.Aline_freq, \
+                                               XStepSize = self.ui.XStepSize.value(), \
+                                               XSteps = self.ui.Xsteps.value(), \
+                                               AVG = self.ui.AlineAVG.value(), \
+                                               bias = self.ui.XBias.value(), \
+                                               obj = self.ui.Objective.currentText(), \
+                                               preclocks = self.ui.PreClock.value(), \
+                                               postclocks = self.ui.PostClock.value(), \
+                                               YStepSize = self.ui.YStepSize.value(), \
+                                               YSteps =  self.ui.Ysteps.value(), \
+                                               BVG = self.ui.BlineAVG.value(),
+                                               FPSAline = self.ui.FPSAline.value(),
+                                               XforAline = self.ui.XforAline.value())
+        distance = np.sum(DOwaveform)/25000.0*2/pow(2,1)
+        self.StagebackQueue.put(distance)
+        
     def startVibratome(self):
         settingtask = ni.Task('vibratome')
         settingtask.do_channels.add_do_chan(lines='AODO/PFI2')
@@ -261,10 +288,9 @@ class AODOThread(QThread):
             settingtask.stop()
             settingtask.close()
             # update GUI Y stage position
-            Ystep = self.ui.YStepSize.value()*self.ui.BlineAVG.value()*self.ui.Ysteps.value()/1000.0
+            Ystep = self.ui.YStepSize.value()*self.ui.Ysteps.value()/1000.0
             self.Ypos = self.Ypos+Ystep if direction == 1 else self.Ypos-Ystep
             self.ui.YPosition.setValue(self.Ypos)
-            # print(self.Ypos)
 
             
     def StartContinuous(self):
@@ -307,19 +333,23 @@ class AODOThread(QThread):
         # generate stage movement that ramps up and down speed so that motor won't miss signal at beginning and end
         # how to do that: motor is driving by low->high digital transition
         # ramping up: make the interval between two highs with long time at the beginning, then gradually goes down.vice versa for ramping down
-        if np.abs(distance) > 0.2:
-            max_interval = 1000
-        elif np.abs(distance) > 0.05:
+        if np.abs(distance) > 0.02:
             max_interval = 100
-        elif np.abs(distance) > 0.001:
+        elif np.abs(distance) > 0.01:
+            max_interval = 40
+        elif np.abs(distance) > 0.003:
             max_interval = 10
-        ramp_up_interval = np.arange(max_interval,0,-10)
-        ramp_down_interval = np.arange(1,max_interval+1,10)
+        else:
+            max_interval = 0
+        ramp_up_interval = np.arange(max_interval,0,-2)
+        ramp_down_interval = np.arange(1,max_interval+1,2)
         ramping_highs = np.sum(len(ramp_down_interval)+len(ramp_up_interval)) # number steps used in ramping up and down process
         total_highs = np.uint32(STEPS//DISTANCE*np.abs(distance))
         
         # ramping up waveform generation
         ramp_up_waveform = np.zeros(np.sum(ramp_up_interval))
+        if any(ramp_up_waveform):
+            ramp_up_waveform[0] = 1
         time_lapse = -1
         for interval in ramp_up_interval:
             time_lapse = time_lapse + interval
@@ -327,6 +357,8 @@ class AODOThread(QThread):
 
         # ramping down waveform generation
         ramp_down_waveform = np.zeros(np.sum(ramp_down_interval))
+        if any(ramp_down_waveform):
+            ramp_down_waveform[0] = 1
         time_lapse = -1
         for interval in ramp_down_interval:
             time_lapse = time_lapse + interval
@@ -357,7 +389,8 @@ class AODOThread(QThread):
         if axis == 'X':
             line = XCH
             speed = self.ui.XSpeed.value()
-            if self.ui.XPosition.value()>self.ui.Xmax.value() or self.ui.XPosition.value()<self.ui.Xmin.value():
+            pos = self.ui.XPosition.value()
+            if pos>self.ui.Xmax.value() or pos<self.ui.Xmin.value():
                 message = 'X target postion invalid, abort...'
                 self.ui.PrintOut.append(message)
                 self.log.write(message)
@@ -375,7 +408,8 @@ class AODOThread(QThread):
         elif axis == 'Y':
             line = YCH
             speed = self.ui.YSpeed.value()
-            if self.ui.YPosition.value()>self.ui.Ymax.value() or self.ui.YPosition.value()<self.ui.Ymin.value():
+            pos = self.ui.YPosition.value()
+            if pos>self.ui.Ymax.value() or pos<self.ui.Ymin.value():
                 message = 'Y target postion invalid, abort...'
                 self.ui.PrintOut.append(message)
                 self.log.write(message)
@@ -393,7 +427,8 @@ class AODOThread(QThread):
         elif axis == 'Z':
             line = ZCH
             speed = self.ui.ZSpeed.value()
-            if self.ui.ZPosition.value()>self.ui.Zmax.value() or self.ui.ZPosition.value()<self.ui.Zmin.value():
+            pos = self.ui.ZPosition.value()
+            if pos>self.ui.Zmax.value() or pos<self.ui.Zmin.value():
                 message = 'Z target postion invalid, abort...'
                 self.ui.PrintOut.append(message)
                 self.log.write(message)
@@ -409,7 +444,7 @@ class AODOThread(QThread):
                 sign = -1
             enable = 0#XDISABLE + YDISABLE
             
-        if np.abs(distance) < 0.001:
+        if np.abs(distance) < 0.003:
             self.StagebackQueue.put(0)
             message = axis + ' move2 action aborted'
             self.ui.PrintOut.append(message)
@@ -426,7 +461,7 @@ class AODOThread(QThread):
                                               active_edge= Edge.FALLING,\
                                               sample_mode=Atype.FINITE,samps_per_chan=len(DOwaveform))
             DOtask.write(DOwaveform, auto_start = True)
-            message = axis+'real distance moved: '+str(np.sum(DOwaveform)/line/25000*DISTANCE*sign)+'mm'
+            message = axis+' distance moved: '+str(np.sum(DOwaveform)/line/25000*DISTANCE*sign)+'mm'+' current pos: '+str(pos)
             print(message)
             self.ui.PrintOut.append(message)
             self.log.write(message)
@@ -448,6 +483,7 @@ class AODOThread(QThread):
             self.Zpos = self.Zpos+distance
             # self.ui.ZPosition.setValue(self.Zpos)
         self.StagebackQueue.put(0)
+        # print('after move func', self.Ypos, self.ui.YPosition.value())
         
     def StepMove(self, axis, Direction):
         ###########################
@@ -461,7 +497,7 @@ class AODOThread(QThread):
         if axis == 'X':
             line = XCH
             speed = self.ui.XSpeed.value()
-            
+            pos = self.ui.XPosition.value()
             distance = self.ui.Xstagestepsize.value()
             if Direction == 'UP':
                 direction = XFORWARD
@@ -480,7 +516,7 @@ class AODOThread(QThread):
         elif axis == 'Y':
             line = YCH
             speed = self.ui.YSpeed.value()
-            
+            pos = self.ui.YPosition.value()
             distance = self.ui.Ystagestepsize.value()
             if Direction == 'UP':
                 direction = YFORWARD
@@ -499,7 +535,7 @@ class AODOThread(QThread):
         elif axis == 'Z':
             line = ZCH
             speed = self.ui.ZSpeed.value()
-            
+            pos = self.ui.ZPosition.value()
             distance = self.ui.Zstagestepsize.value()
             if Direction == 'UP':
                 direction = ZFORWARD
@@ -528,7 +564,7 @@ class AODOThread(QThread):
                                               active_edge= Edge.FALLING,\
                                               sample_mode=Atype.FINITE,samps_per_chan=len(DOwaveform))
             DOtask.write(DOwaveform, auto_start = True)
-            message = axis+'real distance moved: '+str(np.sum(DOwaveform)/line/25000*DISTANCE*sign)+'mm'
+            message = axis+'distance moved: '+str(np.sum(DOwaveform)/line/25000*DISTANCE*sign)+'mm'+' current pos: '+str(pos+sign*distance)
             print(message)
             self.ui.PrintOut.append(message)
             self.log.write(message)

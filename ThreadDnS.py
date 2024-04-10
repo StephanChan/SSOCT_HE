@@ -62,6 +62,10 @@ class DnSThread(QThread):
                     self.print_display_counts()
                 elif self.item.action == 'restart_tilenum':
                     self.restart_tilenum()
+                elif self.item.action == 'change_slice_number':
+                    self.sliceNum = self.ui.SliceN.value()
+                elif self.item.action == 'agarTile':
+                    self.SurfFilename()
                     
                 else:
                     message = 'Display and save thread is doing something invalid' + self.item.action
@@ -191,6 +195,7 @@ class DnSThread(QThread):
         self.ui.XZplane.setPixmap(pixmap)
         
         plane = np.mean(data,2)# has to be first index, otherwise the memory space is not continuous
+        self.ui.tileMean.setValue(np.mean(plane))
         pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
         # clear content on the waveformLabel
         self.ui.XYplane.clear()
@@ -250,13 +255,14 @@ class DnSThread(QThread):
         self.ui.XZplane.setPixmap(pixmap)
         
         plane = np.mean(data,2)
+        self.ui.tileMean.setValue(np.mean(plane))
         pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
         # clear content on the waveformLabel
         self.ui.XYplane.clear()
         # update iamge on the waveformLabel
         self.ui.XYplane.setPixmap(pixmap)
         
-        scale = 2
+        scale = self.ui.scale.value()
 
         ###################### plot 3D visulaization
         self.ui.mayavi_widget.visualization.update_data(self.Cscan/500)
@@ -332,16 +338,13 @@ class DnSThread(QThread):
         self.tileNum = 1
         self.sliceNum = self.sliceNum+1
         
-    def SurfFilename(self, shape):
-        if self.tileNum <= self.totalTiles:
-            filename = 'slice-'+str(self.sliceNum)+'-tile-'+str(self.tileNum)+'-Y'+str(shape[0])+'-X'+str(shape[1])+'-Z'+str(shape[2])+'.bin'
-            self.tileNum = self.tileNum + 1
-        else:
-            self.sliceNum = self.sliceNum + 1
-            self.tileNum = 1
-            filename = 'slice-'+str(self.sliceNum)+'-tile-'+str(self.tileNum)+'-Y'+str(shape[0])+'-X'+str(shape[1])+'-Z'+str(shape[2])+'.bin'
-            self.tileNum = self.tileNum + 1
+    def SurfFilename(self, shape = [0,0,0]):
+        filename = 'slice-'+str(self.sliceNum)+'-tile-'+str(self.tileNum)+'-Y'+str(shape[0])+'-X'+str(shape[1])+'-Z'+str(shape[2])+'.bin'
+        self.tileNum = self.tileNum + 1
+    
         print(filename)
+        self.ui.PrintOut.append(filename)
+        self.log.write(filename)
         return filename
     
     def CscanFilename(self, shape):
@@ -368,7 +371,7 @@ class DnSThread(QThread):
         fp = open(filePath, 'wb')
         data.tofile(fp)
         fp.close()
-        message = 'time for saving: '+str( time.time()-start)
+        message = 'time for saving: '+str(round(time.time()-start,3))
         print(message)
         self.ui.PrintOut.append(message)
         self.log.write(message)

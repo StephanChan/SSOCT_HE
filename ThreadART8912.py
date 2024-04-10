@@ -37,6 +37,7 @@ class ART8912(QThread):
         
     def QueueOut(self):
         self.item = self.queue.get()
+        # start = time.time()
         while self.item.action != 'exit':
             try:
                 if self.item.action == 'ConfigureBoard':
@@ -53,7 +54,12 @@ class ART8912(QThread):
                 self.ui.statusbar.showMessage("\nAn error occurred:"+" skip the Digitizer action\n")
                 self.ui.PrintOut.append("\nAn error occurred:"+" skip the Digitizer action\n")
                 print(traceback.format_exc())
+            # message = 'DIGITIZER spent: '+ str(round(time.time()-start,3))+'s'
+            # self.ui.PrintOut.append(message)
+            # print(message)
+            # self.log.write(message)
             self.item = self.queue.get()
+            start = time.time()
         self.ui.statusbar.showMessage(self.exit_message)
         
     def ConfigureBoard(self):
@@ -201,6 +207,7 @@ class ART8912(QThread):
         self.log.write('start acquiring')
         while blinesCompleted < self.NBlines:
             # 8位的卡需要调用ArtScope_FetchBinary8，同时定义数据缓冲区数据类型为无符号8位数据
+            # start = time.time()
             try:
                 error_code = Functions.ArtScope_FetchBinary16(self.taskHandle, timeout, readLength, self.waveformPtr, wfmInfo)
             except Exception as error:
@@ -241,7 +248,10 @@ class ART8912(QThread):
                 break
             except:
                 pass
-            
+            # print(round(time.time()-start,4))
+        print('finish acquiring')
+        self.ui.PrintOut.append('finish acquiring')
+        self.log.write('finish acquiring')
         #停止采集任务
         error_code = Functions.ArtScope_StopAcquisition(self.taskHandle)
         if error_code < 0:

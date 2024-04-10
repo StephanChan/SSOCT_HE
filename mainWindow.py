@@ -146,7 +146,7 @@ class MainWindow(QMainWindow):
 
         # update laser model
         self.ui.Laser.currentIndexChanged.connect(self.Update_laser)
-        self.ui.Save.stateChanged.connect(self.chooseDir)
+        self.ui.Save.clicked.connect(self.chooseDir)
         self.ui.LoadDispersion.clicked.connect(self.chooseCompenstaion)
         self.ui.LoadBG.clicked.connect(self.chooseBackground)
         self.ui.ConfigButton.clicked.connect(self.LoadConfig)
@@ -356,6 +356,8 @@ class MainWindow(QMainWindow):
         self.ui.SliceZStart.setValue(np.float32(settings.value('SliceZStart')))
         self.ui.SliceSpeed.setValue(np.float32(settings.value('SliceSpeed')))
         self.ui.SliceLength.setValue(np.float32(settings.value('SliceLength')))
+        self.ui.scale.setValue(np.int16(settings.value('scale')))
+        self.ui.AgarValue.setValue(np.float32(settings.value('AgarValue')))
         
     def save_settings(self,settings):
         settings.setValue("FFTresults",self.ui.FFTresults.currentText())
@@ -414,6 +416,8 @@ class MainWindow(QMainWindow):
         settings.setValue("SliceZStart",self.ui.SliceZStart.value())
         settings.setValue("SliceSpeed",self.ui.SliceSpeed.value())
         settings.setValue("SliceLength",self.ui.SliceLength.value())
+        settings.setValue("scale",self.ui.scale.value())
+        settings.setValue("AgarValue",self.ui.AgarValue.value())
 
         
         
