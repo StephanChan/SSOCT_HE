@@ -359,6 +359,10 @@ class MainWindow(QMainWindow):
         self.ui.scale.setValue(np.int16(settings.value('scale')))
         self.ui.AgarValue.setValue(np.float32(settings.value('AgarValue')))
         
+        self.ui.XSpeed.setValue(np.float32(settings.value('XSpeed')))
+        self.ui.YSpeed.setValue(np.float32(settings.value('YSpeed')))
+        self.ui.ZSpeed.setValue(np.float32(settings.value('ZSpeed')))
+        
     def save_settings(self,settings):
         settings.setValue("FFTresults",self.ui.FFTresults.currentText())
         settings.setValue("Objective",self.ui.Objective.currentText())
@@ -418,6 +422,10 @@ class MainWindow(QMainWindow):
         settings.setValue("SliceLength",self.ui.SliceLength.value())
         settings.setValue("scale",self.ui.scale.value())
         settings.setValue("AgarValue",self.ui.AgarValue.value())
+        
+        settings.setValue("XSpeed",self.ui.XSpeed.value())
+        settings.setValue("YSpeed",self.ui.YSpeed.value())
+        settings.setValue("ZSpeed",self.ui.ZSpeed.value())
 
         
         

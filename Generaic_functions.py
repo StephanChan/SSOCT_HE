@@ -43,6 +43,7 @@ class LOG():
         fp = open(self.filePath, 'a')
         fp.write(message+'\n')
         fp.close()
+        # return 0
 
 
 def GenGalvoWave(StepSize = 1, Steps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma5X', preclocks = 50, postclocks = 200):
@@ -114,7 +115,7 @@ def GenStageWave_ramp(distance, AlineTriggers):
     clocks_per_motor_step = np.int16(AlineTriggers/steps)
     if clocks_per_motor_step < 2:
         clocks_per_motor_step = 2
-    print('clocks per motor step: ',clocks_per_motor_step)
+    # print('clocks per motor step: ',clocks_per_motor_step)
     # generate stage movement that ramps up and down speed so that motor won't miss signal at beginning and end
     # ramping up: the interval between two steps should be 100 clocks at the beginning, then gradually decrease.vice versa for ramping down
     if np.abs(distance) > 0.01:
@@ -247,7 +248,7 @@ def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, A
         stagewaveform = GenStageWave_ramp(YSteps * YStepSize/1000, (XSteps + 2 * preclocks + postclocks)* YSteps * BVG)
         # append preclocks and postclocks
         stagewaveform = pow(2,CSCAN_AXIS)*stagewaveform
-        print('distance per Cscan: ',np.sum(stagewaveform)/STEPS*DISTANCE*1000/pow(2,CSCAN_AXIS),'um')
+        # print('distance per Cscan: ',np.sum(stagewaveform)/STEPS*DISTANCE*1000/pow(2,CSCAN_AXIS),'um')
         # add stagewaveform with trigger enable waveform for DOwaveform
         if len(stagewaveform) > len(CscanDO):
             CscanDO = np.append(CscanDO, np.zeros(len(stagewaveform)-len(CscanDO), dtype = np.uint32))
@@ -388,7 +389,11 @@ def ImagePlot(matrix, m=0, M=1):
     matrix[matrix>M] = M
     # adjust image brightness
     data = np.uint8((matrix-m)/np.abs(M-m+0.00001)*255.0)
-    im = qpy.gray2qimage(data)
-    pixmap = QPixmap(im)
+    try:
+        im = qpy.gray2qimage(data)
+        pixmap = QPixmap(im)
+    except:
+        print(data.shape)
+        pixmap = QPixmap(qpy.gray2qimage(np.zeros(1000,1000)))
     return pixmap
     

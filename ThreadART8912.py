@@ -28,9 +28,11 @@ from ART_SCOPE_Lib.errors import check_for_error, ArtScopeError
 class ART8912(QThread):
     def __init__(self):
         super().__init__()
-
+        self.MemoryLoc = 0
         self.exit_message = 'Digitizer thread successfully exited'
-
+        self.InitBoard()
+        
+        
         
     def run(self):
         self.QueueOut()
@@ -44,8 +46,14 @@ class ART8912(QThread):
                     self.ConfigureBoard()
                 elif self.item.action == 'StartAcquire':
                     self.StartAcquire()
-                elif self.item.action == 'CloseTask':
-                    self.CloseTask()
+                elif self.item.action == 'atomBoard':
+                    self.atomBoard()
+                elif self.item.action == 'UninitBoard':
+                    self.UninitBoard()
+                elif self.item.action == 'InitBoard':
+                    self.InitBoard()
+                elif self.item.action == 'simData':
+                    self.simData()
                     
                 else:
                     self.ui.statusbar.showMessage('Digitizer thread is doing something invalid: '+self.item.action)
@@ -59,16 +67,26 @@ class ART8912(QThread):
             # print(message)
             # self.log.write(message)
             self.item = self.queue.get()
-            start = time.time()
-        self.ui.statusbar.showMessage(self.exit_message)
+            # start = time.time()
+        self.UninitBoard()
+        print(self.exit_message)
         
-    def ConfigureBoard(self):
+    def InitBoard(self):
         taskName = "ART8912M"  # 设备名 DMC管理器里面的名称
         self.taskHandle = lib_importer.task_handle(0)                # 设备句柄
+        # print('Gen handle')
         #创建任务
         error_code = Functions.ArtScope_init(taskName, self.taskHandle)
         if error_code < 0:
             check_for_error(error_code)
+            message = 'Init digitizer failed'
+        else:
+            message = 'Init digitizer success'
+        # self.ui.PrintOut.append(message)
+        print(message)
+        # self.log.write(message)
+        
+    def ConfigureBoard(self):
         
         #配置采集模式
         acquisitionMode = SampleMode.FINITE                     # 采集模式 连续采集模式
@@ -93,6 +111,7 @@ class ART8912(QThread):
         if error_code < 0:
             Functions.ArtScope_Close(self.taskHandle)
             check_for_error(error_code)
+            return 'D vertical failed'
         
         #配置水平参数
         if self.ui.ClockFreq_2.currentText() == '250MHz':
@@ -106,6 +125,7 @@ class ART8912(QThread):
         if error_code < 0:
             Functions.ArtScope_Close(self.taskHandle)
             check_for_error(error_code)
+            return 'D Horizontal failed'
         
         #配置边沿触发
         triggerSource = TriggerSource.TRIGSRC_DTR               # 触发源
@@ -121,6 +141,7 @@ class ART8912(QThread):
         if error_code < 0:
             Functions.ArtScope_Close(self.taskHandle)
             check_for_error(error_code)
+            return 'D trigger failed'
         
         #配置触发输出
         if self.ui.AUXIO_2.currentText() == 'ENABLE':
@@ -133,20 +154,26 @@ class ART8912(QThread):
             if error_code < 0:
                 Functions.ArtScope_Close(self.taskHandle)
                 check_for_error(error_code)
+                return 'D export trigger failed'
+        return 'D config success'
         
+        
+    def StartAcquire(self):
         #获取实际使能的通道个数
         numWfms = ctypes.c_uint32(0)                            # 返回的实际参与采集的通道个数
         error_code = Functions.ArtScope_ActualNumWfms(self.taskHandle, numWfms)
         if error_code < 0:
             Functions.ArtScope_Close(self.taskHandle)
             check_for_error(error_code)
+            print( 'D get channels failed')
         
         #初始化采集任务
         error_code = Functions.ArtScope_InitiateAcquisition(self.taskHandle)
         if error_code < 0:
             Functions.ArtScope_Close(self.taskHandle)
             check_for_error(error_code)
-        
+            print( 'D Init acquire failed')
+        # print('Init acqui')
         #获取实际采集长度 这个长度用于读取数据时开辟数据缓冲区时使用
         #读取的数据长度可以大于或小于或等于此长度
         #当读取的数据长度小于此长度时，实际读取的个数是读取的长度
@@ -158,60 +185,63 @@ class ART8912(QThread):
         if error_code < 0:
             Functions.ArtScope_Close(self.taskHandle)
             check_for_error(error_code)
-        self.ui.PostSamples_2.setValue(actualRecordLength.value)
-        
-        #开辟数据存储空间
+            rprint( 'D get Aline samples failed')
+        # get how many Alines per Bline
         if self.ui.ACQMode.currentText() in ['SingleAline', 'RptAline']:
             if self.ui.Laser.currentText() == 'Axsun100k':
                 self.Aline_frq = 100000
+                # total Alines to be acquired per scan
                 AlinesPerBline = np.int32(self.Aline_frq/self.ui.FPSAline.value())
-            self.usefulLength = self.ui.XforAline.value() * actualRecordLength.value * numWfms.value
+                # number Alines * total samples * channels
+            else:
+                return ' laser invalid, kill console to restart'
+            # self.usefulLength = self.ui.XforAline.value() * actualRecordLength.value * numWfms.value
         else:
+            # total ALines to be acquired per Bline, this include galvo fly-backs
             AlinesPerBline = self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2+self.ui.PostClock.value()
-            self.usefulLength = (self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2) * actualRecordLength.value * numWfms.value
+            # from total Alines remove Galvo fly-backs. This is (Alines per bline * Aline rpt + 100) * total samples * channels
+            # self.usefulLength = (self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2) * actualRecordLength.value * numWfms.value
                 
-        
-        self.sumLength = actualRecordLength.value * AlinesPerBline * numWfms.value
-        self.waveformPtr = np.zeros(self.sumLength, dtype=np.uint16)
-        
+        # all samples in all Alines, include galvo fly-backs
+        sumLength = actualRecordLength.value * AlinesPerBline * numWfms.value
+        # self.waveformPtr = np.zeros(self.sumLength, dtype=np.uint16)
         
         for ii in range(self.memoryCount):
-             if self.ui.ACQMode.currentText() in ['SingleBline', 'SingleAline']:
-                 self.NBlines = self.ui.BlineAVG.value()
-                 self.Memory[ii]=np.zeros([self.NBlines, self.usefulLength], dtype = np.uint16)
-             if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline']:
-                 self.NBlines = CONTINUOUS
-                 self.Memory[ii]=np.zeros([self.ui.BlineAVG.value(), self.usefulLength], dtype = np.uint16)
-             elif self.ui.ACQMode.currentText() in ['SingleCscan', 'SurfScan','SurfScan+Slice']:
-                 self.NBlines = self.ui.BlineAVG.value() * self.ui.Ysteps.value()
-                 self.Memory[ii]=np.zeros([self.NBlines, self.usefulLength], dtype = np.uint16)
+              if self.ui.ACQMode.currentText() in ['SingleBline', 'SingleAline']:
+                  NBlines = self.ui.BlineAVG.value()
+                  # self.Memory[ii]=np.zeros([self.NBlines, self.usefulLength], dtype = np.uint16)
+              if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline']:
+                  NBlines = CONTINUOUS
+                  # self.Memory[ii]=np.zeros([self.ui.BlineAVG.value(), self.usefulLength], dtype = np.uint16)
+              elif self.ui.ACQMode.currentText() in ['SingleCscan', 'SurfScan','SurfScan+Slice']:
+                  NBlines = self.ui.BlineAVG.value() * self.ui.Ysteps.value()
+                  # self.Memory[ii]=np.zeros([self.NBlines, self.usefulLength], dtype = np.uint16)
                  
-        self.MemoryLoc = 0
+
         # print('configure ART8912 success\n')
         
-    def StartAcquire(self):
-        num = 1
+        data_packages = 1 # number data packages returned from digitizer
         timeout = self.ui.TriggerTimeout_2.value()              # 数据读取超时时间 单位：s
-        readLength = self.sumLength                         # 数据读取长度
-        usefulLength = self.usefulLength
+        readLength = sumLength                         # 数据读取长度
+        # usefulLength = self.usefulLength
         wfmInfo = ArtScope_wfmInfo()                            # 返回的包含实际读取长度和原码值转电压值相关参数的结构体
-        wfmInfo.actualSamples = 0
-        wfmInfo.pAvailSampsPoints = 0
-        
-        blinesCompleted = 0
-        NACQ = self.NBlines if self.NBlines != CONTINUOUS else self.ui.BlineAVG.value()
+        # wfmInfo.actualSamples = 0
+        # wfmInfo.pAvailSampsPoints = 0
+        # print('get wfminfo')
+        blinesCompleted = 0 # number Blines read
+        NACQ = NBlines if NBlines != CONTINUOUS else self.ui.BlineAVG.value() # total number of Blines to be read per data_package
         #开始采集任务
         error_code = Functions.ArtScope_StartAcquisition(self.taskHandle)
-        print('start acquiring')
-        self.ui.PrintOut.append('start acquiring')
-        self.log.write('start acquiring')
-        while blinesCompleted < self.NBlines:
+        message = 'D using memory loc: '+ str(self.MemoryLoc)
+        print(message)
+        self.ui.PrintOut.append(message)
+        self.log.write(message)
+        while blinesCompleted < NBlines:
             # 8位的卡需要调用ArtScope_FetchBinary8，同时定义数据缓冲区数据类型为无符号8位数据
             # start = time.time()
             try:
-                error_code = Functions.ArtScope_FetchBinary16(self.taskHandle, timeout, readLength, self.waveformPtr, wfmInfo)
+                error_code = Functions.ArtScope_FetchBinary16(self.taskHandle, timeout, readLength, self.Memory[self.MemoryLoc][blinesCompleted % NACQ], wfmInfo)
             except Exception as error:
-                # TODO: if timeout, break this inner while loop
                 message = 'Blines collected: '+str( blinesCompleted)+ \
                       'Blines configured: '+str( NACQ)+ \
                       '\n'+ error+ '\nstopping acquisition for Digitizer\n'
@@ -220,12 +250,109 @@ class ART8912(QThread):
                 self.log.write(message)
                 break
             
-            if error_code < 0:
-                Functions.ArtScope_StopAcquisition(self.taskHandle)
-                Functions.ArtScope_Close(self.taskHandle)
-                check_for_error(error_code)
+            # if error_code < 0:
+            #     Functions.ArtScope_StopAcquisition(self.taskHandle)
+            #     Functions.ArtScope_Close(self.taskHandle)
+            #     check_for_error(error_code)
+            #     return 'D fetch Bline failed'
+            blinesCompleted+=1
+            
+            if blinesCompleted % NACQ ==0:
+                # print('sending data back', num)
+                data_packages+=1
+                an_action = DbackAction(self.MemoryLoc)
+                self.DbackQueue.put(an_action)
+                self.MemoryLoc = (self.MemoryLoc+1) % self.memoryCount
+            # check if user stopped acquisition
+            try:
+                self.StopDQueue.get_nowait()
+                self.ui.statusbar.showMessage('successfully stopped Digitizer...')
+                self.ui.PrintOut.append('successfully stopped Digitizer...')
+                self.log.write('successfully stopped Digitizer...')
+                # self.CloseTask()
+                message = str( data_packages)+ ' data packages returned by digitizer\n'
+                print(message)
+                self.ui.PrintOut.append(message)
+                self.log.write(message)
+                break
+            except:
+                pass
+            # print(round(time.time()-start,4))
+        print('finish acquiring')
+        self.ui.PrintOut.append('finish acquiring')
+        self.log.write('finish acquiring')
+        #停止采集任务
+        error_code = Functions.ArtScope_StopAcquisition(self.taskHandle)
+        # if error_code < 0:
+        #     Functions.ArtScope_ReleaseAcquisition(self.taskHandle)
+        #     Functions.ArtScope_Close(self.taskHandle)
+        #     return 'D stop acquire failed'
+    
+        #释放采集任务
+        error_code = Functions.ArtScope_ReleaseAcquisition(self.taskHandle)
+        if error_code < 0:
+            Functions.ArtScope_Close(self.taskHandle)
+            return 'D release acquire failed'
+            
+    def UninitBoard(self):
+        #释放设备
+        error_code = Functions.ArtScope_Close(self.taskHandle)
+        print('closed digitizer')
+        
+    def atomBoard(self):
+        # print('start')
+        self.InitBoard()
+        # print('Init')
+        self.ConfigureBoard()
+        # print('config')
+        self.StartAcquire()
+        # print('start')
+        self.UninitBoard()
+        # print('uninit')
+        
+    def simData(self):
+        if self.ui.ACQMode.currentText() in ['SingleAline', 'RptAline']:
+            if self.ui.Laser.currentText() == 'Axsun100k':
+                self.Aline_frq = 100000
+                # total Alines to be acquired per scan
+                AlinesPerBline = np.int32(self.Aline_frq/self.ui.FPSAline.value())
+                # number Alines * total samples * channels
+            self.usefulLength = self.ui.XforAline.value() * self.ui.PostSamples_2.value() * 1
+        else:
+            # total ALines to be acquired per Bline, this include galvo fly-backs
+            AlinesPerBline = self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2+self.ui.PostClock.value()
+            # from total Alines remove Galvo fly-backs. This is (Alines per bline * Aline rpt + 100) * total samples * channels
+            self.usefulLength = (self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2) * self.ui.PostSamples_2.value() * 1
                 
-            self.Memory[self.MemoryLoc][blinesCompleted % NACQ][:] = self.waveformPtr[0:usefulLength]
+        # all samples in all Alines, include galvo fly-backs
+        self.sumLength = self.ui.PostSamples_2.value() * AlinesPerBline * 1
+        self.waveformPtr = np.zeros(self.sumLength, dtype=np.uint16)
+        
+        for ii in range(self.memoryCount):
+              if self.ui.ACQMode.currentText() in ['SingleBline', 'SingleAline']:
+                  self.NBlines = self.ui.BlineAVG.value()
+                  # self.Memory[ii]=np.zeros([self.NBlines, self.usefulLength], dtype = np.uint16)
+              if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline']:
+                  self.NBlines = CONTINUOUS
+                  # self.Memory[ii]=np.zeros([self.ui.BlineAVG.value(), self.usefulLength], dtype = np.uint16)
+              elif self.ui.ACQMode.currentText() in ['SingleCscan', 'SurfScan','SurfScan+Slice']:
+                  self.NBlines = self.ui.BlineAVG.value() * self.ui.Ysteps.value()
+                  # self.Memory[ii]=np.zeros([self.NBlines, self.usefulLength], dtype = np.uint16)
+                 
+        blinesCompleted = 0
+        NACQ = self.NBlines if self.NBlines != CONTINUOUS else self.ui.BlineAVG.value()
+        num = 1
+        print('D using memory loc: ',self.MemoryLoc)
+        # print(self.Memory[self.MemoryLoc].shape)
+        self.waveformPtr = np.random.random(self.sumLength)*2000
+        while blinesCompleted < self.NBlines:
+            # 8位的卡需要调用ArtScope_FetchBinary8，同时定义数据缓冲区数据类型为无符号8位数据
+            # start = time.time()
+            # self.waveformPtr = np.random.random(self.sumLength)*2000
+        # 
+            
+            
+            self.Memory[self.MemoryLoc][blinesCompleted % NACQ] = self.waveformPtr
             blinesCompleted+=1
             
             if blinesCompleted % NACQ ==0:
@@ -240,7 +367,7 @@ class ART8912(QThread):
                 self.ui.statusbar.showMessage('successfully stopped Digitizer...')
                 self.ui.PrintOut.append('successfully stopped Digitizer...')
                 self.log.write('successfully stopped Digitizer...')
-                self.CloseTask()
+                # self.CloseTask()
                 message = str( num)+ ' data packages returned by digitizer\n'
                 print(message)
                 self.ui.PrintOut.append(message)
@@ -252,18 +379,3 @@ class ART8912(QThread):
         print('finish acquiring')
         self.ui.PrintOut.append('finish acquiring')
         self.log.write('finish acquiring')
-        #停止采集任务
-        error_code = Functions.ArtScope_StopAcquisition(self.taskHandle)
-        if error_code < 0:
-            Functions.ArtScope_ReleaseAcquisition(self.taskHandle)
-            Functions.ArtScope_Close(self.taskHandle)
-            
-    def CloseTask(self):
-        #释放采集任务
-        error_code = Functions.ArtScope_ReleaseAcquisition(self.taskHandle)
-        if error_code < 0:
-            Functions.ArtScope_Close(self.taskHandle)
-        
-        #释放设备
-        error_code = Functions.ArtScope_Close(self.taskHandle)
-        

@@ -15,6 +15,8 @@ DISTANCE = 2
 global Galvo_bias
 Galvo_bias = 3
 
+global SIM
+SIM = False
 ###########################################
 from PyQt5.QtCore import  QThread
 import nidaqmx as ni
@@ -28,35 +30,35 @@ import numpy as np
 # stage enable/disable digital value
 # enable = 0
 global XDISABLE
-XDISABLE = 1
+XDISABLE = 1 # port 2 line 0
 global YDISABLE
-YDISABLE = 4
+YDISABLE = 4 # port 2 line 2
 global ZDISABLE
-ZDISABLE = 16
+ZDISABLE = 16 # port 2 line 4
 
 # stage forwared backward digital value
 global XFORWARD
-XFORWARD = 2
+XFORWARD = 2 # port 2 line 1
 global YFORWARD
-YFORWARD = 8
+YFORWARD = 8 # port 2 line 3
 global ZFORWARD
-ZFORWARD = 0
+ZFORWARD = 0 # port 2 line 5, but reverse
 
 global XBACKWARD
 XBACKWARD = 0
 global YBACKWARD
 YBACKWARD = 0
 global ZBACKWARD
-ZBACKWARD = 32
+ZBACKWARD = 32 # port 2 line 5
 # backward = 0
 
 # stage channel digital value
 global XCH
-XCH = 1
+XCH = 1 # port 0 line 0
 global YCH
-YCH = 2
+YCH = 2 # port 0 line 1
 global ZCH
-ZCH = 4
+ZCH = 4 # port 0 line2
 
 class AODOThread(QThread):
     def __init__(self):
@@ -96,23 +98,18 @@ class AODOThread(QThread):
                     self.Init_Stages()
                 elif self.item.action == 'Uninit':
                     self.Uninit()
-                elif self.item.action == 'ConfigAODO':
-                    self.ConfigAODO()
+                elif self.item.action == 'ConfigNStart':
+                    self.ConfigNStart(self.item.direction)
                 elif self.item.action == 'startVibratome':
                     self.startVibratome()
                 elif self.item.action == 'stopVibratome':
                     self.stopVibratome()
 
-                elif self.item.action == 'StartOnce':
-                    self.StartOnce(self.item.direction)
-                elif self.item.action == 'StartContinuous':
-                    self.StartContinuous()
-                elif self.item.action == 'WaitDone':
-                    self.WaitDone()
-                elif self.item.action == 'StopContinuous':
-                    self.StopContinuous()
-                elif self.item.action == 'CloseTask':
-                    self.CloseTask()
+                elif self.item.action == 'StopNClose_Finite':
+                    self.StopNClose_Finite(self.item.direction)
+                elif self.item.action == 'StopNClose_Continuous':
+                    self.StopNClose_Continuous()
+                
                 elif self.item.action == 'centergalvo':
                     self.centergalvo()
                 elif self.item.action == 'CscanDistance':
@@ -156,77 +153,87 @@ class AODOThread(QThread):
         settingtask.close()
         self.StagebackQueue.put(0)
         
-    def ConfigAODO(self):
+    def ConfigNStart(self, direction = 1):
         if self.ui.Laser.currentText() == 'Axsun100k':
             self.Aline_freq = 100000
         else:
             return 'Laser invalid!'
-        self.CloseTask()
-
-        DOwaveform,AOwaveform,status = GenAODO(mode=self.ui.ACQMode.currentText(), \
-                                               Aline_frq = self.Aline_freq, \
-                                               XStepSize = self.ui.XStepSize.value(), \
-                                               XSteps = self.ui.Xsteps.value(), \
-                                               AVG = self.ui.AlineAVG.value(), \
-                                               bias = self.ui.XBias.value(), \
-                                               obj = self.ui.Objective.currentText(), \
-                                               preclocks = self.ui.PreClock.value(), \
-                                               postclocks = self.ui.PostClock.value(), \
-                                               YStepSize = self.ui.YStepSize.value(), \
-                                               YSteps =  self.ui.Ysteps.value(), \
-                                               BVG = self.ui.BlineAVG.value(),
-                                               FPSAline = self.ui.FPSAline.value(),
-                                               XforAline = self.ui.XforAline.value())
-        self.AOtask = ni.Task('AOtask')
+        # self.CloseTask()
         
-        # Configure Analog output task for Galvo control
-        self.AOtask.ao_channels.add_ao_voltage_chan(physical_channel='AODO/ao0', \
-                                              min_val=- 5.0, max_val=5.0, \
-                                              units=ni.constants.VoltageUnits.VOLTS)
-        if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline']:
+        if not SIM: # if not running simulation mode
+            # Generate waveform
+            DOwaveform,AOwaveform,status = GenAODO(mode=self.ui.ACQMode.currentText(), \
+                                                   Aline_frq = self.Aline_freq, \
+                                                   XStepSize = self.ui.XStepSize.value(), \
+                                                   XSteps = self.ui.Xsteps.value(), \
+                                                   AVG = self.ui.AlineAVG.value(), \
+                                                   bias = self.ui.XBias.value(), \
+                                                   obj = self.ui.Objective.currentText(), \
+                                                   preclocks = self.ui.PreClock.value(), \
+                                                   postclocks = self.ui.PostClock.value(), \
+                                                   YStepSize = self.ui.YStepSize.value(), \
+                                                   YSteps =  self.ui.Ysteps.value(), \
+                                                   BVG = self.ui.BlineAVG.value(),
+                                                   FPSAline = self.ui.FPSAline.value(),
+                                                   XforAline = self.ui.XforAline.value())
+            ######################################################################################
+            # init AO task
+            self.AOtask = ni.Task('AOtask')
+            # Config channel and vertical
+            self.AOtask.ao_channels.add_ao_voltage_chan(physical_channel='AODO/ao0', \
+                                                  min_val=- 5.0, max_val=5.0, \
+                                                  units=ni.constants.VoltageUnits.VOLTS)
+            # depending on whether continuous or finite, config clock and mode
+            mode = Atype.CONTINUOUS if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline'] else Atype.FINITE
             self.AOtask.timing.cfg_samp_clk_timing(rate=self.Aline_freq, \
-                                            source=self.ui.ClockTerm.toPlainText(), \
-                                                active_edge= Edge.FALLING,\
-                                              sample_mode=Atype.CONTINUOUS,samps_per_chan=len(AOwaveform))
-        else:
-            self.AOtask.timing.cfg_samp_clk_timing(rate=self.Aline_freq, \
-                                            source=self.ui.ClockTerm.toPlainText(), \
-                                              sample_mode=Atype.FINITE,samps_per_chan=len(AOwaveform))
-        if self.Digitizer == 'ATS9351':      
-            self.AOtask.triggers.sync_type.MASTER = True
-        elif self.Digitizer == 'ART8912':
-            self.AOtask.triggers.start_trigger.cfg_dig_edge_start_trig("/AODO/PFI1")
-
-        # print(len(DOwaveform))
-            
-        self.AOtask.write(AOwaveform, auto_start = False)
-        # Confiture Digital output task for stage control and digitizer trigger enabling
-        
-        if self.ui.ACQMode.currentText() in ['SingleCscan','SurfScan','SurfScan+Slice'] or self.Digitizer == 'ATS9351':
-            self.DOtask = ni.Task('DOtask')
-            self.DOtask.do_channels.add_do_chan(lines='AODO/port0/line0:7')
-            if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline']:
-                self.DOtask.timing.cfg_samp_clk_timing(rate=self.Aline_freq, \
-                                                source=self.ui.ClockTerm.toPlainText(), \
-                                                    active_edge= Edge.FALLING,\
-                                                  sample_mode=Atype.CONTINUOUS,samps_per_chan=len(DOwaveform))
-            else:
-                self.DOtask.timing.cfg_samp_clk_timing(rate=self.Aline_freq, \
-                                                source=self.ui.ClockTerm.toPlainText(), \
-                                                  sample_mode=Atype.FINITE,samps_per_chan=len(DOwaveform))
-           
+                                                   source=self.ui.ClockTerm.toPlainText(), \
+                                                   active_edge= Edge.FALLING,\
+                                                   sample_mode=mode,samps_per_chan=len(AOwaveform))
+            # Config start mode
             if self.Digitizer == 'ATS9351':      
-                self.DOtask.triggers.sync_type.SLAVE = True
+                self.AOtask.triggers.sync_type.MASTER = True
             elif self.Digitizer == 'ART8912':
-                self.DOtask.triggers.start_trigger.cfg_dig_edge_start_trig("/AODO/PFI1")
+                # pass
+                self.AOtask.triggers.start_trigger.cfg_dig_edge_start_trig("/AODO/PFI1")
+            # write waveform and start
+            self.AOtask.write(AOwaveform, auto_start = False)
+            self.AOtask.start()
             
-            self.DOtask.write(DOwaveform, auto_start = False)
-            # print(DOwaveform.shape)
-            steps = np.sum(DOwaveform)/25000.0*2/pow(2,1)
-            message = 'distance per Cscan: '+str(steps)+'mm'
-            self.ui.PrintOut.append(message)
-            print(message)
-            self.log.write(message)
+            #################################################################################
+            # only use DO in Cscan acquisition or if digitizer is Alazar board
+            if self.ui.ACQMode.currentText() in ['SingleCscan','SurfScan','SurfScan+Slice'] or self.Digitizer == 'ATS9351':
+                # before move stage, configure direction and enable stage using port 2 first
+                # direction = 0 means backward
+                # direction = 1 means forward
+                stageEnabletask = ni.Task('stageEnable')
+                stageEnabletask.do_channels.add_do_chan(lines='AODO/port2/line0:7')
+                tmp = np.uint32(direction * YFORWARD)# + XDISABLE + ZDISABLE)
+                stageEnabletask.write(tmp, auto_start = True)
+                stageEnabletask.wait_until_done(timeout = 1)
+                stageEnabletask.stop()
+                stageEnabletask.close()
+                # config DO task
+                self.DOtask = ni.Task('DOtask')
+                self.DOtask.do_channels.add_do_chan(lines='AODO/port0/line0:7')
+                self.DOtask.timing.cfg_samp_clk_timing(rate=self.Aline_freq, \
+                                                       source=self.ui.ClockTerm.toPlainText(), \
+                                                       active_edge= Edge.FALLING,\
+                                                       sample_mode=mode,samps_per_chan=len(DOwaveform))
+               
+                if self.Digitizer == 'ATS9351':      
+                    self.DOtask.triggers.sync_type.SLAVE = True
+                elif self.Digitizer == 'ART8912':
+                    # pass
+                    self.DOtask.triggers.start_trigger.cfg_dig_edge_start_trig("/AODO/PFI1")
+                
+                self.DOtask.write(DOwaveform, auto_start = False)
+                self.DOtask.start()
+                # print(DOwaveform.shape)
+                steps = np.sum(DOwaveform)/25000.0*2/pow(2,1)
+                message = 'distance per Cscan: '+str(steps)+'mm'
+                self.ui.PrintOut.append(message)
+                print(message)
+                self.log.write(message)
         return 'AODO configuration success'
     
     def CscanDistance(self):
@@ -234,7 +241,7 @@ class AODOThread(QThread):
             self.Aline_freq = 100000
         else:
             return 'Laser invalid!'
-        self.CloseTask()
+        # self.CloseTask()
 
         DOwaveform,AOwaveform,status = GenAODO(mode=self.ui.ACQMode.currentText(), \
                                                Aline_frq = self.Aline_freq, \
@@ -257,7 +264,7 @@ class AODOThread(QThread):
         settingtask = ni.Task('vibratome')
         settingtask.do_channels.add_do_chan(lines='AODO/PFI2')
         settingtask.write(True, auto_start = True)
-        time.sleep(0.1)
+        settingtask.wait_until_done(timeout = 1)
         settingtask.stop()
         settingtask.close()
         self.StagebackQueue.put(0)
@@ -266,69 +273,58 @@ class AODOThread(QThread):
         settingtask = ni.Task('vibratome')
         settingtask.do_channels.add_do_chan(lines='AODO/PFI2')
         settingtask.write(False, auto_start = True)
-        time.sleep(0.1)
+        settingtask.wait_until_done(timeout = 1)
         settingtask.stop()
         settingtask.close()
         self.StagebackQueue.put(0)
             
-    def StartOnce(self, direction):
-        if self.ui.ACQMode.currentText() in ['SingleCscan','SurfScan','SurfScan+Slice'] or self.Digitizer == 'ATS9351':
-            settingtask = ni.Task('setting')
-            settingtask.do_channels.add_do_chan(lines='AODO/port2/line0:7')
-            tmp = np.uint32(direction * YFORWARD)# + XDISABLE + ZDISABLE)
-            settingtask.write(tmp, auto_start = True)
-            self.DOtask.start()
-        self.AOtask.start()
-        # try:
-        self.AOtask.wait_until_done(timeout = 60)
-        self.AOtask.stop()
-        if self.ui.ACQMode.currentText() in ['SingleCscan','SurfScan','SurfScan+Slice'] or self.Digitizer == 'ATS9351':
-            self.DOtask.stop()
-            # settingtask.write(XDISABLE+ YDISABLE+ ZDISABLE, auto_start = True)
-            settingtask.stop()
-            settingtask.close()
-            # update GUI Y stage position
-            Ystep = self.ui.YStepSize.value()*self.ui.Ysteps.value()/1000.0
-            self.Ypos = self.Ypos+Ystep if direction == 1 else self.Ypos-Ystep
-            self.ui.YPosition.setValue(self.Ypos)
+    def StopNClose_Finite(self, direction = 1):
+        if not SIM:
+            self.AOtask.wait_until_done(timeout = 60)
+            self.AOtask.stop()
+            self.AOtask.close()
+            # print(self.ui.ACQMode.currentText())
+            if self.ui.ACQMode.currentText() in ['SingleCscan','SurfScan','SurfScan+Slice'] or self.Digitizer == 'ATS9351':
+                self.DOtask.stop()
+                self.DOtask.close()
+                # settingtask.write(XDISABLE+ YDISABLE+ ZDISABLE, auto_start = True)
+                # update GUI Y stage position
+                Ystep = self.ui.YStepSize.value()*self.ui.Ysteps.value()/1000.0
+                self.Ypos = self.Ypos+Ystep if direction == 1 else self.Ypos-Ystep
+                self.ui.YPosition.setValue(self.Ypos)
 
-            
-    def StartContinuous(self):
-        if self.AOtask.is_task_done():
-            if self.Digitizer == 'ATS9351':   
-                self.DOtask.start()
-            self.AOtask.start()
-        else:
-            pass
-        
-    def WaitDone(self):
-        self.AOtask.wait_until_done()
-        
-    def StopContinuous(self):
-        self.AOtask.stop()
-        if self.Digitizer == 'ATS9351':   
-            self.DOtask.stop()
+    def StopNClose_Continuous(self):
+        if not SIM:
+            if self.AOtask:
+                self.AOtask.stop()
+                self.AOtask.close()
+                if self.Digitizer == 'ATS9351':   
+                    self.DOtask.stop()
+                    self.DOtask.close()
+            else:
+                print('continuous acquisition already stopped...')
         
     def CloseTask(self):
         try:
-            while not self.AOtask.is_task_done():
-                time.sleep(0.5)
             self.AOtask.close()
-            self.DOtask.close()
-            
         except:
             pass
+        try:
+            self.DOtask.close()
+        except:
+            pass
+        print('closed AODO')
         return 'AODO write task done'
                 
     def centergalvo(self):
-        with ni.Task('AO task') as AOtask, ni.Task('DO task') as DOtask:
+        with ni.Task('AO task') as AOtask:
             AOtask.ao_channels.add_ao_voltage_chan(physical_channel='AODO/ao0', \
                                                   min_val=- 10.0, max_val=10.0, \
                                                   units=ni.constants.VoltageUnits.VOLTS)
             AOtask.write(Galvo_bias, auto_start = True)
-            DOtask.do_channels.add_do_chan(lines='AODO/port0/line0:7')
-            DOtask.write(0, auto_start = True)
-            # AOtask.close()
+            AOtask.wait_until_done(timeout = 1)
+            AOtask.stop()
+
     def stagewave_ramp(self, distance):
         # generate stage movement that ramps up and down speed so that motor won't miss signal at beginning and end
         # how to do that: motor is driving by low->high digital transition
@@ -445,34 +441,40 @@ class AODOThread(QThread):
             enable = 0#XDISABLE + YDISABLE
             
         if np.abs(distance) < 0.003:
-            self.StagebackQueue.put(0)
             message = axis + ' move2 action aborted'
             self.ui.PrintOut.append(message)
             print(message)
             self.log.write(message)
+            self.StagebackQueue.put(0)
             return 0
-        with ni.Task('Move task') as DOtask, ni.Task('setting') as settingtask:
-            settingtask.do_channels.add_do_chan(lines='AODO/port2/line0:7')
-            settingtask.write(direction + enable, auto_start = True)
-            DOwaveform = self.stagewave_ramp(distance)
-            DOwaveform = np.uint32(DOwaveform * line)
-            DOtask.do_channels.add_do_chan(lines='AODO/port0/line0:7')
-            DOtask.timing.cfg_samp_clk_timing(rate=STEPS*2//DISTANCE*speed, \
-                                              active_edge= Edge.FALLING,\
-                                              sample_mode=Atype.FINITE,samps_per_chan=len(DOwaveform))
-            DOtask.write(DOwaveform, auto_start = True)
-            message = axis+' distance moved: '+str(np.sum(DOwaveform)/line/25000*DISTANCE*sign)+'mm'+' current pos: '+str(pos)
-            print(message)
-            self.ui.PrintOut.append(message)
-            self.log.write(message)
-            DOtask.wait_until_done(timeout =300)
+        if not SIM:
+            with ni.Task('Move task') as DOtask, ni.Task('stageEnable') as stageEnabletask:
+                # configure stage direction and enable
+                stageEnabletask.do_channels.add_do_chan(lines='AODO/port2/line0:7')
+                stageEnabletask.write(direction + enable, auto_start = True)
+                stageEnabletask.wait_until_done(timeout = 1)
+                stageEnabletask.stop()
+                # configure DO task 
+                DOwaveform = self.stagewave_ramp(distance)
+                DOwaveform = np.uint32(DOwaveform * line)
+                message = axis+' moving: '+str(round(np.sum(DOwaveform)/line/25000*DISTANCE*sign,3))+'mm'+' target pos: '+str(pos)
+                print(message)
+                self.ui.PrintOut.append(message)
+                self.log.write(message)
                 
-            DOtask.stop()
-            # DOtask.close()
-            # settingtask.write(XDISABLE + YDISABLE + ZDISABLE, auto_start = True)
-            settingtask.stop()
-            # settingtask.close()
-            
+                DOtask.do_channels.add_do_chan(lines='AODO/port0/line0:7')
+                DOtask.timing.cfg_samp_clk_timing(rate=STEPS*2//DISTANCE*round(speed,2), \
+                                                  active_edge= Edge.FALLING,\
+                                                  sample_mode=Atype.FINITE,samps_per_chan=len(DOwaveform))
+                DOtask.write(DOwaveform, auto_start = True)
+                DOtask.wait_until_done(timeout =300)
+                DOtask.stop()
+                message = axis+' current pos: '+str(pos)
+                print(message)
+                self.ui.PrintOut.append(message)
+                self.log.write(message)
+                # settingtask.write(XDISABLE + YDISABLE + ZDISABLE, auto_start = True)
+                
         if axis == 'X':
             self.Xpos = self.Xpos+distance
             # self.ui.XPosition.setValue(self.Xpos)
@@ -486,103 +488,16 @@ class AODOThread(QThread):
         # print('after move func', self.Ypos, self.ui.YPosition.value())
         
     def StepMove(self, axis, Direction):
-        ###########################
-        # you can only move one axis at a time
-        ###########################
-        # X axis use port 2 line 0-1 for enable and direction, use port 0 line 0 for steps
-        # Y axis use port 2 line 2-3 for enable and direction, use port 0 line 1 for steps
-        # Z axis use port 2 line 4-5 for enable and direction, use port 0 line 2 for steps
-        # enable low enables, enable high disables
-        
-        if axis == 'X':
-            line = XCH
-            speed = self.ui.XSpeed.value()
-            pos = self.ui.XPosition.value()
-            distance = self.ui.Xstagestepsize.value()
-            if Direction == 'UP':
-                direction = XFORWARD
-                sign = 1
-            else:
-                direction = XBACKWARD
-                sign = -1
-            enable = 0#YDISABLE + ZDISABLE
-            if self.ui.XPosition.value()+sign*distance>self.ui.Xmax.value() or self.ui.XPosition.value()+sign*distance<self.ui.Xmin.value():
-                message = 'X target postion invalid, abort...'
-                self.ui.PrintOut.append(message)
-                self.log.write(message)
-                print(message)
-                self.StagebackQueue.put(0)
-                return 
-        elif axis == 'Y':
-            line = YCH
-            speed = self.ui.YSpeed.value()
-            pos = self.ui.YPosition.value()
-            distance = self.ui.Ystagestepsize.value()
-            if Direction == 'UP':
-                direction = YFORWARD
-                sign = 1
-            else:
-                direction = YBACKWARD
-                sign = -1
-            enable = 0#XDISABLE + ZDISABLE
-            if self.ui.YPosition.value()+sign*distance>self.ui.Ymax.value() or self.ui.YPosition.value()+sign*distance<self.ui.Ymin.value():
-                message = 'Y target postion invalid, abort...'
-                self.ui.PrintOut.append(message)
-                self.log.write(message)
-                print(message)
-                self.StagebackQueue.put(0)
-                return 
-        elif axis == 'Z':
-            line = ZCH
-            speed = self.ui.ZSpeed.value()
-            pos = self.ui.ZPosition.value()
-            distance = self.ui.Zstagestepsize.value()
-            if Direction == 'UP':
-                direction = ZFORWARD
-                sign = 1
-            else:
-                direction = ZBACKWARD
-                sign = -1
-            enable = 0#XDISABLE + YDISABLE
-            if self.ui.ZPosition.value()+sign*distance>self.ui.Zmax.value() or self.ui.ZPosition.value()+sign*distance<self.ui.Zmin.value():
-                message = 'Z target postion invalid, abort...'
-                self.ui.PrintOut.append(message)
-                self.log.write(message)
-                print(message)
-                self.StagebackQueue.put(0)
-                return 
-        if np.abs(distance) < 0.001:
-            self.StagebackQueue.put(0)
-            return
-        with ni.Task('Move task') as DOtask, ni.Task('setting') as settingtask:
-            settingtask.do_channels.add_do_chan(lines='AODO/port2/line0:7')
-            settingtask.write(direction + enable, auto_start = True)
-            DOwaveform = self.stagewave_ramp(distance)
-            DOwaveform = np.uint32(DOwaveform * line)
-            DOtask.do_channels.add_do_chan(lines='AODO/port0/line0:7')
-            DOtask.timing.cfg_samp_clk_timing(rate=STEPS*2//DISTANCE*speed, \
-                                              active_edge= Edge.FALLING,\
-                                              sample_mode=Atype.FINITE,samps_per_chan=len(DOwaveform))
-            DOtask.write(DOwaveform, auto_start = True)
-            message = axis+'distance moved: '+str(np.sum(DOwaveform)/line/25000*DISTANCE*sign)+'mm'+' current pos: '+str(pos+sign*distance)
-            print(message)
-            self.ui.PrintOut.append(message)
-            self.log.write(message)
-            DOtask.wait_until_done(timeout =60)
-                
-            DOtask.stop()
-            # DOtask.close()
-            # settingtask.write(XDISABLE + YDISABLE + ZDISABLE, auto_start = True)
-            settingtask.stop()
-            # settingtask.close()
-            
-        if axis == 'X':
-            self.Xpos = self.Xpos+distance*sign
-            self.ui.XPosition.setValue(self.Xpos)
-        elif axis == 'Y':
-            self.Ypos = self.Ypos+distance*sign
-            self.ui.YPosition.setValue(self.Ypos)
-        elif axis == 'Z':
-            self.Zpos = self.Zpos+distance*sign
-            self.ui.ZPosition.setValue(self.Zpos)
-        self.StagebackQueue.put(0)
+        if not SIM:
+            if axis == 'X':
+                distance = self.ui.Xstagestepsize.value() if Direction == 'UP' else -self.ui.Xstagestepsize.value() 
+                self.ui.XPosition.setValue(self.ui.XPosition.value()+distance)
+            elif axis == 'Y':
+                distance = self.ui.Ystagestepsize.value() if Direction == 'UP' else -self.ui.Ystagestepsize.value() 
+                self.ui.YPosition.setValue(self.ui.YPosition.value()+distance)
+                # self.ui.XPosition.setValue(self.Xpos)
+            elif axis == 'Z':
+                distance = self.ui.Zstagestepsize.value() if Direction == 'UP' else -self.ui.Zstagestepsize.value() 
+                self.ui.ZPosition.setValue(self.ui.ZPosition.value()+distance)
+                # self.ui.XPosition.setValue(self.Xpos)
+            self.Move(axis)

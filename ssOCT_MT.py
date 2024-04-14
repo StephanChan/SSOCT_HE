@@ -27,8 +27,10 @@ Created on Sun Dec 10 20:14:40 2023
 # between threads, using Queue to pass variables, variables gets duplicated in memory when passed as arguments
 
 import sys
+import numpy as np
 from queue import Queue
 from PyQt5.QtWidgets import QApplication
+from PyQt5 import QtWidgets as QW
 import PyQt5.QtCore as qc
 from mainWindow import MainWindow
 from Actions import *
@@ -55,21 +57,19 @@ global PauseQueue
 global GPUQueue 
 global DQueue # D stands for digitizer
 global DbackQueue # Dback stands for digitizer respond back, digitizer respond back if data collection is done
-global DnSbackQueue # display thread respond back to weaver thread
 global StopDQueue # StopD stands for stop digitizer, for stopping digitizer in continuous acquisition
 global GPU2weaverQueue
 
-AODOQueue = Queue(maxsize = 10)
-StagebackQueue = Queue(maxsize = 10)
-WeaverQueue = Queue(maxsize = 10)
-DnSQueue = Queue(maxsize = 10)
-PauseQueue = Queue(maxsize = 10)
-GPUQueue = Queue(maxsize = 10)
-DQueue = Queue(maxsize = 10)
-DbackQueue = Queue(maxsize = 10)
-DnSbackQueue = Queue(maxsize = 10)
-StopDQueue = Queue(maxsize = 10)
-GPU2weaverQueue = Queue(maxsize = 10)
+AODOQueue = Queue(maxsize = 0)
+StagebackQueue = Queue(maxsize = 0)
+WeaverQueue = Queue(maxsize = 0)
+DnSQueue = Queue(maxsize = 0)
+PauseQueue = Queue(maxsize = 0)
+GPUQueue = Queue(maxsize = 0)
+DQueue = Queue(maxsize = 0)
+DbackQueue = Queue(maxsize = 0)
+StopDQueue = Queue(maxsize = 0)
+GPU2weaverQueue = Queue(maxsize = 0)
      
 # wrap digitzer thread with queues and Memory
 if Digitizer == 'ATS9351':
@@ -94,6 +94,7 @@ if Digitizer == 'ATS9351':
             super().__init__()
             global Memory
             self.Memory = Memory
+            self.memoryCount = memoryCount
             self.ui = ui
             self.queue = WeaverQueue
             self.DnSQueue = DnSQueue
@@ -102,7 +103,6 @@ if Digitizer == 'ATS9351':
             self.PauseQueue = PauseQueue
             self.StopDQueue = StopDQueue
             self.DbackQueue = DbackQueue
-            self.DnSbackQueue = DnSbackQueue
             self.GPUQueue = GPUQueue
             self.DQueue = DQueue
             self.GPU2weaverQueue = GPU2weaverQueue
@@ -132,6 +132,7 @@ elif Digitizer == 'ART8912':
             super().__init__()
             global Memory
             self.Memory = Memory
+            self.memoryCount = memoryCount
             self.ui = ui
             self.queue = WeaverQueue
             self.DnSQueue = DnSQueue
@@ -140,7 +141,6 @@ elif Digitizer == 'ART8912':
             self.PauseQueue = PauseQueue
             self.StopDQueue = StopDQueue
             self.DbackQueue = DbackQueue
-            self.DnSbackQueue = DnSbackQueue
             self.GPUQueue = GPUQueue
             self.DQueue = DQueue
             self.GPU2weaverQueue = GPU2weaverQueue
@@ -179,13 +179,19 @@ class DnSThread_2(DnSThread):
         self.ui = ui
         self.queue = DnSQueue
         self.Digitizer = Digitizer
-        self.DnSbackQueue = DnSbackQueue
         self.log = log
         
-# wrap MainWindow object with queues and threads        
+# wrap MainWindow object with queues and threads   
+     
 class GUI(MainWindow):
     def __init__(self):
         super().__init__()
+        # print(dir(self.ui))
+        # print(self.ui.__dict__)
+        # aa=self.ui.__getattribute__('ACQMode')
+        # if type(aa) == QW.QComboBox:
+        #     print(1)
+        # print(aa.currentText())
         self.log = LOG(self.ui)
         self.ui.RunButton.clicked.connect(self.run_task)
         self.ui.PauseButton.clicked.connect(self.Pause_task)
@@ -221,13 +227,15 @@ class GUI(MainWindow):
         self.ui.ZDOWN.clicked.connect(self.ZDOWN)
         self.ui.InitStageButton.clicked.connect(self.InitStages)
         self.ui.StageUninit.clicked.connect(self.Uninit)
-        self.ui.ZstageTest.clicked.connect(self.ZstageTest)
-        self.ui.ZstageTest2.clicked.connect(self.ZstageTest2)
+        self.ui.RepTest.clicked.connect(self.RepTest)
+        self.ui.RepTest2.clicked.connect(self.RepTest2)
         self.ui.SliceDir.clicked.connect(self.SliceDirection)
         self.ui.VibEnabled.clicked.connect(self.Vibratome)
         self.ui.SliceN.valueChanged.connect(self.change_slice_number)
         # self.ui.Gotozero.stateChanged.connect(self.Gotozero)
         self.Init_allThreads()
+        # configure digitizer with inital settings from GUI
+        self.ConfigureD()
         
     def Init_allThreads(self):
         self.Weaver_thread = WeaverThread_2(self.ui, self.log)
@@ -266,7 +274,7 @@ class GUI(MainWindow):
         # SurfScan + Slice is for serial sectioning imaging
         
         # Slice is for cut one slice only
-
+        
         if self.ui.ACQMode.currentText() in ['RptAline','RptBline','RptCscan','SurfScan','SurfScan+Slice','RptSlice']:
             if self.ui.RunButton.isChecked():
                 self.ui.RunButton.setText('Stop')
@@ -363,13 +371,13 @@ class GUI(MainWindow):
         an_action = DnSAction('change_slice_number')
         DnSQueue.put(an_action)
         
-    def ZstageTest(self):
+    def RepTest(self):
         if self.ui.ZstageTest.isChecked():
             an_action = WeaverAction('ZstageRepeatibility')
             WeaverQueue.put(an_action)
         # wait until weaver done
         
-    def ZstageTest2(self):
+    def RepTest2(self):
         if self.ui.ZstageTest2.isChecked():
             an_action = WeaverAction('ZstageRepeatibility2')
             WeaverQueue.put(an_action)
@@ -429,9 +437,16 @@ class GUI(MainWindow):
         an_action = WeaverAction('get_background')
         WeaverQueue.put(an_action)
         
+    def ConfigureD(self):
+        an_action = DAction('ConfigureBoard')
+        DQueue.put(an_action)
+        
+    def UninitBoard(self):
+        an_action = DAction('UninitBoard')
+        DQueue.put(an_action)
     
     def closeEvent(self, event):
-        self.ui.statusbar.showMessage('Exiting all threads')
+        print('Exiting all threads')
         self.Stop_allThreads()
         settings = qc.QSettings("config.ini", qc.QSettings.IniFormat)
         self.save_settings(settings )

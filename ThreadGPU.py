@@ -54,7 +54,7 @@ class GPUThread(QThread):
                 else:
                     self.ui.statusbar.showMessage('GPU thread is doing something invalid '+self.item.action)
                 if time.time()-start > 1:
-                    message = 'an FFT action took '+str(round(time.time()-start,3))+' s\n'
+                    message = '\n an FFT action took '+str(round(time.time()-start,3))+' s\n'
                     print(message)
                     self.ui.PrintOut.append(message)
                     self.log.write(message)
@@ -78,16 +78,21 @@ class GPUThread(QThread):
         Pixel_range = self.ui.DepthRange.value()
         # print(Pixel_start, Pixel_range)
         # copy data from global memory
+        # print('GPU using memory loc: ',memoryLoc)
+        # print(self.Memory[memoryLoc].shape)
         self.data_CPU = np.float32(self.Memory[memoryLoc].copy())
+        # print('GPU finish copy data')
+        # self.data_CPU = np.zeros()
         # reshape data as [Alines, Samples]
         Alines =np.uint32((self.data_CPU.shape[1])/samples) * self.data_CPU.shape[0]
         self.data_CPU=self.data_CPU.reshape([Alines, samples])
+        # print('GPU finish reshape data')
         # subtract background and remove first 100 samples
         if self.Digitizer == 'ART8912':
             self.data_CPU = self.data_CPU[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]-self.background
             samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
         fftAxis = 1
-
+        # print('GPU finish chop data')
         # # zero-padding data before FFT
         # if data_CPU.shape[1] != self.length_FFT:
         #     data_padded = np.zeros([Alines, self.length_FFT], dtype = np.float32)
@@ -98,26 +103,31 @@ class GPUThread(QThread):
         # start = time.time()
         # transfer data to GPU
         data_GPU  = cupy.array(self.data_CPU)
+        # print('GPU finish send data')
         dispersion_GPU = cupy.array(self.dispersion)
         # window function and dispersion compensation
         data_GPU = self.winfunc(data_GPU, dispersion_GPU)
-
+        # print('GPU finish WINDOW data')
         # FFT
         data_GPU = cupy.fft.fft(data_GPU, axis=fftAxis)/samples
+        # print('GPU finish FFT data')
         # calculate absolute value and only keep depth range specified
         data_GPU = cupy.absolute(data_GPU[:,Pixel_start:Pixel_start+Pixel_range])
+        # print('GPU finish trim data')
         # transfer data back to computer
         self.data_CPU = cupy.asnumpy(data_GPU)*self.AMPLIFICATION
-
+        # print('GPU finish receive data')
         # print('FFT took ',time.time()-start,' seconds\n')
         # data_CPU = data_CPU.reshape([shape[0],Pixel_range * np.uint32(Alines/shape[0])])
         # display and save data, data type is float32
         an_action = DnSAction(mode, data = self.data_CPU, args = args) # data in Memory[memoryLoc]
         self.DnSQueue.put(an_action)
+        # print('send for display')
         if self.ui.Gotozero.isChecked() and self.ui.ACQMode.currentText() == 'SingleAline':
             self.GPU2weaverQueue.put(self.data_CPU)
         if self.ui.DSing.isChecked():
             self.GPU2weaverQueue.put(self.data_CPU)
+            # print('GPU data to weaver')
         
         
         

@@ -64,8 +64,13 @@ class DnSThread(QThread):
                     self.restart_tilenum()
                 elif self.item.action == 'change_slice_number':
                     self.sliceNum = self.ui.SliceN.value()
+                    self.ui.CuSlice.setValue(self.sliceNum)
                 elif self.item.action == 'agarTile':
                     self.SurfFilename()
+                elif self.item.action == 'WriteAgar':
+                    self.WriteAgar(self.item.data)
+                elif self.item.action == 'Init_SurfScan':
+                    self.Init_SurfScan(self.item.args)
                     
                 else:
                     message = 'Display and save thread is doing something invalid' + self.item.action
@@ -95,6 +100,8 @@ class DnSThread(QThread):
         #data = ctypes.cast(data_address, ctypes.py_object).value 
         # TODO: make sure fft is shifted
         # check if displaying before FFT
+        if self.ui.Laser.currentText() == 'Axsun100k':
+            self.Aline_frq = 100000
         if not raw:
             Zpixels = self.ui.DepthRange.value()
         else:
@@ -104,7 +111,8 @@ class DnSThread(QThread):
             elif self.Digitizer == 'ART8912':
                 Zpixels = self.ui.PostSamples_2.value()
                 # data = np.float32(data/pow(2,12))
-        Xpixels = self.ui.XforAline.value()
+        # Xpixels = self.ui.XforAline.value()
+        Xpixels = np.int32(self.Aline_frq/self.ui.FPSAline.value())
         Yrpt = self.ui.BlineAVG.value()
         data = data.reshape([Yrpt*Xpixels,Zpixels])
         # data in original state
@@ -140,7 +148,7 @@ class DnSThread(QThread):
                 # data = np.float32(data/pow(2,12))
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         if self.Digitizer == 'ART8912':
-            Xpixels = Xpixels + self.ui.PreClock.value()*2
+            Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
         Yrpt = self.ui.BlineAVG.value()
         
         data = data.reshape([Yrpt,Xpixels,Zpixels])
@@ -178,7 +186,7 @@ class DnSThread(QThread):
                 # data = np.float32(data/pow(2,12))
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         if self.Digitizer == 'ART8912':
-            Xpixels = Xpixels + self.ui.PreClock.value()*2
+            Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
         data = data.reshape([Ypixels,Xpixels,Zpixels])
         if self.Digitizer == 'ART8912' and raw:
@@ -196,6 +204,10 @@ class DnSThread(QThread):
         
         plane = np.mean(data,2)# has to be first index, otherwise the memory space is not continuous
         self.ui.tileMean.setValue(np.mean(plane))
+        if np.mean(plane)>self.ui.AgarValue.value():
+            self.ui.TissueRadio.setChecked(True)
+        else:
+            self.ui.TissueRadio.setChecked(False)
         pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
         # clear content on the waveformLabel
         self.ui.XYplane.clear()
@@ -210,7 +222,25 @@ class DnSThread(QThread):
                 data = np.uint16(self.Cscan/SCALE*65535)
             self.WriteData(data, self.CscanFilename([Ypixels,Xpixels,Zpixels]))
         
+    def Init_SurfScan(self, args = []):
         
+        Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
+        if self.Digitizer == 'ART8912':
+            Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+        Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
+        
+        #######################################
+        # for even strips, need to flip data in Y dimension because scanning was in backward direction
+        surfX = args[1][0]
+        surfY = np.int32(args[1][1]/args[1][0])
+        scale = self.ui.scale.value()
+        self.surf = np.zeros([ surfX*Ypixels//scale,surfY*Xpixels//scale],dtype = np.float32)
+        pixmap = ImagePlot(self.surf, self.ui.Surfmin.value(), self.ui.Surfmax.value())
+        # clear content on the waveformLabel
+        self.ui.SampleMosaic.clear()
+        # update iamge on the waveformLabel
+        self.ui.SampleMosaic.setPixmap(pixmap)
+            
     def Display_SurfScan(self, data, raw = False, args = []):
         if not raw:
             Zpixels = self.ui.DepthRange.value()
@@ -223,14 +253,15 @@ class DnSThread(QThread):
                 # data = np.float32(data/pow(2,12))
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         if self.Digitizer == 'ART8912':
-            Xpixels = Xpixels + self.ui.PreClock.value()*2
+            Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
+        # print('get shape')
         data = data.reshape([Ypixels,Xpixels,Zpixels])
-        
+        # print('reshape')
         if self.Digitizer == 'ART8912' and raw:
             Zpixels = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
             data = data[:,:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]
-        
+
         #######################################
         # for even strips, need to flip data in Y dimension because scanning was in backward direction
         surfX = args[1][0]
@@ -244,7 +275,7 @@ class DnSThread(QThread):
         if np.mod(fileY,2)==1:
             data = np.flip(data,0)
         #######################################
-        
+        # print('flip')
         self.Cscan = data
         
         plane = np.transpose(data[0,:,:]).copy()# has to be first index, otherwise the memory space is not continuous
@@ -253,30 +284,37 @@ class DnSThread(QThread):
         self.ui.XZplane.clear()
         # update image on the waveformLabel
         self.ui.XZplane.setPixmap(pixmap)
-        
+        # print('display Bline')
         plane = np.mean(data,2)
         self.ui.tileMean.setValue(np.mean(plane))
+        if np.mean(plane)>self.ui.AgarValue.value():
+            self.ui.TissueRadio.setChecked(True)
+        else:
+            self.ui.TissueRadio.setChecked(False)
+        # print('identify agar')
         pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
         # clear content on the waveformLabel
         self.ui.XYplane.clear()
         # update iamge on the waveformLabel
         self.ui.XYplane.setPixmap(pixmap)
-        
+        # print('display XY')
         scale = self.ui.scale.value()
 
         ###################### plot 3D visulaization
         self.ui.mayavi_widget.visualization.update_data(self.Cscan/500)
-        
-        self.totalTiles = args[1][1]
-        if not np.any(self.surf):
-            self.surf = np.zeros([ surfX*Ypixels//scale,surfY*Xpixels//scale],dtype = np.float32)
-        
+        # print('display 3D')
+        # self.totalTiles = args[1][1]
+        # print('before surf image update')
         self.surf[Ypixels//scale*fileX:Ypixels//scale*(fileX+1),Xpixels//scale*fileY:Xpixels//scale*(fileY+1)] = plane[::scale,::scale]
+        # print('append tile')
         pixmap = ImagePlot(self.surf, self.ui.Surfmin.value(), self.ui.Surfmax.value())
+        # print('gen pixmap')
         # clear content on the waveformLabel
         self.ui.SampleMosaic.clear()
+        # print('clear window')
         # update iamge on the waveformLabel
         self.ui.SampleMosaic.setPixmap(pixmap)
+        # print('update window')
         if self.ui.Save.isChecked():
             if raw:
                 data = np.uint16(self.Cscan)
@@ -337,6 +375,7 @@ class DnSThread(QThread):
     def restart_tilenum(self):
         self.tileNum = 1
         self.sliceNum = self.sliceNum+1
+        self.ui.CuSlice.setValue(self.sliceNum)
         
     def SurfFilename(self, shape = [0,0,0]):
         filename = 'slice-'+str(self.sliceNum)+'-tile-'+str(self.tileNum)+'-Y'+str(shape[0])+'-X'+str(shape[1])+'-Z'+str(shape[2])+'.bin'
@@ -375,4 +414,13 @@ class DnSThread(QThread):
         print(message)
         self.ui.PrintOut.append(message)
         self.log.write(message)
+        
+    def WriteAgar(self, data):
+        filename = 'slice-'+str(self.sliceNum)+'-agarTiles.bin'
+        filePath = self.ui.DIR.toPlainText()
+        filePath = filePath + "/" + filename
+        # print(filePath)
+        fp = open(filePath, 'wb')
+        data.tofile(fp)
+        fp.close()
         
