@@ -75,13 +75,13 @@ class DnSThread(QThread):
                 else:
                     message = 'Display and save thread is doing something invalid' + self.item.action
                     self.ui.statusbar.showMessage(message)
-                    self.ui.PrintOut.append(message)
+                    # self.ui.PrintOut.append(message)
                     self.log.write(message)
             except Exception as error:
                 message = "\nAn error occurred:"+" skip the display and save action\n"
                 print(message)
                 self.ui.statusbar.showMessage(message)
-                self.ui.PrintOut.append(message)
+                # self.ui.PrintOut.append(message)
                 self.log.write(message)
                 print(traceback.format_exc())
             num+=1
@@ -92,7 +92,7 @@ class DnSThread(QThread):
     def print_display_counts(self):
         message = str(self.display_actions)+ ' Blines displayed\n'
         print(message)
-        self.ui.PrintOut.append(message)
+        # self.ui.PrintOut.append(message)
         self.log.write(message)
         self.display_actions = 0
         
@@ -112,7 +112,10 @@ class DnSThread(QThread):
                 Zpixels = self.ui.PostSamples_2.value()
                 # data = np.float32(data/pow(2,12))
         # Xpixels = self.ui.XforAline.value()
-        Xpixels = np.int32(self.Aline_frq/self.ui.FPSAline.value())
+        # Xpixels = np.int32(self.Aline_frq/self.ui.FPSAline.value())
+        Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
+        if self.Digitizer == 'ART8912':
+            Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
         Yrpt = self.ui.BlineAVG.value()
         data = data.reshape([Yrpt*Xpixels,Zpixels])
         # data in original state
@@ -382,7 +385,7 @@ class DnSThread(QThread):
         self.tileNum = self.tileNum + 1
     
         print(filename)
-        self.ui.PrintOut.append(filename)
+        # self.ui.PrintOut.append(filename)
         self.log.write(filename)
         return filename
     
@@ -412,7 +415,7 @@ class DnSThread(QThread):
         fp.close()
         message = 'time for saving: '+str(round(time.time()-start,3))
         print(message)
-        self.ui.PrintOut.append(message)
+        # self.ui.PrintOut.append(message)
         self.log.write(message)
         
     def WriteAgar(self, data):

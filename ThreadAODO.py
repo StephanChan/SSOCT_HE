@@ -118,13 +118,13 @@ class AODOThread(QThread):
                     message = 'AODO thread is doing something undefined: '+self.item.action
                     self.ui.statusbar.showMessage(message)
                     print(message)
-                    self.ui.PrintOut.append(message)
+                    # self.ui.PrintOut.append(message)
                     self.log.write(message)
             except Exception:
                 message = "\nAn error occurred,"+" skip the AODO action\n"
                 print(message)
                 self.ui.statusbar.showMessage(message)
-                self.ui.PrintOut.append(message)
+                # self.ui.PrintOut.append(message)
                 self.log.write(message)
                 print(traceback.format_exc())
             self.item = self.queue.get()
@@ -136,7 +136,7 @@ class AODOThread(QThread):
         self.Zpos = self.ui.ZPosition.value()
         message = "Stage position updated...X"+str(self.Xpos)+'Y'+str(self.Ypos)+'Z'+str(self.Zpos)
         self.ui.statusbar.showMessage(message)
-        self.ui.PrintOut.append(message)
+        # self.ui.PrintOut.append(message)
         self.log.write(message)
         print(message)
         self.StagebackQueue.put(0)
@@ -145,12 +145,13 @@ class AODOThread(QThread):
         # print('Z pos: ',self.Zpos)
     
     def Uninit(self):
-        settingtask = ni.Task('setting')
-        settingtask.do_channels.add_do_chan(lines='AODO/port2/line0:7')
-        tmp = np.uint32(YDISABLE + XDISABLE + ZDISABLE)
-        settingtask.write(tmp, auto_start = True)
-        settingtask.stop()
-        settingtask.close()
+        if not SIM:
+            settingtask = ni.Task('setting')
+            settingtask.do_channels.add_do_chan(lines='AODO/port2/line0:7')
+            tmp = np.uint32(YDISABLE + XDISABLE + ZDISABLE)
+            settingtask.write(tmp, auto_start = True)
+            settingtask.stop()
+            settingtask.close()
         self.StagebackQueue.put(0)
         
     def ConfigNStart(self, direction = 1):
@@ -231,7 +232,7 @@ class AODOThread(QThread):
                 # print(DOwaveform.shape)
                 steps = np.sum(DOwaveform)/25000.0*2/pow(2,1)
                 message = 'distance per Cscan: '+str(steps)+'mm'
-                self.ui.PrintOut.append(message)
+                # self.ui.PrintOut.append(message)
                 print(message)
                 self.log.write(message)
         return 'AODO configuration success'
@@ -261,21 +262,23 @@ class AODOThread(QThread):
         self.StagebackQueue.put(distance)
         
     def startVibratome(self):
-        settingtask = ni.Task('vibratome')
-        settingtask.do_channels.add_do_chan(lines='AODO/PFI2')
-        settingtask.write(True, auto_start = True)
-        settingtask.wait_until_done(timeout = 1)
-        settingtask.stop()
-        settingtask.close()
+        if not SIM:
+            settingtask = ni.Task('vibratome')
+            settingtask.do_channels.add_do_chan(lines='AODO/PFI2')
+            settingtask.write(True, auto_start = True)
+            settingtask.wait_until_done(timeout = 1)
+            settingtask.stop()
+            settingtask.close()
         self.StagebackQueue.put(0)
         
     def stopVibratome(self):
-        settingtask = ni.Task('vibratome')
-        settingtask.do_channels.add_do_chan(lines='AODO/PFI2')
-        settingtask.write(False, auto_start = True)
-        settingtask.wait_until_done(timeout = 1)
-        settingtask.stop()
-        settingtask.close()
+        if not SIM:
+            settingtask = ni.Task('vibratome')
+            settingtask.do_channels.add_do_chan(lines='AODO/PFI2')
+            settingtask.write(False, auto_start = True)
+            settingtask.wait_until_done(timeout = 1)
+            settingtask.stop()
+            settingtask.close()
         self.StagebackQueue.put(0)
             
     def StopNClose_Finite(self, direction = 1):
@@ -317,13 +320,14 @@ class AODOThread(QThread):
         return 'AODO write task done'
                 
     def centergalvo(self):
-        with ni.Task('AO task') as AOtask:
-            AOtask.ao_channels.add_ao_voltage_chan(physical_channel='AODO/ao0', \
-                                                  min_val=- 10.0, max_val=10.0, \
-                                                  units=ni.constants.VoltageUnits.VOLTS)
-            AOtask.write(Galvo_bias, auto_start = True)
-            AOtask.wait_until_done(timeout = 1)
-            AOtask.stop()
+        if not SIM:
+            with ni.Task('AO task') as AOtask:
+                AOtask.ao_channels.add_ao_voltage_chan(physical_channel='AODO/ao0', \
+                                                      min_val=- 10.0, max_val=10.0, \
+                                                      units=ni.constants.VoltageUnits.VOLTS)
+                AOtask.write(Galvo_bias, auto_start = True)
+                AOtask.wait_until_done(timeout = 1)
+                AOtask.stop()
 
     def stagewave_ramp(self, distance):
         # generate stage movement that ramps up and down speed so that motor won't miss signal at beginning and end
@@ -388,7 +392,7 @@ class AODOThread(QThread):
             pos = self.ui.XPosition.value()
             if pos>self.ui.Xmax.value() or pos<self.ui.Xmin.value():
                 message = 'X target postion invalid, abort...'
-                self.ui.PrintOut.append(message)
+                # self.ui.PrintOut.append(message)
                 self.log.write(message)
                 print(message)
                 self.StagebackQueue.put(0)
@@ -407,7 +411,7 @@ class AODOThread(QThread):
             pos = self.ui.YPosition.value()
             if pos>self.ui.Ymax.value() or pos<self.ui.Ymin.value():
                 message = 'Y target postion invalid, abort...'
-                self.ui.PrintOut.append(message)
+                # self.ui.PrintOut.append(message)
                 self.log.write(message)
                 print(message)
                 self.StagebackQueue.put(0)
@@ -426,7 +430,7 @@ class AODOThread(QThread):
             pos = self.ui.ZPosition.value()
             if pos>self.ui.Zmax.value() or pos<self.ui.Zmin.value():
                 message = 'Z target postion invalid, abort...'
-                self.ui.PrintOut.append(message)
+                # self.ui.PrintOut.append(message)
                 self.log.write(message)
                 print(message)
                 self.StagebackQueue.put(0)
@@ -442,7 +446,7 @@ class AODOThread(QThread):
             
         if np.abs(distance) < 0.003:
             message = axis + ' move2 action aborted'
-            self.ui.PrintOut.append(message)
+            # self.ui.PrintOut.append(message)
             print(message)
             self.log.write(message)
             self.StagebackQueue.put(0)
@@ -459,7 +463,7 @@ class AODOThread(QThread):
                 DOwaveform = np.uint32(DOwaveform * line)
                 message = axis+' moving: '+str(round(np.sum(DOwaveform)/line/25000*DISTANCE*sign,3))+'mm'+' target pos: '+str(pos)
                 print(message)
-                self.ui.PrintOut.append(message)
+                # self.ui.PrintOut.append(message)
                 self.log.write(message)
                 
                 DOtask.do_channels.add_do_chan(lines='AODO/port0/line0:7')
@@ -471,7 +475,7 @@ class AODOThread(QThread):
                 DOtask.stop()
                 message = axis+' current pos: '+str(pos)
                 print(message)
-                self.ui.PrintOut.append(message)
+                # self.ui.PrintOut.append(message)
                 self.log.write(message)
                 # settingtask.write(XDISABLE + YDISABLE + ZDISABLE, auto_start = True)
                 

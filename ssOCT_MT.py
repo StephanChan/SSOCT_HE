@@ -49,16 +49,16 @@ Digitizer = 'ART8912'
 
 # init all Queues as global variable
 # for any queue, you can do queue-in at multiple places, but you can only do queue-out at one place
-global AODOQueue # AODO stands for analog output and digital output
-global StagebackQueue # stage finish moving report queue
-global WeaverQueue # King of all threads, gives command to other threads
-global DnSQueue # DnS stands for display and save
-global PauseQueue 
-global GPUQueue 
-global DQueue # D stands for digitizer
-global DbackQueue # Dback stands for digitizer respond back, digitizer respond back if data collection is done
-global StopDQueue # StopD stands for stop digitizer, for stopping digitizer in continuous acquisition
-global GPU2weaverQueue
+# global AODOQueue # AODO stands for analog output and digital output
+# global StagebackQueue # stage finish moving report queue
+# global WeaverQueue # King of all threads, gives command to other threads
+# global DnSQueue # DnS stands for display and save
+# global PauseQueue 
+# global GPUQueue 
+# global DQueue # D stands for digitizer
+# global DbackQueue # Dback stands for digitizer respond back, digitizer respond back if data collection is done
+# global StopDQueue # StopD stands for stop digitizer, for stopping digitizer in continuous acquisition
+# global GPU2weaverQueue
 
 AODOQueue = Queue(maxsize = 0)
 StagebackQueue = Queue(maxsize = 0)
@@ -112,7 +112,7 @@ if Digitizer == 'ATS9351':
 elif Digitizer == 'ART8912':
     # ART8912 outputs 12bit data range
     AMPLIFICATION = 16*5
-    from ThreadART8912 import ART8912
+    from ThreadART8912_finiteTrigger import ART8912_finiteTrigger as ART8912
     class Digitizer_2(ART8912):
         def __init__(self, ui, log):
             super().__init__()
@@ -261,7 +261,7 @@ class GUI(MainWindow):
     def run_task(self):
         while PauseQueue.qsize()>0:
             PauseQueue.get()
-        self.ui.PrintOut.append('Pause Queue inited...')
+        # self.ui.PrintOut.append('Pause Queue inited...')
         # RptAline and SingleAline is for checking Aline profile, we don't need to capture each Aline, only display 30 Alines per second\
         
         # RptBline and SingleBline will collect each Bline, but FFT will be slow in this mode. To check image quality, recommend using Alazar FFT.

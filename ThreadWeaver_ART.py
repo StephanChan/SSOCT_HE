@@ -11,7 +11,7 @@ from PyQt5.QtCore import  QThread
 import time
 import numpy as np
 from Generaic_functions import *
-from Actions import DnSAction, AODOAction, GPUAction, DAction
+from Actions import DnSAction, AODOAction, GPUAction, DAction, DbackAction
 import traceback
 
 import matplotlib.pyplot as plt
@@ -28,82 +28,82 @@ class WeaverThread(QThread):
         self.exit_message = 'ACQ thread successfully exited'
         
     def run(self):
+        self.InitMemory()
         self.QueueOut()
         
     def QueueOut(self):
         self.item = self.queue.get()
         while self.item.action != 'exit':
             # self.ui.statusbar.showMessage('King thread is doing: '+self.item.action)
-            current_message = self.ui.statusbar.currentMessage()
             try:
                 if self.item.action in ['RptAline','RptBline','RptCscan']:
                     message = self.RptScan(self.item.action)
                     self.ui.statusbar.showMessage(message)
-                    self.ui.PrintOut.append(message)
+                    # self.ui.PrintOut.append(message)
                     self.log.write(message)
     
                     
                 elif self.item.action in ['SingleBline', 'SingleAline', 'SingleCscan']:
                     message = self.SingleScan(self.item.action)
                     self.ui.statusbar.showMessage(message)
-                    self.ui.PrintOut.append(message)
+                    # self.ui.PrintOut.append(message)
                     self.log.write(message)
                     
                 elif self.item.action == 'SurfScan':
                     interrupt, status = self.SurfScan()
                     self.ui.statusbar.showMessage(status)
-                    self.ui.PrintOut.append(status)
+                    # self.ui.PrintOut.append(status)
                     self.log.write(status)
                     
                 elif self.item.action == 'SurfScan+Slice':
                     message = self.SurfSlice()
                     self.ui.statusbar.showMessage(message)
-                    self.ui.PrintOut.append(message)
+                    # self.ui.PrintOut.append(message)
                     self.log.write(message)
                 elif self.item.action == 'SingleSlice':
                     message = self.SingleSlice(self.ui.SliceZStart.value())
                     self.ui.statusbar.showMessage(message)
-                    self.ui.PrintOut.append(message)
+                    # self.ui.PrintOut.append(message)
                     self.log.write(message)
                 elif self.item.action == 'RptSlice':
                     message = self.RptSlice()
                     self.ui.statusbar.showMessage(message)
-                    self.ui.PrintOut.append(message)
+                    # self.ui.PrintOut.append(message)
                     self.log.write(message)
                 elif self.item.action == 'Gotozero':
                     message = self.Gotozero()
                     self.ui.statusbar.showMessage(message)
-                    self.ui.PrintOut.append(message)
+                    # self.ui.PrintOut.append(message)
                     self.log.write(message)
                 elif self.item.action == 'ZstageRepeatibility':
                     message = self.ZstageRepeatibility()
                     self.ui.statusbar.showMessage(message)
-                    self.ui.PrintOut.append(message)
+                    # self.ui.PrintOut.append(message)
                     self.log.write(message)
                 elif self.item.action == 'ZstageRepeatibility2':
                     message = self.ZstageRepeatibility2()
                     self.ui.statusbar.showMessage(message)
-                    self.ui.PrintOut.append(message)
+                    # self.ui.PrintOut.append(message)
                     self.log.write(message)
                 elif self.item.action == 'dispersion_compensation':
                     message = self.dispersion_compensation()
                     self.ui.statusbar.showMessage(message)
-                    self.ui.PrintOut.append(message)
+                    # self.ui.PrintOut.append(message)
                     self.log.write(message)
                 elif self.item.action == 'get_background':
                     message = self.get_background()
                     self.ui.statusbar.showMessage(message)
-                    self.ui.PrintOut.append(message)
+                    # self.ui.PrintOut.append(message)
                     self.log.write(message)
                 else:
                     message = 'King thread is doing something invalid: '+self.item.action
                     self.ui.statusbar.showMessage(message)
-                    self.ui.PrintOut.append(message)
+                    # self.ui.PrintOut.append(message)
                     self.log.write(message)
             except Exception as error:
                 message = "An error occurred,"+"skip the acquisition action\n"
                 self.ui.statusbar.showMessage(message)
-                self.ui.PrintOut.append(message)
+                # self.ui.PrintOut.append(message)
                 self.log.write(message)
                 print(traceback.format_exc())
             self.item = self.queue.get()
@@ -118,35 +118,29 @@ class WeaverThread(QThread):
         else:
             nchannels = 1
             
-        if self.ui.ACQMode.currentText() in ['RptAline','SingleAline']:
-            if self.ui.Laser.currentText() == 'Axsun100k':
-                self.Aline_frq = 100000
-                # total Alines to be acquired per scan
-                AlinesPerBline = np.int32(self.Aline_frq/self.ui.FPSAline.value())
-            sumLength = self.ui.PostSamples_2.value() * AlinesPerBline * nchannels
-            usefulLength = self.ui.XforAline.value() * self.ui.PostSamples_2.value() * nchannels
-        else:
-            AlinesPerBline = self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2+self.ui.PostClock.value()
-            # from total Alines remove Galvo fly-backs. This is (Alines per bline * Aline rpt + 100) * total samples * channels
-            usefulLength = (self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2) * self.ui.PostSamples_2.value() * nchannels
-            sumLength = self.ui.PostSamples_2.value() * AlinesPerBline * nchannels
+        self.AlinesPerBline = self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2+self.ui.PostClock.value()
+        # from total Alines remove Galvo fly-backs. This is (Alines per bline * Aline rpt + 100) * total samples * channels
+        # usefulLength = (self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2) * self.ui.PostSamples_2.value() * nchannels
+        sumLength = self.ui.PostSamples_2.value() * self.AlinesPerBline * nchannels
         for ii in range(self.memoryCount):
              if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline','SingleBline', 'SingleAline']:
-                 self.Memory[ii]=np.zeros([self.ui.BlineAVG.value(), sumLength], dtype = np.uint16)
+                 self.Memory[ii]=np.zeros([self.ui.BlineAVG.value()*sumLength], dtype = np.uint16)
              elif self.ui.ACQMode.currentText() in ['SingleCscan','SurfScan','SurfScan+Slice']:
-                 self.Memory[ii]=np.zeros([self.ui.BlineAVG.value() * self.ui.Ysteps.value(), sumLength], dtype = np.uint16)
+                 self.Memory[ii]=np.zeros([self.ui.BlineAVG.value()*self.ui.Ysteps.value()*sumLength], dtype = np.uint16)
         ###########################################################################################
         
     def SingleScan(self, mode):
         self.InitMemory()
+        an_action = DAction('ConfigureBoard')
+        self.DQueue.put(an_action)
         ###########################################################################################
         # start AODO 
         # print(self.ui.ACQMode.currentText())
-        # an_action = AODOAction('ConfigNStart')
-        # self.AODOQueue.put(an_action)
-        # # close AODO
-        # an_action = AODOAction('StopNClose_Finite')
-        # self.AODOQueue.put(an_action)
+        an_action = AODOAction('ConfigNStart')
+        self.AODOQueue.put(an_action)
+        # close AODO
+        an_action = AODOAction('StopNClose_Finite')
+        self.AODOQueue.put(an_action)
         time.sleep(0.2) # starting acquire takes less than 0.1 second, this is to make sure board started before AODO started
         # start digitizer, it will stop automatically when all Blines are acquired
         an_action = DAction('StartAcquire')
@@ -168,7 +162,7 @@ class WeaverThread(QThread):
             self.data = self.Memory[memoryLoc].copy()
             if np.sum(self.data)<10:
                 print('spectral data all zeros!')
-                self.ui.PrintOut.append('spectral data all zeros!')
+                # self.ui.PrintOut.append('spectral data all zeros!')
                 self.log.write('spectral data all zeros!')
                 return mode + " got all zeros..."
             an_action = DnSAction(mode, self.data, raw=True) # data in Memory[memoryLoc]
@@ -185,28 +179,32 @@ class WeaverThread(QThread):
             self.GPUQueue.put(an_action)
         return mode + " successfully finished..."
             
-    
     def RptScan(self, mode):
         self.InitMemory()
+        an_action = DAction('ConfigureBoard')
+        self.DQueue.put(an_action)
         # clear stop D queue to remove previous command
-        while not self.StopDQueue.empty():
-            self.StopDQueue.get()
+        # while not self.StopDQueue.empty():
+        #     self.StopDQueue.get()
         # clear display windows
         an_action = DnSAction('Clear')
         self.DnSQueue.put(an_action)
-        # start AODO for continuous measurement
-        an_action = AODOAction('ConfigNStart')
-        self.AODOQueue.put(an_action)
-        time.sleep(0.1) # starting acquire takes less than 0.1 second, this is to make sure board started before AODO started
-        # start digitizer for continuous acuquqisition
-        an_action = DAction('StartAcquire')
-        self.DQueue.put(an_action)
+        
         # an_action = DAction('atomBoard')
         # self.DQueue.put(an_action)
         interrupt = None
         data_backs = 0 # count number of data backs
         ######################################################### repeat acquisition until Stop button is clicked
         while interrupt != 'Stop':
+            # start AODO for continuous measurement
+            an_action = AODOAction('ConfigNStart')
+            self.AODOQueue.put(an_action)
+            an_action = AODOAction('StopNClose_Continuous')
+            self.AODOQueue.put(an_action)
+            time.sleep(0.1) # starting acquire takes less than 0.1 second, this is to make sure board started before AODO started
+            # start digitizer for continuous acuquqisition
+            an_action = DAction('StartAcquire')
+            self.DQueue.put(an_action)
             ######################################### collect data
             # wait for data collection done for one measurement in the Board_thread
             an_action = self.DbackQueue.get() # never time out
@@ -236,13 +234,6 @@ class WeaverThread(QThread):
             ######################################## check if Pause button is clicked
             try:
                interrupt = self.PauseQueue.get_nowait()  # time out 0.01 s
-               ################################################################################
-               # IN REPEAT ACQUISITION MODE, YOU HAVE TO STOP DIGITIZER IMMEDIATELY, OTHERWAISE DIGITIZER WILL MALFUNCTION!!!!!!!!!!!!
-               an_action = AODOAction('StopNClose_Continuous')
-               self.AODOQueue.put(an_action)
-               # stop Board with any input
-               self.StopDQueue.put(0)
-                   
                # wait until unpause button or stop button is clicked
                if interrupt == 'Pause':
                    interrupt = self.PauseQueue.get()  # never time out
@@ -250,24 +241,12 @@ class WeaverThread(QThread):
                    if interrupt == 'unPause':
                          # self.ui.PauseButton.setChecked(False)
                          interrupt = None
-                         # restart AODO for continuous acquisition
-                         an_action = AODOAction('ConfigNStart')
-                         self.AODOQueue.put(an_action)
-                         # restart ART8912 for continuous acquisition
-                         an_action = DAction('StartAcquire')
-                         self.DQueue.put(an_action)
             except:
                 pass
         
-        an_action = DAction('UninitBoard')
-        self.DQueue.put(an_action)
-        an_action = DAction('InitBoard')
-        self.DQueue.put(an_action)
-        an_action = DAction('ConfigureBoard')
-        self.DQueue.put(an_action)
         
         message = str(data_backs)+ ' data received by weaver'
-        self.ui.PrintOut.append(message)
+        # self.ui.PrintOut.append(message)
         self.log.write(message)
         an_action = GPUAction('display_FFT_actions')
         self.GPUQueue.put(an_action)
@@ -276,13 +255,106 @@ class WeaverThread(QThread):
         self.ui.PauseButton.setChecked(False)
         self.ui.PauseButton.setText('Pause')
         return mode + ' successfully finished...'
+    # def RptScan(self, mode):
+    #     self.InitMemory()
+    #     # clear stop D queue to remove previous command
+    #     # while not self.StopDQueue.empty():
+    #     #     self.StopDQueue.get()
+    #     # clear display windows
+    #     an_action = DnSAction('Clear')
+    #     self.DnSQueue.put(an_action)
+    #     # start AODO for continuous measurement
+    #     an_action = AODOAction('ConfigNStart')
+    #     self.AODOQueue.put(an_action)
+    #     time.sleep(0.1) # starting acquire takes less than 0.1 second, this is to make sure board started before AODO started
+    #     # start digitizer for continuous acuquqisition
+    #     an_action = DAction('StartAcquire')
+    #     self.DQueue.put(an_action)
+    #     # an_action = DAction('atomBoard')
+    #     # self.DQueue.put(an_action)
+    #     interrupt = None
+    #     data_backs = 0 # count number of data backs
+    #     ######################################################### repeat acquisition until Stop button is clicked
+    #     while interrupt != 'Stop':
+    #         ######################################### collect data
+    #         # wait for data collection done for one measurement in the Board_thread
+    #         an_action = self.DbackQueue.get() # never time out
+    #         memoryLoc = an_action.action
+    #         # print(memoryLoc)
+    #         data_backs += 1
+    #         ######################################### display data
+    #         if self.ui.FFTDevice.currentText() in ['None']:
+    #             # In None mode, directly do display and save
+    #             data = self.Memory[memoryLoc].copy()
+    #             an_action = DnSAction(mode, data, raw=True) # data in Memory[memoryLoc]
+    #             self.DnSQueue.put(an_action)
+                
+    #         elif self.ui.FFTDevice.currentText() in ['Alazar']:
+    #             # in Alazar mode, directly do display and save
+    #             data = self.Memory[memoryLoc].copy()
+    #             # TODO: fix this
+    #             # samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
+    #             # Alines =np.uint32((data.shape[1])/samples) * data.shape[0]
+    #             # data=data.reshape([Alines, samples])
+    #             an_action = DnSAction(mode, data) # data in Memory[memoryLoc]
+    #             self.DnSQueue.put(an_action)
+    #         else:
+    #             # In other modes, do FFT first
+    #             an_action = GPUAction(self.ui.FFTDevice.currentText(), mode, memoryLoc)
+    #             self.GPUQueue.put(an_action)
+    #         ######################################## check if Pause button is clicked
+    #         try:
+    #            interrupt = self.PauseQueue.get_nowait()  # time out 0.01 s
+    #            ################################################################################
+    #            # IN REPEAT ACQUISITION MODE, YOU HAVE TO STOP DIGITIZER IMMEDIATELY, OTHERWAISE DIGITIZER WILL MALFUNCTION!!!!!!!!!!!!
+    #            an_action = AODOAction('StopNClose_Continuous')
+    #            self.AODOQueue.put(an_action)
+    #            # stop Board with any input
+    #            self.StopDQueue.put(0)
+                   
+    #            # wait until unpause button or stop button is clicked
+    #            if interrupt == 'Pause':
+    #                interrupt = self.PauseQueue.get()  # never time out
+    #                # if unpause button is clicked        
+    #                if interrupt == 'unPause':
+    #                      # self.ui.PauseButton.setChecked(False)
+    #                      interrupt = None
+    #                      # restart AODO for continuous acquisition
+    #                      an_action = AODOAction('ConfigNStart')
+    #                      self.AODOQueue.put(an_action)
+    #                      # restart ART8912 for continuous acquisition
+    #                      an_action = DAction('StartAcquire')
+    #                      self.DQueue.put(an_action)
+    #         except:
+    #             pass
+        
+    #     an_action = DAction('UninitBoard')
+    #     self.DQueue.put(an_action)
+    #     an_action = DAction('InitBoard')
+    #     self.DQueue.put(an_action)
+    #     an_action = DAction('ConfigureBoard')
+    #     self.DQueue.put(an_action)
+        
+    #     message = str(data_backs)+ ' data received by weaver'
+        # self.ui.PrintOut.append(message)
+    #     self.log.write(message)
+    #     an_action = GPUAction('display_FFT_actions')
+    #     self.GPUQueue.put(an_action)
+    #     an_action = DnSAction('display_counts')
+    #     self.DnSQueue.put(an_action)
+    #     self.ui.PauseButton.setChecked(False)
+    #     self.ui.PauseButton.setText('Pause')
+    #     return mode + ' successfully finished...'
 
             
     def SurfScan(self):
         # fast scan to differentiate agar and tissue
-        
+        an_action = DnSAction('WriteAgar', data = self.tile_flag)
+        self.DnSQueue.put(an_action)
         self.InitMemory()
-
+        # configure digitizer
+        an_action = DAction('ConfigureBoard')
+        self.DQueue.put(an_action)
         # clear display windows
         an_action = DnSAction('Clear')
         self.DnSQueue.put(an_action)
@@ -309,7 +381,7 @@ class WeaverThread(QThread):
         args = [[0, 0], [CscansPerStripe, self.totalTiles]]
         an_action = DnSAction('Init_SurfScan', data = None, args = args) # data in Memory[memoryLoc]
         self.DnSQueue.put(an_action)
-        
+
         interrupt = None
         stripes = 1
         # stage move to start of this stripe
@@ -369,11 +441,13 @@ class WeaverThread(QThread):
                     # an_action = DAction('simData')
                     # self.DQueue.put(an_action)
                     start = time.time()
+                    # time.sleep(0.3)
                     ###################################### collecting data
                     # collect data from digitizer
                     an_action = self.DbackQueue.get() # never time out
+                    # an_action = DbackAction(0)
                     message = 'time to fetch data: '+str(round(time.time()-start,3))+'s'
-                    self.ui.PrintOut.append(message)
+                    # self.ui.PrintOut.append(message)
                     print(message)
                     self.log.write(message)
                     # start = time.time()
@@ -402,7 +476,8 @@ class WeaverThread(QThread):
             # finishing this stripe, delete one MOSAIC object from the mosaic pattern
             self.Mosaic = np.delete(self.Mosaic, 0)
             stripes = stripes + 1
-
+        
+        print('finished this cycle for surf')
         if self.ui.Save.isChecked():
             # wailt 5 seconds for the last tile to be saved
             time.sleep(5)
@@ -462,6 +537,9 @@ class WeaverThread(QThread):
         self.ui.FFTDevice.setCurrentText('GPU')
         self.ui.scale.setValue(1)
         self.InitMemory()
+        # configure digitizer
+        an_action = DAction('ConfigureBoard')
+        self.DQueue.put(an_action)
         # generate Mosaic pattern, a Mosaic pattern consists of a list of MOSAIC object, 
         # each MOSAIC object defines a stripe of scanning area, which is defined by the X stage position, and Y stage start and stop position
         self.Mosaic, status = GenMosaic_XGalvo(self.ui.XStart.value(),\
@@ -535,7 +613,7 @@ class WeaverThread(QThread):
                 # collect data from digitizer
                 an_action = self.DbackQueue.get() # never time out
                 message = 'time to fetch data: '+str(round(time.time()-start,3))+'s'
-                self.ui.PrintOut.append(message)
+                # self.ui.PrintOut.append(message)
                 print(message)
                 self.log.write(message)
                 memoryLoc = an_action.action
@@ -544,6 +622,7 @@ class WeaverThread(QThread):
                 args = [[cscans, stripes], [CscansPerStripe, self.totalTiles],[self.ui.Xsteps.value()*self.ui.AlineAVG.value(),self.ui.PreSamples.value()+self.ui.PostSamples.value()]]
                 an_action = GPUAction(self.ui.FFTDevice.currentText(), 'SurfScan', memoryLoc, args=args)
                 self.GPUQueue.put(an_action)
+                # time.sleep(0.2)
                 # get cscan data
                 while self.GPU2weaverQueue.qsize()>1:
                     cscan =self.GPU2weaverQueue.get()
@@ -558,11 +637,14 @@ class WeaverThread(QThread):
                 self.ui.statusbar.showMessage('finished '+str(stripes)+'th strip, '+str(cscans)+'th Cscan ')
                 ######################################## check if Pause button is clicked
                 interrupt = self.check_interrupt()
-                print('finished this cycle')
+            print('finished this cycle for presurf')
             # finishing this stripe, delete one MOSAIC object from the mosaic pattern
             self.Mosaic = np.delete(self.Mosaic, 0)
             stripes = stripes + 1
             
+        print('finished presurf')
+        # wait one second for the last tile to be displayed
+        time.sleep(2)
         self.ui.DSing.setChecked(False)
         # reset FOV
         self.ui.Xsteps.setValue(Xsteps)
@@ -571,14 +653,11 @@ class WeaverThread(QThread):
         self.ui.YStepSize.setValue(YStepSize)
         self.ui.AlineAVG.setValue(AlineAVG)
         self.ui.BlineAVG.setValue(BlineAVG)
-        # wait one second for the last tile to be displayed
-        time.sleep(1)
         self.ui.Save.setChecked(save)
         self.ui.FFTDevice.setCurrentText(FFTDevice)
         self.ui.scale.setValue(scale)
         # self.tile_flag = self.tile_flag.flatten()
-        an_action = DnSAction('WriteAgar', data = self.tile_flag)
-        self.DnSQueue.put(an_action)
+
         # print(self.tile_flag)
         return interrupt
     
@@ -587,33 +666,33 @@ class WeaverThread(QThread):
         if self.ui.ImageZDepth.value() - self.ui.SliceZDepth.value() >1: # unit: um
             message = ' imaging deeper than cutting, cut multiple times per image...'
             self.ui.statusbar.showMessage(message)
-            self.ui.PrintOut.append(message)
+            # self.ui.PrintOut.append(message)
             self.log.write(message)
             
             message = ' this mode has not been configured, abort...'
             self.ui.statusbar.showMessage(message)
-            self.ui.PrintOut.append(message)
+            # self.ui.PrintOut.append(message)
             self.log.write(message)
             
         elif self.ui.SliceZDepth.value() - self.ui.ImageZDepth.value() >1:
             message = ' slicing deeper than imaging, image multiple times per slice...'
             self.ui.statusbar.showMessage(message)
-            self.ui.PrintOut.append(message)
+            # self.ui.PrintOut.append(message)
             self.log.write(message)
             
             message = ' this mode has not been configured, abort...'
             self.ui.statusbar.showMessage(message)
-            self.ui.PrintOut.append(message)
+            # self.ui.PrintOut.append(message)
             self.log.write(message)
             
         else:
             message = ' slicing and imaging depth same, one image per cut...'
             self.ui.statusbar.showMessage(message)
-            self.ui.PrintOut.append(message)
+            # self.ui.PrintOut.append(message)
             self.log.write(message)
             message = self.OneImagePerCut()
             self.ui.statusbar.showMessage(message)
-            self.ui.PrintOut.append(message)
+            # self.ui.PrintOut.append(message)
             self.log.write(message)
             
         self.ui.RunButton.setChecked(False)
@@ -635,8 +714,9 @@ class WeaverThread(QThread):
             if message != 'Slice success':
                 return message
             # remeasure background
-            # if ii == 0:
-            self.get_background()
+            if ii%5 == 0:
+                self.get_background()
+                # time.sleep(1)
             ##################################################
             interrupt = self.check_interrupt()
             if interrupt == 'Stop':
@@ -691,7 +771,7 @@ class WeaverThread(QThread):
                 return message
             ########################################################
             # do surf
-            if ii == 0:
+            if ii%5 == 0:
                 interrupt = self.SurfPreScan()
                 if interrupt == 'Stop':
                     # reset RUN button
@@ -699,7 +779,7 @@ class WeaverThread(QThread):
                     self.ui.RunButton.setText('Run')
                     self.ui.PauseButton.setChecked(False)
                     self.ui.PauseButton.setText('Pause')
-                    return interrupt, 'SurfPreScan stopped by user...'
+                    return 'SurfPreScan stopped by user...'
             interrupt, status = self.SurfScan()
             self.ui.RunButton.setChecked(True)
             self.ui.RunButton.setText('Stop')
@@ -956,17 +1036,17 @@ class WeaverThread(QThread):
             m = np.max(Aline[start_depth:end_depth])
             message = 'peak at:'+str(z)+ ' pixel, m='+str(m)+ ' '+str(z-target_depth)+' pixels away'
             print(message)
-            self.ui.PrintOut.append(message)
+            # self.ui.PrintOut.append(message)
             self.log.write(message)
             # handle error condistions
             if m < self.ui.AlinePeakMin.value():
                 message = 'peak height='+str(m)+ ' peak too small, abort...'
                 print(message)
-                self.ui.PrintOut.append(message)
+                # self.ui.PrintOut.append(message)
                 self.log.write(message)
                 message = 'start depth: '+str(start_depth)+ ' end depth: '+str( end_depth)
                 print(message)
-                self.ui.PrintOut.append(message)
+                # self.ui.PrintOut.append(message)
                 self.log.write(message)
                 self.ui.ACQMode.setCurrentText(mode)
                 self.ui.FFTDevice.setCurrentText(device)
@@ -981,11 +1061,11 @@ class WeaverThread(QThread):
             elif m>=self.ui.AlinePeakMax.value():
                 message = 'peak height='+str(m)+' this means spectral samples are all 0s, increase XforAline, abort...'
                 print(message)
-                self.ui.PrintOut.append(message)
+                # self.ui.PrintOut.append(message)
                 self.log.write(message)
                 message = 'start depth: '+str(start_depth)+ ' end depth: '+str( end_depth)
                 print(message)
-                self.ui.PrintOut.append(message)
+                # self.ui.PrintOut.append(message)
                 self.log.write(message)
                 self.ui.ACQMode.setCurrentText(mode)
                 self.ui.FFTDevice.setCurrentText(device)
@@ -1044,7 +1124,7 @@ class WeaverThread(QThread):
             # measure ALine
             message = self.SingleScan(self.ui.ACQMode.currentText())
             self.log.write(message)
-            self.ui.PrintOut.append(message)
+            # self.ui.PrintOut.append(message)
             failed_times = 0
             while message != self.ui.ACQMode.currentText()+" successfully finished...":
                 failed_times+=1
@@ -1055,7 +1135,7 @@ class WeaverThread(QThread):
                     return message
                 message = self.SingleScan(self.ui.ACQMode.currentText())
                 self.log.write(message)
-                self.ui.PrintOut.append(message)
+                # self.ui.PrintOut.append(message)
                 time.sleep(1)
             time.sleep(0.1)
             
@@ -1152,7 +1232,7 @@ class WeaverThread(QThread):
             while message != self.ui.ACQMode.currentText()+" successfully finished...":
                 message = self.SingleScan(self.ui.ACQMode.currentText())
                 self.log.write(message)
-                self.ui.PrintOut.append(message)
+                # self.ui.PrintOut.append(message)
                 time.sleep(1)
             time.sleep(0.1) # let GUI update Aline 
             # move Z stage down
@@ -1185,7 +1265,7 @@ class WeaverThread(QThread):
             if message != 'gotozero success...':
                 message = 'go to zero failed, abort test...'
                 print(message)
-                self.ui.PrintOut.append(message)
+                # self.ui.PrintOut.append(message)
                 self.log.write(message)
                 break
             else:
@@ -1252,7 +1332,7 @@ class WeaverThread(QThread):
         plt.plot(phi_diff)
         # plt.figure()
         message = 'max phase difference is: '+str(np.max(np.abs(phi_diff)))+'\n'
-        self.ui.PrintOut.append(message)
+        # self.ui.PrintOut.append(message)
         self.log.write(message)
         # fR = np.fft.fft(ALINE, axis=1)/L
 
@@ -1289,7 +1369,7 @@ class WeaverThread(QThread):
         time.sleep(0.1)
         #######################################################################
         # Xpixels = self.ui.XforAline.value()
-        Xpixels = np.int32(self.Aline_frq/self.ui.FPSAline.value())
+        Xpixels = self.AlinesPerBline
         Yrpt = self.ui.BlineAVG.value()
         ALINE = self.data.reshape([Xpixels*Yrpt,self.ui.PostSamples_2.value()])
         ALINE = ALINE[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]

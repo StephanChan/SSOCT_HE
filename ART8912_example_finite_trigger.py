@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Mon Apr 15 14:58:58 2024
+
+@author: admin
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Tue Jan 23 17:06:32 2024
 
 @author: admin
@@ -15,7 +22,7 @@ from ART_SCOPE_Lib.lib import *
 from ART_SCOPE_Lib.errors import check_for_error, ArtScopeError
 
 
-class ART8912():
+class ART8912_finite_trigger():
     def __init__(self):
         super().__init__()
 
@@ -56,7 +63,7 @@ class ART8912():
 
         minSampleRate = 250000000.0  
                                     # 采样率
-        minRecordLength = 1200           # 最小采样长度
+        minRecordLength = 1024           # 最小采样长度
         refPosition = 0                                         # 触发位置 0-后触发 100-预触发 0~100-中间触发
         error_code = Functions.ArtScope_ConfigureHorizontalTiming(self.taskHandle, minSampleRate, minRecordLength, refPosition)
         if error_code < 0:
@@ -91,20 +98,33 @@ class ART8912():
                 Functions.ArtScope_Close(self.taskHandle)
                 check_for_error(error_code)
         
-        
-        
-        
-        
-    def StartAcquire(self, Bline = 1):
-        #获取实际使能的通道个数
-        numWfms = ctypes.c_uint32(0)                            # 返回的实际参与采集的通道个数
-        error_code = Functions.ArtScope_ActualNumWfms(self.taskHandle, numWfms)
-        print('channels configed: ',numWfms.value)
+        self.numWfms = ctypes.c_uint32(0)                            # 返回的实际参与采集的通道个数
+        error_code = Functions.ArtScope_ActualNumWfms(self.taskHandle, self.numWfms)
+        print('channels configed: ',self.numWfms.value)
         if error_code < 0:
             print('get channels failed\n')
             Functions.ArtScope_Close(self.taskHandle)
             check_for_error(error_code)
+        
+        recordLength = 1024
         AlinesPerBline = 1300
+        #开辟数据存储空间
+        self.sumLength =  Bline* recordLength * AlinesPerBline * self.numWfms.value
+        
+        self.memoryCount = 2
+        self.Memory = list(range(self.memoryCount))
+        for ii in range(self.memoryCount):
+
+            self.Memory[ii]=np.zeros(self.sumLength, dtype = np.uint16)
+                 
+        self.MemoryLoc = 0
+        self.wfmInfo = ArtScope_wfmInfo()                            # 返回的包含实际读取长度和原码值转电压值相关参数的结构体
+        
+    def StartAcquire(self, Bline = 1):
+        #获取实际使能的通道个数
+        start = time.time()
+        
+
         #初始化采集任务
         error_code = Functions.ArtScope_InitiateAcquisition(self.taskHandle)
         if error_code < 0:
@@ -125,62 +145,34 @@ class ART8912():
         #     Functions.ArtScope_Close(self.taskHandle)
         #     check_for_error(error_code)
         
-        recordLength = 1200
-        #开辟数据存储空间
-        self.sumLength =  recordLength * AlinesPerBline * numWfms.value
-        self.waveformPtr = np.zeros(self.sumLength, dtype=np.uint16)
         
-        self.memoryCount = 2
-        self.Memory = list(range(self.memoryCount))
-        for ii in range(self.memoryCount):
-
-                 self.NBlines = Bline
-                 self.Memory[ii]=np.zeros([self.NBlines*self.sumLength], dtype = np.uint16)
-                 
-        self.MemoryLoc = 0
         #开始采集任务
         error_code = Functions.ArtScope_StartAcquisition(self.taskHandle)
     
-        timeout = 1              # 数据读取超时时间 单位：s
+        timeout = 5              # 数据读取超时时间 单位：s
         readLength = self.sumLength                        # 数据读取长度
-        wfmInfo = ArtScope_wfmInfo()                            # 返回的包含实际读取长度和原码值转电压值相关参数的结构体
+        
         # wfmInfo.actualSamples = 0
         # wfmInfo.pAvailSampsPoints = 0
-        
-        blinesCompleted = 0
-        NACQ = 1#self.NBlines
+        print('time spent for presetting: ', time.time()-start)
+        # 8位的卡需要调用ArtScope_FetchBinary8，同时定义数据缓冲区数据类型为无符号8位数据
         start = time.time()
-        while blinesCompleted < NACQ:
-            # 8位的卡需要调用ArtScope_FetchBinary8，同时定义数据缓冲区数据类型为无符号8位数据
-            start = time.time()
-            try:
-                # error_code = Functions.ArtScope_FetchBinary16(self.taskHandle, timeout, readLength, self.Memory[self.MemoryLoc][blinesCompleted % NACQ], wfmInfo)
-                error_code = Functions.ArtScope_FetchBinary16(self.taskHandle, timeout, Bline*readLength, self.Memory[self.MemoryLoc], wfmInfo)
-            except Exception as error:
-                # TODO: if timeout, break this inner while loop
-                print('Blines collected: ', blinesCompleted+1, \
-                      'Blines configured: ', NACQ, \
-                      '\n', error, '\nstopping acquisition for Digitizer\n')
-                break
-            print('time per fetch: ', time.time()-start)
-            if error_code < 0:
-                print('fetch data failed\n')
-                Functions.ArtScope_StopAcquisition(self.taskHandle)
-                Functions.ArtScope_Close(self.taskHandle)
-                check_for_error(error_code)
-                
-            # self.Memory[self.MemoryLoc][blinesCompleted % NACQ][:] = self.waveformPtr
-            blinesCompleted+=1
-            
-            if blinesCompleted % NACQ ==0:
-                # print('sending data back')
-                # an_action = DbackAction(self.MemoryLoc)
-                # self.DbackQueue.put(an_action)
-                # print(self.Memory[self.MemoryLoc].shape)
-                # print(self.Memory[self.MemoryLoc][0,:])
-                self.MemoryLoc = (self.MemoryLoc+1) % self.memoryCount
 
+        error_code = Functions.ArtScope_FetchBinary16(self.taskHandle, timeout, readLength, self.Memory[self.MemoryLoc], self.wfmInfo)
+        if error_code < 0:
+            print('fetch data failed\n')
+            Functions.ArtScope_StopAcquisition(self.taskHandle)
+            Functions.ArtScope_Close(self.taskHandle)
+            check_for_error(error_code)
+        print('time per FetchBinary16:', time.time()-start)
+        
+        # 打印数据
+        # for ii in range(10):
+        #     print(self.Memory[self.MemoryLoc][ii])
             
+        self.MemoryLoc = (self.MemoryLoc+1) % self.memoryCount
+
+        start = time.time()
             
         #停止采集任务
         error_code = Functions.ArtScope_StopAcquisition(self.taskHandle)
@@ -192,21 +184,23 @@ class ART8912():
         error_code = Functions.ArtScope_ReleaseAcquisition(self.taskHandle)
         if error_code < 0:
             Functions.ArtScope_Close(self.taskHandle)
-        print('time to fetch data: ', time.time() - start)
+        
+        print('time to stop: ', time.time()-start)
+        
             
     def CloseBoard(self):
-        
-        
         #释放设备
         error_code = Functions.ArtScope_Close(self.taskHandle)
         
 
 if __name__ == "__main__":
 
-    example = ART8912()
-    example.ConfigureBoard(40)
-    for ii in range(1):
+    example = ART8912_finite_trigger()
+    # FIXME：改变Blines的数值，采集时间不是线性变化的, 20,60,100 会慢很多， 40，80，120，200速度正常
+    Blines = 2
+    example.ConfigureBoard(Blines)
+    for ii in range(2):
         start = time.time()
-        example.StartAcquire(40)
+        example.StartAcquire(Blines)
         print(ii,'time per acquisition: ', time.time()-start)
     example.CloseBoard()
