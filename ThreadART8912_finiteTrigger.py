@@ -214,10 +214,10 @@ class ART8912_finiteTrigger(QThread):
 
         #开始采集任务
         error_code = Functions.ArtScope_StartAcquisition(self.taskHandle)
-        message = 'D using memory loc: '+ str(self.MemoryLoc)
-        print(message)
+        # message = 'D using memory loc: '+ str(self.MemoryLoc)
+        # print(message)
         # self.ui.PrintOut.append(message)
-        self.log.write(message)
+        # self.log.write(message)
         # print(readLength//self.ui.PostSamples_2.value())
         error_code = Functions.ArtScope_FetchBinary16(self.taskHandle, timeout, readLength, self.Memory[self.MemoryLoc], wfmInfo)
 
@@ -258,7 +258,7 @@ class ART8912_finiteTrigger(QThread):
         # all samples in all Alines, include galvo fly-backs
         readLength = self.ui.PostSamples_2.value()  * 1 * self.triggerCount # 数据读取长度
         
-        print('D using memory loc: ',self.MemoryLoc)
+        # print('D using memory loc: ',self.MemoryLoc)
         # print(self.Memory[self.MemoryLoc].shape)
 
         self.Memory[self.MemoryLoc] = np.random.random(readLength)

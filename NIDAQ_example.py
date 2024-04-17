@@ -31,7 +31,7 @@ class AODO(object):
         self.AOtask.timing.cfg_samp_clk_timing(rate=100000, \
                                         source='/AODO/PFI0', \
                                             active_edge= Edge.FALLING,\
-                                          sample_mode=Atype.CONTINUOUS,samps_per_chan=len(AOwaveform))
+                                          sample_mode=Atype.FINITE,samps_per_chan=len(AOwaveform))
         # AOtask.triggers.sync_type.MASTER = True
         # self.AOtask.triggers.start_trigger.cfg_dig_edge_start_trig("/AODO/PFI1")
     
@@ -41,7 +41,7 @@ class AODO(object):
         self.DOtask.timing.cfg_samp_clk_timing(rate=100000, \
                                         source='/AODO/PFI0', \
                                             active_edge= Edge.FALLING,\
-                                          sample_mode=Atype.CONTINUOUS,samps_per_chan=len(AOwaveform))
+                                          sample_mode=Atype.FINITE,samps_per_chan=len(AOwaveform))
         # DOtask.triggers.sync_type.SLAVE = True
         # self.DOtask.triggers.start_trigger.cfg_dig_edge_start_trig("/AODO/PFI1")
         # DOwaveform = np.uint32(np.append(np.zeros(np.int32(len(AOwaveform)/2)),8*np.ones(np.int32(len(AOwaveform)/2))))

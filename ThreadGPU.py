@@ -80,7 +80,7 @@ class GPUThread(QThread):
         Pixel_range = self.ui.DepthRange.value()
         # print(Pixel_start, Pixel_range)
         # copy data from global memory
-        print('GPU using memory loc: ',memoryLoc)
+        # print('GPU using memory loc: ',memoryLoc)
         # print(self.Memory[memoryLoc].shape)
         if not SIM:
             self.data_CPU = np.float32(self.Memory[memoryLoc].copy())
@@ -201,11 +201,13 @@ class GPUThread(QThread):
             self.ui.statusbar.showMessage("load disperison compensation success...")
             # self.ui.PrintOut.append("load disperison compensation success...")
             self.log.write("load disperison compensation success...")
+            print("load disperison compensation success...")
         else:
             self.dispersion = np.complex64(np.ones(samples))
             self.ui.statusbar.showMessage('no disperison compensation found...')
             # self.ui.PrintOut.append("no disperison compensation found...")
             self.log.write("no disperison compensation found...")
+            print("no disperison compensation found...")
         if len(self.window) == len(self.dispersion):
             self.dispersion = np.complex64(self.dispersion * self.window)
             message = 'using dispersion compensation...'
@@ -216,6 +218,7 @@ class GPUThread(QThread):
             self.ui.statusbar.showMessage('however, dispersion length unmatch sample size, no dispersion compensation...')
             # self.ui.PrintOut.append('however, dispersion length unmatch sample size, no dispersion compensation...')
             self.log.write('however, dispersion length unmatch sample size, no dispersion compensation...')
+            print('however, dispersion length unmatch sample size, no dispersion compensation...')
             self.dispersion = np.complex64(np.ones(samples))
             self.dispersion = np.complex64(self.dispersion * self.window)
         self.dispersion = self.dispersion.reshape([1,len(self.dispersion)])
@@ -233,15 +236,17 @@ class GPUThread(QThread):
             self.ui.statusbar.showMessage(current_message+"load background success...")
             # self.ui.PrintOut.append("load background success...")
             self.log.write("load background success...")
+            print("load background success...")
         else:
             current_message = self.ui.statusbar.currentMessage()
             self.ui.statusbar.showMessage('using 2048 as background...')
             # self.ui.PrintOut.append('using 2048 as background...')
             self.log.write('using 2048 as background...')
             self.background = np.float32(np.ones(samples)*2048)
+            print('using 2048 as background...')
             
         if  len(self.background) == samples:
-            message = 'using dispersion compensation...'
+            message = 'using background subtraction...'
             print(message)
             # self.ui.PrintOut.append(message)
             self.log.write(message)
@@ -249,6 +254,7 @@ class GPUThread(QThread):
             self.ui.statusbar.showMessage('however, background length unmatch sample size, no background used...')
             # self.ui.PrintOut.append('however, background length unmatch sample size, no background used...')
             self.log.write('however, background length unmatch sample size, no background used...')
+            print('however, background length unmatch sample size, no background used...')
             self.background = np.float32(np.ones(samples)*2048)
         
     def update_FFTlength(self):

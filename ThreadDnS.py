@@ -15,6 +15,9 @@ SCALE =10000
 import matplotlib.pyplot as plt
 import datetime
 
+global SIM
+SIM = False
+
 class DnSThread(QThread):
     def __init__(self):
         super().__init__()
@@ -304,7 +307,8 @@ class DnSThread(QThread):
         scale = self.ui.scale.value()
 
         ###################### plot 3D visulaization
-        self.ui.mayavi_widget.visualization.update_data(self.Cscan/500)
+        if not SIM:
+            self.ui.mayavi_widget.visualization.update_data(self.Cscan/500)
         # print('display 3D')
         # self.totalTiles = args[1][1]
         # print('before surf image update')

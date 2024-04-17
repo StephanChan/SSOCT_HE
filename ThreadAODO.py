@@ -98,15 +98,20 @@ class AODOThread(QThread):
                     self.Init_Stages()
                 elif self.item.action == 'Uninit':
                     self.Uninit()
-                elif self.item.action == 'ConfigNStart':
-                    self.ConfigNStart(self.item.direction)
+                elif self.item.action == 'ConfigTask':
+                    self.ConfigTask(self.item.direction)
+                elif self.item.action == 'StartTask':
+                    self.StartTask()
+                elif self.item.action == 'StopTask':
+                    self.StopTask(self.item.direction)
+                elif self.item.action == 'CloseTask':
+                    self.CloseTask()
+                    
                 elif self.item.action == 'startVibratome':
                     self.startVibratome()
                 elif self.item.action == 'stopVibratome':
                     self.stopVibratome()
 
-                elif self.item.action == 'StopNClose_Finite':
-                    self.StopNClose_Finite(self.item.direction)
                 elif self.item.action == 'StopNClose_Continuous':
                     self.StopNClose_Continuous()
                 
@@ -154,7 +159,7 @@ class AODOThread(QThread):
             settingtask.close()
         self.StagebackQueue.put(0)
         
-    def ConfigNStart(self, direction = 1):
+    def ConfigTask(self, direction = 1):
         if self.ui.Laser.currentText() == 'Axsun100k':
             self.Aline_freq = 100000
         else:
@@ -185,7 +190,7 @@ class AODOThread(QThread):
                                                   min_val=- 5.0, max_val=5.0, \
                                                   units=ni.constants.VoltageUnits.VOLTS)
             # depending on whether continuous or finite, config clock and mode
-            mode = Atype.CONTINUOUS if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline'] else Atype.FINITE
+            mode =  Atype.FINITE
             self.AOtask.timing.cfg_samp_clk_timing(rate=self.Aline_freq, \
                                                    source=self.ui.ClockTerm.toPlainText(), \
                                                    active_edge= Edge.FALLING,\
@@ -198,7 +203,7 @@ class AODOThread(QThread):
                 self.AOtask.triggers.start_trigger.cfg_dig_edge_start_trig("/AODO/PFI1")
             # write waveform and start
             self.AOtask.write(AOwaveform, auto_start = False)
-            self.AOtask.start()
+            # self.AOtask.start()
             
             #################################################################################
             # only use DO in Cscan acquisition or if digitizer is Alazar board
@@ -228,7 +233,7 @@ class AODOThread(QThread):
                     self.DOtask.triggers.start_trigger.cfg_dig_edge_start_trig("/AODO/PFI1")
                 
                 self.DOtask.write(DOwaveform, auto_start = False)
-                self.DOtask.start()
+                # self.DOtask.start()
                 # print(DOwaveform.shape)
                 steps = np.sum(DOwaveform)/25000.0*2/pow(2,1)
                 message = 'distance per Cscan: '+str(steps)+'mm'
@@ -236,31 +241,37 @@ class AODOThread(QThread):
                 print(message)
                 self.log.write(message)
         return 'AODO configuration success'
-    
-    def CscanDistance(self):
-        if self.ui.Laser.currentText() == 'Axsun100k':
-            self.Aline_freq = 100000
-        else:
-            return 'Laser invalid!'
-        # self.CloseTask()
-
-        DOwaveform,AOwaveform,status = GenAODO(mode=self.ui.ACQMode.currentText(), \
-                                               Aline_frq = self.Aline_freq, \
-                                               XStepSize = self.ui.XStepSize.value(), \
-                                               XSteps = self.ui.Xsteps.value(), \
-                                               AVG = self.ui.AlineAVG.value(), \
-                                               bias = self.ui.XBias.value(), \
-                                               obj = self.ui.Objective.currentText(), \
-                                               preclocks = self.ui.PreClock.value(), \
-                                               postclocks = self.ui.PostClock.value(), \
-                                               YStepSize = self.ui.YStepSize.value(), \
-                                               YSteps =  self.ui.Ysteps.value(), \
-                                               BVG = self.ui.BlineAVG.value(),
-                                               FPSAline = self.ui.FPSAline.value(),
-                                               XforAline = self.ui.XforAline.value())
-        distance = np.sum(DOwaveform)/25000.0*2/pow(2,1)
-        self.StagebackQueue.put(distance)
         
+    def StartTask(self):
+        if not SIM:
+            self.AOtask.start()
+            if self.ui.ACQMode.currentText() in ['SingleCscan','SurfScan','SurfScan+Slice'] or self.Digitizer == 'ATS9351':
+                self.DOtask.start()
+        self.StagebackQueue.put(0)
+            
+
+            
+    def StopTask(self, direction = 1):
+        if not SIM:
+            self.AOtask.wait_until_done(timeout = 6)
+            self.AOtask.stop()
+            # self.AOtask.close()
+            # print(self.ui.ACQMode.currentText())
+            if self.ui.ACQMode.currentText() in ['SingleCscan','SurfScan','SurfScan+Slice'] or self.Digitizer == 'ATS9351':
+                self.DOtask.stop()
+                # self.DOtask.close()
+                # settingtask.write(XDISABLE+ YDISABLE+ ZDISABLE, auto_start = True)
+                # update GUI Y stage position
+                Ystep = self.ui.YStepSize.value()*self.ui.Ysteps.value()/1000.0
+                self.Ypos = self.Ypos+Ystep if direction == 1 else self.Ypos-Ystep
+                self.ui.YPosition.setValue(self.Ypos)
+    
+    def CloseTask(self):
+        if not SIM:
+            self.AOtask.close()
+            if self.ui.ACQMode.currentText() in ['SingleCscan','SurfScan','SurfScan+Slice'] or self.Digitizer == 'ATS9351':
+                self.DOtask.close()
+
     def startVibratome(self):
         if not SIM:
             settingtask = ni.Task('vibratome')
@@ -280,22 +291,7 @@ class AODOThread(QThread):
             settingtask.stop()
             settingtask.close()
         self.StagebackQueue.put(0)
-            
-    def StopNClose_Finite(self, direction = 1):
-        if not SIM:
-            self.AOtask.wait_until_done(timeout = 60)
-            self.AOtask.stop()
-            self.AOtask.close()
-            # print(self.ui.ACQMode.currentText())
-            if self.ui.ACQMode.currentText() in ['SingleCscan','SurfScan','SurfScan+Slice'] or self.Digitizer == 'ATS9351':
-                self.DOtask.stop()
-                self.DOtask.close()
-                # settingtask.write(XDISABLE+ YDISABLE+ ZDISABLE, auto_start = True)
-                # update GUI Y stage position
-                Ystep = self.ui.YStepSize.value()*self.ui.Ysteps.value()/1000.0
-                self.Ypos = self.Ypos+Ystep if direction == 1 else self.Ypos-Ystep
-                self.ui.YPosition.setValue(self.Ypos)
-
+        
     def StopNClose_Continuous(self):
         if not SIM:
             if self.AOtask:

@@ -136,12 +136,17 @@ class WeaverThread(QThread):
         ###########################################################################################
         # start AODO 
         # print(self.ui.ACQMode.currentText())
-        an_action = AODOAction('ConfigNStart')
+        an_action = AODOAction('ConfigTask')
         self.AODOQueue.put(an_action)
-        # close AODO
-        an_action = AODOAction('StopNClose_Finite')
+        an_action = AODOAction('StartTask')
         self.AODOQueue.put(an_action)
-        time.sleep(0.2) # starting acquire takes less than 0.1 second, this is to make sure board started before AODO started
+        self.StagebackQueue.get()
+        an_action = AODOAction('StopTask')
+        self.AODOQueue.put(an_action)
+        an_action = AODOAction('CloseTask')
+        self.AODOQueue.put(an_action)
+
+        # time.sleep(0.1) # starting acquire takes less than 0.1 second, this is to make sure board started before AODO started
         # start digitizer, it will stop automatically when all Blines are acquired
         an_action = DAction('StartAcquire')
         self.DQueue.put(an_action)
@@ -189,7 +194,9 @@ class WeaverThread(QThread):
         # clear display windows
         an_action = DnSAction('Clear')
         self.DnSQueue.put(an_action)
-        
+        # config AODO
+        an_action = AODOAction('ConfigTask')
+        self.AODOQueue.put(an_action)
         # an_action = DAction('atomBoard')
         # self.DQueue.put(an_action)
         interrupt = None
@@ -197,11 +204,14 @@ class WeaverThread(QThread):
         ######################################################### repeat acquisition until Stop button is clicked
         while interrupt != 'Stop':
             # start AODO for continuous measurement
-            an_action = AODOAction('ConfigNStart')
+
+            an_action = AODOAction('StartTask')
             self.AODOQueue.put(an_action)
-            an_action = AODOAction('StopNClose_Continuous')
+            self.StagebackQueue.get()
+            an_action = AODOAction('StopTask')
             self.AODOQueue.put(an_action)
-            time.sleep(0.1) # starting acquire takes less than 0.1 second, this is to make sure board started before AODO started
+            
+            # time.sleep(0.05) # starting acquire takes less than 0.1 second, this is to make sure board started before AODO started
             # start digitizer for continuous acuquqisition
             an_action = DAction('StartAcquire')
             self.DQueue.put(an_action)
@@ -244,7 +254,10 @@ class WeaverThread(QThread):
             except:
                 pass
         
-        
+        # close AODO
+        an_action = AODOAction('CloseTask')
+        self.AODOQueue.put(an_action)
+        # don't need to close board
         message = str(data_backs)+ ' data received by weaver'
         # self.ui.PrintOut.append(message)
         self.log.write(message)
@@ -426,12 +439,16 @@ class WeaverThread(QThread):
                     ###################################### start one Cscan
                     # start AODO for one Cscan acquisition
                     # start AODO
-                    an_action = AODOAction('ConfigNStart', scan_direction)
+                    an_action = AODOAction('ConfigTask', scan_direction)
                     self.AODOQueue.put(an_action)
-                    # close AODO
-                    an_action = AODOAction('StopNClose_Finite', scan_direction)
+                    an_action = AODOAction('StartTask')
                     self.AODOQueue.put(an_action)
-                    time.sleep(0.1) # wait 0.1 seconds to make sure board started before ART8912 start
+                    self.StagebackQueue.get()
+                    an_action = AODOAction('StopTask', scan_direction)
+                    self.AODOQueue.put(an_action)
+                    an_action = AODOAction('CloseTask')
+                    self.AODOQueue.put(an_action)
+                    # time.sleep(0.05) # wait 0.1 seconds to make sure board started before ART8912 start
                     
                     # start ATS9351 for one Cscan acquisition
                     an_action = DAction('StartAcquire')
@@ -574,11 +591,11 @@ class WeaverThread(QThread):
         self.ui.YPosition.setValue(self.Mosaic[0].ystart)
         an_action = AODOAction('Xmove2')
         self.AODOQueue.put(an_action)
-        tmp = self.StagebackQueue.get()
+        self.StagebackQueue.get()
         an_action = AODOAction('Ymove2')
         self.AODOQueue.put(an_action)
         #TODO: stage back queue tell weaver stage is done moving
-        tmp = self.StagebackQueue.get()
+        self.StagebackQueue.get()
         scan_direction = 0 # init scan direction to be backward
         ############################################################# Iterate through strips for one surfscan
         while np.any(self.Mosaic) and interrupt != 'Stop': 
@@ -587,19 +604,24 @@ class WeaverThread(QThread):
             self.ui.XPosition.setValue(self.Mosaic[0].x)
             an_action = AODOAction('Xmove2')
             self.AODOQueue.put(an_action)
-            tmp = self.StagebackQueue.get()
+            self.StagebackQueue.get()
             
             scan_direction = np.uint32(np.mod(scan_direction+1,2))
+            # configure AODO
+            an_action = AODOAction('ConfigTask', scan_direction)
+            self.AODOQueue.put(an_action)
             ############################################################  iterate through Cscans in one stripe
             while cscans < CscansPerStripe and interrupt != 'Stop': 
                 ###################################### start one Cscan
                 # start AODO for one Cscan acquisition
-                # configure AODO
-                an_action = AODOAction('ConfigNStart', scan_direction)
+
+                an_action = AODOAction('StartTask')
                 self.AODOQueue.put(an_action)
-                an_action = AODOAction('StopNClose_Finite', scan_direction)
+                self.StagebackQueue.get()
+                an_action = AODOAction('StopTask', scan_direction)
                 self.AODOQueue.put(an_action)
-                time.sleep(0.1) # wait 0.1 seconds to make sure board started before ART8912 start
+
+                # time.sleep(0.1) # wait 0.1 seconds to make sure board started before ART8912 start
                 
                 # start ATS9351 for one Cscan acquisition
                 an_action = DAction('StartAcquire')
@@ -638,6 +660,8 @@ class WeaverThread(QThread):
                 ######################################## check if Pause button is clicked
                 interrupt = self.check_interrupt()
             print('finished this cycle for presurf')
+            an_action = AODOAction('CloseTask')
+            self.AODOQueue.put(an_action)
             # finishing this stripe, delete one MOSAIC object from the mosaic pattern
             self.Mosaic = np.delete(self.Mosaic, 0)
             stripes = stripes + 1
@@ -1293,7 +1317,7 @@ class WeaverThread(QThread):
         time.sleep(0.1)
         #################################################################### do dispersion compenstation
         # Xpixels = self.ui.XforAline.value()
-        Xpixels = np.int32(self.Aline_frq/self.ui.FPSAline.value())
+        Xpixels = self.AlinesPerBline
         Yrpt = self.ui.BlineAVG.value()
         ALINE = self.data.reshape([Xpixels*Yrpt,self.ui.PostSamples_2.value()])
         ALINE = ALINE[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]

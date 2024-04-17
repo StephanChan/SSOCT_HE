@@ -409,6 +409,7 @@ class GUI(MainWindow):
     def update_Dispersion(self):
         an_action = GPUAction('update_Dispersion')
         GPUQueue.put(an_action)
+        self.update_background()
         
     def update_background(self):
         an_action = GPUAction('update_background')
