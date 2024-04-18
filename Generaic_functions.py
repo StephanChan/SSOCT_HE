@@ -29,7 +29,7 @@ class LOG():
         super().__init__()
         import datetime
         current_time = datetime.datetime.now()
-        self.dir = 'C:/Users/帅斌/Downloads/SSOCT_HE-master'
+        self.dir = 'D:/SSOCT_HE/data/log_files'
         if not os.path.exists(self.dir):
             os.makedirs(self.dir)
         self.filePath = self.dir +  "/" + 'log_'+\
@@ -397,3 +397,13 @@ def ImagePlot(matrix, m=0, M=1):
         pixmap = QPixmap(qpy.gray2qimage(np.zeros(1000,1000)))
     return pixmap
     
+def findchangept(signal):
+    # python implementation of matlab function findchangepts
+    L = len(signal)
+    residual_error = np.ones(L)*9999999
+    for ii in range(2,L-2,2):
+        residual_error[ii] = (ii-1)*np.var(signal[0:ii])+(L-ii+1)*np.var(signal[ii+1:-1])
+    pts = np.argmin(residual_error)
+    # plt.plot(residual_error[2:-2])
+    return pts
+        

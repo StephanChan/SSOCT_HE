@@ -99,7 +99,6 @@ class GPUThread(QThread):
                 self.data_CPU = self.data_CPU[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]-self.background
                 samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
             fftAxis = 1
-            
             # print(self.data_CPU[1:10,1:5])
             # print('GPU finish chop data')
             # # zero-padding data before FFT
@@ -125,6 +124,7 @@ class GPUThread(QThread):
             # print('GPU finish trim data')
             # transfer data back to computer
             self.data_CPU = cupy.asnumpy(data_GPU)*self.AMPLIFICATION
+            # print(self.data_CPU.shape)
             # print('GPU finish receive data')
             # print('FFT took ',time.time()-start,' seconds\n')
             # data_CPU = data_CPU.reshape([shape[0],Pixel_range * np.uint32(Alines/shape[0])])

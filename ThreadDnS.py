@@ -73,7 +73,7 @@ class DnSThread(QThread):
                 elif self.item.action == 'WriteAgar':
                     self.WriteAgar(self.item.data)
                 elif self.item.action == 'Init_SurfScan':
-                    self.Init_SurfScan(self.item.args)
+                    self.Init_SurfScan(self.item.data, self.item.args)
                     
                 else:
                     message = 'Display and save thread is doing something invalid' + self.item.action
@@ -118,7 +118,10 @@ class DnSThread(QThread):
         # Xpixels = np.int32(self.Aline_frq/self.ui.FPSAline.value())
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         if self.Digitizer == 'ART8912':
-            Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+            if not raw:
+                Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+            else:
+                Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
         Yrpt = self.ui.BlineAVG.value()
         data = data.reshape([Yrpt*Xpixels,Zpixels])
         # data in original state
@@ -154,7 +157,10 @@ class DnSThread(QThread):
                 # data = np.float32(data/pow(2,12))
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         if self.Digitizer == 'ART8912':
-            Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+            if not raw:
+                Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+            else:
+                Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
         Yrpt = self.ui.BlineAVG.value()
         
         data = data.reshape([Yrpt,Xpixels,Zpixels])
@@ -192,7 +198,10 @@ class DnSThread(QThread):
                 # data = np.float32(data/pow(2,12))
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         if self.Digitizer == 'ART8912':
-            Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+            if not raw:
+                Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+            else:
+                Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
         data = data.reshape([Ypixels,Xpixels,Zpixels])
         if self.Digitizer == 'ART8912' and raw:
@@ -228,11 +237,14 @@ class DnSThread(QThread):
                 data = np.uint16(self.Cscan/SCALE*65535)
             self.WriteData(data, self.CscanFilename([Ypixels,Xpixels,Zpixels]))
         
-    def Init_SurfScan(self, args = []):
+    def Init_SurfScan(self, raw = False, args = []):
         
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         if self.Digitizer == 'ART8912':
-            Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+            if not raw:
+                Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+            else:
+                Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
         
         #######################################
@@ -259,7 +271,10 @@ class DnSThread(QThread):
                 # data = np.float32(data/pow(2,12))
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         if self.Digitizer == 'ART8912':
-            Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+            if not raw:
+                Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+            else:
+                Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
         # print('get shape')
         data = data.reshape([Ypixels,Xpixels,Zpixels])

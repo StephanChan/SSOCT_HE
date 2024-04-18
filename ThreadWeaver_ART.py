@@ -17,6 +17,7 @@ import traceback
 import matplotlib.pyplot as plt
 from scipy.signal import hilbert
 import datetime
+import ruptures as rpt
 
 global ZPIXELSIZE
 ZPIXELSIZE = 5 # um, axial pixel size
@@ -497,7 +498,7 @@ class WeaverThread(QThread):
         print('finished this cycle for surf')
         if self.ui.Save.isChecked():
             # wailt 5 seconds for the last tile to be saved
-            time.sleep(5)
+            time.sleep(4)
         an_action = DnSAction('restart_tilenum') # data in Memory[memoryLoc]
         self.DnSQueue.put(an_action)
         # reset RUN button
@@ -583,7 +584,7 @@ class WeaverThread(QThread):
         self.DnSQueue.put(an_action)
         # init tile threshold array
         self.tile_flag = np.zeros((len(self.Mosaic),CscansPerStripe),dtype = np.uint8)
-
+        self.tile_surf = np.zeros((len(self.Mosaic),CscansPerStripe),dtype = np.float32)
         interrupt = None
         stripes = 1
         # stage move to start of this stripe
@@ -653,6 +654,7 @@ class WeaverThread(QThread):
                 value = np.mean(cscan)
                 if value > self.ui.AgarValue.value():
                     self.tile_flag[stripes - 1][cscans] = 1
+                    self.tile_surf[stripes - 1][cscans] = self.autoFocus(cscan)
                 
                 # increment files imaged
                 cscans +=1
@@ -685,6 +687,32 @@ class WeaverThread(QThread):
         # print(self.tile_flag)
         return interrupt
     
+    def autoFocus(self, cscan):
+        Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value() + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+        Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
+        # print(cscan.shape,Xpixels, Ypixels)
+        cscan =cscan.reshape([Ypixels,Xpixels,cscan.shape[1]])
+        cscan = cscan[:,::50, :]
+        cscan = cscan.reshape([Ypixels*Xpixels//50, cscan.shape[2]])
+        # print(cscan.shape)
+        aip = np.mean(cscan,1)
+        # get mask of tissue
+        mask = aip > self.ui.AgarValue.value()
+        # get Alines of tissue
+        tissue_vol = cscan[mask,:]
+        # print(tissue_vol.shape)
+        # find tissue surface
+        surf_profile = np.zeros(tissue_vol.shape[0])
+        for ii in range(tissue_vol.shape[0]):
+            surf_profile[ii] = findchangept(tissue_vol[ii,:])
+        # use histogram with bins of 5 pixels to find most populated surface
+        [counts,bins]=np.histogram(surf_profile,np.arange(0,tissue_vol.shape[1],5))
+        z = np.argmax(counts)
+        M = np.max(counts)
+        print('surface at: ',z, ' pixels: ',M)
+        return (bins[z]+bins[z+1])/2
+
+        
     def SurfSlice(self):
         # determine if one image per cut
         if self.ui.ImageZDepth.value() - self.ui.SliceZDepth.value() >1: # unit: um
