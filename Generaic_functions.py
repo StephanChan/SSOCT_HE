@@ -29,7 +29,7 @@ class LOG():
         super().__init__()
         import datetime
         current_time = datetime.datetime.now()
-        self.dir = 'D:/SSOCT_HE/data/log_files'
+        self.dir = os.getcwd() + '/log_files'
         if not os.path.exists(self.dir):
             os.makedirs(self.dir)
         self.filePath = self.dir +  "/" + 'log_'+\

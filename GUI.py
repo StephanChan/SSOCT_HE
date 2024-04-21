@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'D:\SSOCT_HE\software\GUI.ui'
+# Form implementation generated from reading ui file 'C:\Users\帅斌\Documents\SSOCT_HE\SSOCT_HE-master\GUI.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.10
 #
@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1402, 996)
+        MainWindow.resize(1414, 996)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout_14 = QtWidgets.QGridLayout(self.centralwidget)
@@ -58,7 +58,7 @@ class Ui_MainWindow(object):
         sizePolicy.setHeightForWidth(self.XYplane.sizePolicy().hasHeightForWidth())
         self.XYplane.setSizePolicy(sizePolicy)
         self.XYplane.setMinimumSize(QtCore.QSize(450, 100))
-        self.XYplane.setMaximumSize(QtCore.QSize(500, 600))
+        self.XYplane.setMaximumSize(QtCore.QSize(700, 600))
         font = QtGui.QFont()
         font.setPointSize(25)
         self.XYplane.setFont(font)
@@ -97,13 +97,13 @@ class Ui_MainWindow(object):
         self.verticalLayout.addLayout(self.horizontalLayout_11)
         self.XZplane = QtWidgets.QLabel(self.centralwidget)
         self.XZplane.setMinimumSize(QtCore.QSize(100, 300))
-        self.XZplane.setMaximumSize(QtCore.QSize(500, 600))
+        self.XZplane.setMaximumSize(QtCore.QSize(700, 700))
         self.XZplane.setAutoFillBackground(True)
         self.XZplane.setScaledContents(True)
         self.XZplane.setObjectName("XZplane")
         self.verticalLayout.addWidget(self.XZplane)
         self.BCbox1 = QtWidgets.QGroupBox(self.centralwidget)
-        self.BCbox1.setMaximumSize(QtCore.QSize(500, 90))
+        self.BCbox1.setMaximumSize(QtCore.QSize(700, 90))
         self.BCbox1.setObjectName("BCbox1")
         self.verticalLayout_18 = QtWidgets.QVBoxLayout(self.BCbox1)
         self.verticalLayout_18.setObjectName("verticalLayout_18")
@@ -136,7 +136,7 @@ class Ui_MainWindow(object):
         self.tmp_label.setObjectName("tmp_label")
         self.verticalLayout_2.addWidget(self.tmp_label)
         self.BCbox2 = QtWidgets.QGroupBox(self.centralwidget)
-        self.BCbox2.setMaximumSize(QtCore.QSize(500, 90))
+        self.BCbox2.setMaximumSize(QtCore.QSize(700, 90))
         self.BCbox2.setObjectName("BCbox2")
         self.verticalLayout_19 = QtWidgets.QVBoxLayout(self.BCbox2)
         self.verticalLayout_19.setObjectName("verticalLayout_19")
@@ -164,7 +164,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_5.setObjectName("verticalLayout_5")
         self.SampleMosaic = QtWidgets.QLabel(self.centralwidget)
         self.SampleMosaic.setMinimumSize(QtCore.QSize(300, 300))
-        self.SampleMosaic.setMaximumSize(QtCore.QSize(500, 600))
+        self.SampleMosaic.setMaximumSize(QtCore.QSize(700, 700))
         font = QtGui.QFont()
         font.setPointSize(25)
         self.SampleMosaic.setFont(font)
@@ -174,7 +174,7 @@ class Ui_MainWindow(object):
         self.SampleMosaic.setObjectName("SampleMosaic")
         self.verticalLayout_5.addWidget(self.SampleMosaic)
         self.BCbox3 = QtWidgets.QGroupBox(self.centralwidget)
-        self.BCbox3.setMaximumSize(QtCore.QSize(500, 90))
+        self.BCbox3.setMaximumSize(QtCore.QSize(700, 90))
         self.BCbox3.setObjectName("BCbox3")
         self.verticalLayout_20 = QtWidgets.QVBoxLayout(self.BCbox3)
         self.verticalLayout_20.setObjectName("verticalLayout_20")
@@ -1303,27 +1303,6 @@ class Ui_MainWindow(object):
         self.ClockTerm.setObjectName("ClockTerm")
         self.verticalLayout_21.addWidget(self.ClockTerm)
         self.horizontalLayout_9.addWidget(self.groupBox_4)
-        self.Alinebox = QtWidgets.QGroupBox(self.Lasertab)
-        self.Alinebox.setMaximumSize(QtCore.QSize(500, 16777215))
-        self.Alinebox.setObjectName("Alinebox")
-        self.verticalLayout_22 = QtWidgets.QVBoxLayout(self.Alinebox)
-        self.verticalLayout_22.setObjectName("verticalLayout_22")
-        self.label_3 = QtWidgets.QLabel(self.Alinebox)
-        self.label_3.setObjectName("label_3")
-        self.verticalLayout_22.addWidget(self.label_3)
-        self.XforAline = QtWidgets.QSpinBox(self.Alinebox)
-        self.XforAline.setMaximum(10000)
-        self.XforAline.setProperty("value", 100)
-        self.XforAline.setObjectName("XforAline")
-        self.verticalLayout_22.addWidget(self.XforAline)
-        self.label_4 = QtWidgets.QLabel(self.Alinebox)
-        self.label_4.setObjectName("label_4")
-        self.verticalLayout_22.addWidget(self.label_4)
-        self.FPSAline = QtWidgets.QSpinBox(self.Alinebox)
-        self.FPSAline.setProperty("value", 10)
-        self.FPSAline.setObjectName("FPSAline")
-        self.verticalLayout_22.addWidget(self.FPSAline)
-        self.horizontalLayout_9.addWidget(self.Alinebox)
         self.Tabs.addTab(self.Lasertab, "")
         self.DefineZeroTab = QtWidgets.QWidget()
         self.DefineZeroTab.setObjectName("DefineZeroTab")
@@ -1419,7 +1398,7 @@ class Ui_MainWindow(object):
         self.gridLayout_14.addLayout(self.gridLayout, 0, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1402, 33))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1414, 33))
         font = QtGui.QFont()
         font.setPointSize(15)
         self.menubar.setFont(font)
@@ -1514,8 +1493,8 @@ class Ui_MainWindow(object):
         self.FOV.setHtml(_translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'Microsoft YaHei UI\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">XFOV(mm): </p></body></html>"))
+"</style></head><body style=\" font-family:\'SimSun\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'Microsoft YaHei UI\';\">XFOV(mm): </span></p></body></html>"))
         self.XstopLabel.setText(_translate("MainWindow", "Xstop(mm)"))
         self.YstopLabel.setText(_translate("MainWindow", "Ystop(mm)"))
         self.OverlapLabel.setText(_translate("MainWindow", "Overlap(%)"))
@@ -1681,8 +1660,8 @@ class Ui_MainWindow(object):
         self.DIR.setHtml(_translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'Microsoft YaHei UI\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">D:/SSOCT_HE/data</p></body></html>"))
+"</style></head><body style=\" font-family:\'SimSun\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'Microsoft YaHei UI\';\">D:/SSOCT_HE/data</span></p></body></html>"))
         self.label_23.setText(_translate("MainWindow", "Start Slice#"))
         self.redoBG.setText(_translate("MainWindow", "Reget background"))
         self.label_28.setText(_translate("MainWindow", "Current Slice"))
@@ -1697,11 +1676,8 @@ class Ui_MainWindow(object):
         self.ClockTerm.setHtml(_translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'Microsoft YaHei UI\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">/AODO/PFI0</p></body></html>"))
-        self.Alinebox.setTitle(_translate("MainWindow", "Single/RptAline settings"))
-        self.label_3.setText(_translate("MainWindow", "#Alines to acquire for single/RptAline mode"))
-        self.label_4.setText(_translate("MainWindow", "fps for RptAline"))
+"</style></head><body style=\" font-family:\'SimSun\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'Microsoft YaHei UI\';\">/AODO/PFI0</span></p></body></html>"))
         self.Tabs.setTabText(self.Tabs.indexOf(self.Lasertab), _translate("MainWindow", "Laser"))
         self.DefinedZerobox.setTitle(_translate("MainWindow", "Using OCT to calibrate Zstage height"))
         self.Gotozero.setText(_translate("MainWindow", "Go to 0"))

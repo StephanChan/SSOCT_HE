@@ -186,12 +186,6 @@ class DnSThread_2(DnSThread):
 class GUI(MainWindow):
     def __init__(self):
         super().__init__()
-        # print(dir(self.ui))
-        # print(self.ui.__dict__)
-        # aa=self.ui.__getattribute__('ACQMode')
-        # if type(aa) == QW.QComboBox:
-        #     print(1)
-        # print(aa.currentText())
         self.log = LOG(self.ui)
         self.ui.RunButton.clicked.connect(self.run_task)
         self.ui.PauseButton.clicked.connect(self.Pause_task)
@@ -450,7 +444,7 @@ class GUI(MainWindow):
         print('Exiting all threads')
         self.Stop_allThreads()
         settings = qc.QSettings("config.ini", qc.QSettings.IniFormat)
-        self.save_settings(settings )
+        self.SaveSettings()
         if self.DnS_thread.isFinished:
             event.accept()
         else:

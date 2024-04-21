@@ -28,13 +28,15 @@ global SIM
 SIM = False
 
 if not SIM:
-    sys.path.append(r"C:\\Program Files (x86)\\ART Technology\\ArtScope\\Samples\\Python\\")
-    
-    from ART_SCOPE_Lib.functions import Functions
-    from ART_SCOPE_Lib.constants import *
-    from ART_SCOPE_Lib.lib import *
-    from ART_SCOPE_Lib.errors import check_for_error, ArtScopeError
-
+    try:
+        sys.path.append(r"C:\\Program Files (x86)\\ART Technology\\ArtScope\\Samples\\Python\\")
+        
+        from ART_SCOPE_Lib.functions import Functions
+        from ART_SCOPE_Lib.constants import *
+        from ART_SCOPE_Lib.lib import *
+        from ART_SCOPE_Lib.errors import check_for_error, ArtScopeError
+    except:
+        SIM = True
 
 class ART8912_finiteTrigger(QThread):
     def __init__(self):

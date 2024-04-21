@@ -22,7 +22,7 @@ class DnSThread(QThread):
     def __init__(self):
         super().__init__()
         self.surf = []
-        self.sliceNum = 1
+        self.sliceNum = 0
         self.tileNum = 1
         self.AlineNum = 1
         self.BlineNum = 1
@@ -66,7 +66,7 @@ class DnSThread(QThread):
                 elif self.item.action == 'restart_tilenum':
                     self.restart_tilenum()
                 elif self.item.action == 'change_slice_number':
-                    self.sliceNum = self.ui.SliceN.value()
+                    self.sliceNum = self.ui.SliceN.value()-1
                     self.ui.CuSlice.setValue(self.sliceNum)
                 elif self.item.action == 'agarTile':
                     self.SurfFilename()
@@ -100,11 +100,7 @@ class DnSThread(QThread):
         self.display_actions = 0
         
     def Display_aline(self, data, raw = False):
-        #data = ctypes.cast(data_address, ctypes.py_object).value 
-        # TODO: make sure fft is shifted
-        # check if displaying before FFT
-        if self.ui.Laser.currentText() == 'Axsun100k':
-            self.Aline_frq = 100000
+        # get number of Z pixels
         if not raw:
             Zpixels = self.ui.DepthRange.value()
         else:
@@ -114,20 +110,15 @@ class DnSThread(QThread):
             elif self.Digitizer == 'ART8912':
                 Zpixels = self.ui.PostSamples_2.value()
                 # data = np.float32(data/pow(2,12))
-        # Xpixels = self.ui.XforAline.value()
-        # Xpixels = np.int32(self.Aline_frq/self.ui.FPSAline.value())
+        # get number of X pixels
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         if self.Digitizer == 'ART8912':
-            if not raw:
-                Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
-            else:
-                Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+            Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+        # get number of Y pixels
         Yrpt = self.ui.BlineAVG.value()
+        # reshape data to [Ypixels*Xpixels, Zpixels]
         data = data.reshape([Yrpt*Xpixels,Zpixels])
-        # data in original state
-        if self.Digitizer == 'ART8912' and raw:
-            Zpixels = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
-            data = data[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]
+
         self.Aline = data
         data = np.float32(np.mean(data,0))
         # float32 data type
@@ -146,6 +137,7 @@ class DnSThread(QThread):
             
     
     def Display_bline(self, data, raw = False):
+        # get number of Z pixels
         if not raw:
             Zpixels = self.ui.DepthRange.value()
         else:
@@ -155,19 +147,15 @@ class DnSThread(QThread):
             elif self.Digitizer == 'ART8912':
                 Zpixels = self.ui.PostSamples_2.value()
                 # data = np.float32(data/pow(2,12))
+        # get number of X pixels
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         if self.Digitizer == 'ART8912':
-            if not raw:
-                Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
-            else:
-                Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+            Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+        # get number of Y pixels
         Yrpt = self.ui.BlineAVG.value()
-        
+        # reshape data
         data = data.reshape([Yrpt,Xpixels,Zpixels])
-        if self.Digitizer == 'ART8912' and raw:
-            Zpixels = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
-            data = data[:,:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]
-        # data in original state
+
         self.Bline = data
         data = np.float32(np.mean(data,0))
         data = np.transpose(data).copy()
@@ -187,6 +175,7 @@ class DnSThread(QThread):
         
         
     def Display_Cscan(self, data, raw = False):
+        # get number of Z pixels
         if not raw:
             Zpixels = self.ui.DepthRange.value()
         else:
@@ -196,20 +185,16 @@ class DnSThread(QThread):
             elif self.Digitizer == 'ART8912':
                 Zpixels = self.ui.PostSamples_2.value()
                 # data = np.float32(data/pow(2,12))
+        # get number of X pixels
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         if self.Digitizer == 'ART8912':
-            if not raw:
-                Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
-            else:
-                Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+            Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+        # get number of Y pixels
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
+        # reshape data
         data = data.reshape([Ypixels,Xpixels,Zpixels])
-        if self.Digitizer == 'ART8912' and raw:
-            Zpixels = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
-            data = data[:,:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]
-        # data in original state
-        self.Cscan = data
 
+        self.Cscan = data
         plane = np.transpose(data[0,:,:]).copy()# has to be first index, otherwise the memory space is not continuous
         pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
         # clear content on the waveformLabel
@@ -241,10 +226,7 @@ class DnSThread(QThread):
         
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         if self.Digitizer == 'ART8912':
-            if not raw:
-                Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
-            else:
-                Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+            Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
         
         #######################################
@@ -260,6 +242,7 @@ class DnSThread(QThread):
         self.ui.SampleMosaic.setPixmap(pixmap)
             
     def Display_SurfScan(self, data, raw = False, args = []):
+        # get number of Z pixels
         if not raw:
             Zpixels = self.ui.DepthRange.value()
         else:
@@ -269,20 +252,14 @@ class DnSThread(QThread):
             elif self.Digitizer == 'ART8912':
                 Zpixels = self.ui.PostSamples_2.value()
                 # data = np.float32(data/pow(2,12))
+        # get number of X pixels
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         if self.Digitizer == 'ART8912':
-            if not raw:
-                Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
-            else:
-                Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+            Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+        # get number of Y pixels
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
         # print('get shape')
         data = data.reshape([Ypixels,Xpixels,Zpixels])
-        # print('reshape')
-        if self.Digitizer == 'ART8912' and raw:
-            Zpixels = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
-            data = data[:,:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]
-
         #######################################
         # for even strips, need to flip data in Y dimension because scanning was in backward direction
         surfX = args[1][0]
@@ -296,7 +273,6 @@ class DnSThread(QThread):
         if np.mod(fileY,2)==1:
             data = np.flip(data,0)
         #######################################
-        # print('flip')
         self.Cscan = data
         
         plane = np.transpose(data[0,:,:]).copy()# has to be first index, otherwise the memory space is not continuous

@@ -9,7 +9,10 @@ import time
 global SIM
 SIM = False
 if not SIM:
-    import cupy
+    try:
+        import cupy
+    except:
+        SIM = True
 import numpy as np
 from Actions import DnSAction
 import os
@@ -80,27 +83,15 @@ class GPUThread(QThread):
         # get depth pixels after FFT
         Pixel_start = self.ui.DepthStart.value()
         Pixel_range = self.ui.DepthRange.value()
-        # print(Pixel_start, Pixel_range)
-        # copy data from global memory
-        # print('GPU using memory loc: ',memoryLoc)
-        # print(self.Memory[memoryLoc].shape)
         if not SIM:
             self.data_CPU = np.float32(self.Memory[memoryLoc].copy())
-            # print('GPU finish copy data')
-            # self.data_CPU = np.zeros()
-            # reshape data as [Alines, Samples]
-            # Alines =np.uint32((self.data_CPU.shape[1])/samples) * self.data_CPU.shape[0]
             Alines =len(self.data_CPU)//samples
-
             self.data_CPU=self.data_CPU.reshape([Alines, samples])
-            # print('GPU finish reshape data')
             # subtract background and remove first 100 samples
             if self.Digitizer == 'ART8912':
                 self.data_CPU = self.data_CPU[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]-self.background
                 samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
             fftAxis = 1
-            # print(self.data_CPU[1:10,1:5])
-            # print('GPU finish chop data')
             # # zero-padding data before FFT
             # if data_CPU.shape[1] != self.length_FFT:
             #     data_padded = np.zeros([Alines, self.length_FFT], dtype = np.float32)
@@ -111,23 +102,15 @@ class GPUThread(QThread):
             # start = time.time()
             # transfer data to GPU
             data_GPU  = cupy.array(self.data_CPU)
-            # print('GPU finish send data')
             dispersion_GPU = cupy.array(self.dispersion)
             # window function and dispersion compensation
             data_GPU = self.winfunc(data_GPU, dispersion_GPU)
-            # print('GPU finish WINDOW data')
             # FFT
             data_GPU = cupy.fft.fft(data_GPU, axis=fftAxis)/samples
-            # print('GPU finish FFT data')
             # calculate absolute value and only keep depth range specified
             data_GPU = cupy.absolute(data_GPU[:,Pixel_start:Pixel_start+Pixel_range])
-            # print('GPU finish trim data')
             # transfer data back to computer
             self.data_CPU = cupy.asnumpy(data_GPU)*self.AMPLIFICATION
-            # print(self.data_CPU.shape)
-            # print('GPU finish receive data')
-            # print('FFT took ',time.time()-start,' seconds\n')
-            # data_CPU = data_CPU.reshape([shape[0],Pixel_range * np.uint32(Alines/shape[0])])
             # display and save data, data type is float32
             an_action = DnSAction(mode, data = self.data_CPU, args = args) # data in Memory[memoryLoc]
             self.DnSQueue.put(an_action)
@@ -150,46 +133,65 @@ class GPUThread(QThread):
             # print('send for display')
             if self.ui.Gotozero.isChecked() and self.ui.ACQMode.currentText() == 'SingleAline':
                 self.GPU2weaverQueue.put(data_CPU)
+            # print(self.ui.DSing.isChecked())
             if self.ui.DSing.isChecked():
                 self.GPU2weaverQueue.put(data_CPU)
                 # print('GPU data to weaver')
-            print('GPU finish')
+            # print('GPU finish')
             
         
     def cpuFFT(self, mode, memoryLoc, args):
-
+        # get samples per Aline
         if self.Digitizer == 'ATS9351':
             samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
         elif self.Digitizer == 'ART8912':
-            samples = self.ui.PostSamples_2.value()
+            samples = self.ui.PostSamples_2.value()# - self.ui.DelaySamples.value()
+        # get depth pixels after FFT
         Pixel_start = self.ui.DepthStart.value()
         Pixel_range = self.ui.DepthRange.value()
-        data_CPU = self.Memory[memoryLoc].copy()
-        
-        Alines =np.uint32((data_CPU.shape[1])/samples) * data_CPU.shape[0]
-        
-        data_CPU=data_CPU.reshape([Alines, samples])
-        if self.Digitizer == 'ATS9351':
-            data_CPU=np.float32(data_CPU/65535-0.5)
-        elif self.Digitizer == 'ART8912':
-            data_CPU=np.float32(data_CPU/4095-0.5)
-        fftAxis = 1
-        # if data_CPU.shape[1] != self.length_FFT:
-        #     data_padded = np.zeros([Alines, self.length_FFT], dtype = np.float32)
-        #     tmp = np.uint16((self.length_FFT-samples)/2)
-        #     data_padded[:,tmp:samples+tmp] = data_CPU
-        # else:
-        #     data_padded = data_CPU
+        if not SIM:
+            self.data_CPU = np.float32(self.Memory[memoryLoc].copy())
+            Alines =len(self.data_CPU)//samples
+            self.data_CPU=self.data_CPU.reshape([Alines, samples])
+            # subtract background and remove first 100 samples
+            if self.Digitizer == 'ART8912':
+                self.data_CPU = self.data_CPU[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]-self.background
+                samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
+            fftAxis = 1
+            # # zero-padding data before FFT
+            # if data_CPU.shape[1] != self.length_FFT:
+            #     data_padded = np.zeros([Alines, self.length_FFT], dtype = np.float32)
+            #     tmp = np.uint16((self.length_FFT-samples)/2)
+            #     data_padded[:,tmp:samples+tmp] = data_CPU
+            # else:
+            #     data_padded = data_CPU
             
-        data_CPU = data_CPU*self.dispersion
-        data_CPU = np.abs(np.fft.fft(data_CPU, axis=fftAxis))/samples
-        
-        
-        data_CPU = data_CPU[:,Pixel_start: Pixel_start+Pixel_range ]
-        # data_CPU = data_CPU.reshape([shape[0],Pixel_range * np.uint32(Alines/shape[0])])
-        an_action = DnSAction(mode, data_CPU, args) # data in Memory[memoryLoc]
-        self.DnSQueue.put(an_action)
-        
+            self.data_CPU = self.data_CPU*self.dispersion
+            self.data_CPU = np.abs(np.fft.fft(self.data_CPU, axis=fftAxis))/samples
+            
+            
+            self.data_CPU = self.data_CPU[:,Pixel_start: Pixel_start+Pixel_range ]
+            # data_CPU = data_CPU.reshape([shape[0],Pixel_range * np.uint32(Alines/shape[0])])
+            an_action = DnSAction(mode, self.data_CPU, args) # data in Memory[memoryLoc]
+            self.DnSQueue.put(an_action)
+        else:
+            self.AlinesPerBline = self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2+self.ui.PostClock.value()
+            if self.ui.ACQMode.currentText() in ['SingleBline', 'SingleAline','RptBline', 'RptAline']:
+                self.triggerCount = self.ui.BlineAVG.value() * self.AlinesPerBline
+            elif self.ui.ACQMode.currentText() in ['SingleCscan', 'SurfScan','SurfScan+Slice']:
+                self.triggerCount = self.ui.BlineAVG.value() * self.ui.Ysteps.value() * self.AlinesPerBline
+            data_CPU = 100*np.random.random([self.triggerCount, Pixel_range])
+            an_action = DnSAction(mode, data = data_CPU, args = args) # data in Memory[memoryLoc]
+            self.DnSQueue.put(an_action)
+            # print('send for display')
+            if self.ui.Gotozero.isChecked() and self.ui.ACQMode.currentText() == 'SingleAline':
+                self.GPU2weaverQueue.put(data_CPU)
+            # print(self.ui.DSing.isChecked())
+            if self.ui.DSing.isChecked():
+                self.GPU2weaverQueue.put(data_CPU)
+                # print('GPU data to weaver')
+            # print('GPU finish')
+            
     def update_Dispersion(self):
         if self.Digitizer == 'ATS9351':
             samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
@@ -253,10 +255,11 @@ class GPUThread(QThread):
             print('using 2048 as background...')
             
         if  len(self.background) == samples:
-            message = 'using background subtraction...'
-            print(message)
+            pass
+            # message = 'using background subtraction...'
+            # print(message)
             # self.ui.PrintOut.append(message)
-            self.log.write(message)
+            # self.log.write(message)
         else:
             self.ui.statusbar.showMessage('however, background length unmatch sample size, no background used...')
             # self.ui.PrintOut.append('however, background length unmatch sample size, no background used...')
