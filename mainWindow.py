@@ -140,6 +140,11 @@ class MainWindow(QMainWindow):
                     self.ui.__getattribute__(ii).setText(settings.value(ii))
                 except:
                     print(ii, ' setting missing, using default...')
+            # elif type(self.ui.__getattribute__(ii)) == QW.QPushButton:
+            #     try:
+            #         self.ui.__getattribute__(ii).setChecked(settings.value(ii))
+            #     except:
+            #         print(ii, ' setting missing, using default...')
                 
     def SaveSettings(self):
         settings = qc.QSettings("config.ini", qc.QSettings.IniFormat)

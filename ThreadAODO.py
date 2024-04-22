@@ -184,9 +184,7 @@ class AODOThread(QThread):
                                                    postclocks = self.ui.PostClock.value(), \
                                                    YStepSize = self.ui.YStepSize.value(), \
                                                    YSteps =  self.ui.Ysteps.value(), \
-                                                   BVG = self.ui.BlineAVG.value(),
-                                                   FPSAline = self.ui.FPSAline.value(),
-                                                   XforAline = self.ui.XforAline.value())
+                                                   BVG = self.ui.BlineAVG.value())
             ######################################################################################
             # init AO task
             self.AOtask = ni.Task('AOtask')

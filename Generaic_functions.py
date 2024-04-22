@@ -164,16 +164,17 @@ def GenStageWave_ramp(distance, AlineTriggers):
     return DOwaveform
 
 def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma5X',\
-            preclocks = 50, postclocks = 200, YStepSize = 1, YSteps = 200, BVG = 1, FPSAline=10, XforAline=100):
+            preclocks = 50, postclocks = 200, YStepSize = 1, YSteps = 200, BVG = 1):
     # DO clock is swept source A-line trigger at 100kHz
     # DO configure: port0 line 0 for X stage, port0 line 1 for Y stage, port 0 line 2 for Z stage, port 0 line 3 for Digitizer enable
     if mode == 'RptAline' or mode == 'SingleAline':
         # RptAline is for checking Aline profile, we don't need to capture each Aline, only display 30 Alines per second\
         # if one wants to capture each Aline, they can set X and Y step size to be 0 and capture Cscan instead
         # 33 frames per second, how many samples for each frame
-        one_cycle_samples = np.int32(Aline_frq/FPSAline)
+        one_cycle_samples = XSteps * AVG + 2 * preclocks + postclocks
         # trigger enbale waveform generation
-        DOwaveform = np.append(np.zeros(one_cycle_samples-XforAline), pow(2,ATSenable)*np.ones(XforAline))
+        DOwaveform = np.append(np.zeros(preclocks), pow(2,ATSenable)*np.ones(XSteps * AVG))
+        DOwaveform = np.append(DOwaveform, np.zeros(preclocks + postclocks))
         CscanAO = np.ones(BVG*len(DOwaveform)) * Galvo_bias
         CscanDO = np.zeros(BVG*len(DOwaveform))
         for ii in range(BVG):
