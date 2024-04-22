@@ -7,6 +7,7 @@ Created on Tue Dec 12 16:35:04 2023
 
 from GUI import Ui_MainWindow
 import os
+from PyQt5 import QtWidgets as QW
 from PyQt5.QtWidgets import  QMainWindow, QFileDialog, QWidget, QVBoxLayout
 import PyQt5.QtCore as qc
 import numpy as np
@@ -90,6 +91,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.LoadSettings()
         if maya_installed:
             self.ui.mayavi_widget = MayaviQWidget()
             self.ui.mayavi_widget.setMinimumSize(qc.QSize(100, 100))
@@ -100,18 +102,59 @@ class MainWindow(QMainWindow):
             # self.ui.verticalLayout_2.addWidget(self.ui.mayavi_widget)
             self.ui.verticalLayout_2.replaceWidget(self.ui.tmp_label, self.ui.mayavi_widget)
         #################### load configuration settings
-        settings = qc.QSettings("config.ini", qc.QSettings.IniFormat)
         
-        try:
-            self.load_settings(settings)
-        except Exception as error:
-            print('settings reload failed, using default settings')
-            print(traceback.format_exc())
         self.Update_laser()
         self.update_galvoXwaveform()
         self.update_Mosaic()
         self.connectActions()
         
+
+        
+    def LoadSettings(self):
+        settings = qc.QSettings("config.ini", qc.QSettings.IniFormat)
+        for ii in dir(self.ui):
+            if ii == 'ACQMode':
+                pass
+            elif type(self.ui.__getattribute__(ii)) == QW.QComboBox:
+                try:
+                    self.ui.__getattribute__(ii).setCurrentText(settings.value(ii))
+                except:
+                    print(ii, ' setting missing, using default...')
+            elif type(self.ui.__getattribute__(ii)) == QW.QDoubleSpinBox:
+                try:
+                    self.ui.__getattribute__(ii).setValue(np.float32(settings.value(ii)))
+                except:
+                    print(ii, ' setting missing, using default...')
+            elif type(self.ui.__getattribute__(ii)) == QW.QSpinBox:
+                try:
+                    self.ui.__getattribute__(ii).setValue(np.int16(settings.value(ii)))
+                except:
+                    print(ii, ' setting missing, using default...')
+            elif type(self.ui.__getattribute__(ii)) == QW.QTextEdit:
+                try:
+                    self.ui.__getattribute__(ii).setText(settings.value(ii))
+                except:
+                    print(ii, ' setting missing, using default...')
+            elif type(self.ui.__getattribute__(ii)) == QW.QLineEdit:
+                try:
+                    self.ui.__getattribute__(ii).setText(settings.value(ii))
+                except:
+                    print(ii, ' setting missing, using default...')
+                
+    def SaveSettings(self):
+        settings = qc.QSettings("config.ini", qc.QSettings.IniFormat)
+        for ii in dir(self.ui):
+            if type(self.ui.__getattribute__(ii)) == QW.QComboBox:
+                settings.setValue(ii,self.ui.__getattribute__(ii).currentText())
+            elif type(self.ui.__getattribute__(ii)) == QW.QDoubleSpinBox:
+                settings.setValue(ii,self.ui.__getattribute__(ii).value())
+            elif type(self.ui.__getattribute__(ii)) == QW.QSpinBox:
+                settings.setValue(ii,self.ui.__getattribute__(ii).value())
+            elif type(self.ui.__getattribute__(ii)) == QW.QTextEdit:
+                settings.setValue(ii,self.ui.__getattribute__(ii).toPlainText())
+            elif type(self.ui.__getattribute__(ii)) == QW.QLineEdit:
+                settings.setValue(ii,self.ui.__getattribute__(ii).text())
+            
     def connectActions(self):
         self.ui.Xsteps.valueChanged.connect(self.update_galvoXwaveform)
         self.ui.XStepSize.valueChanged.connect(self.update_galvoXwaveform)
@@ -298,137 +341,5 @@ class MainWindow(QMainWindow):
         else:
             self.ui.statusbar.showMessage('Laser invalid!!!')
     
-    
-    def load_settings(self,settings):
-        self.ui.FFTresults.setCurrentText(settings.value("FFTresults"))
-        self.ui.Objective.setCurrentText(settings.value("Objective"))
-        self.ui.Xsteps.setValue(np.int16(settings.value('Xsteps')))
-        self.ui.XStepSize.setValue(np.float32(settings.value('XStepSize')))
-        self.ui.XBias.setValue(np.float32(settings.value('XBias')))
-        self.ui.AlineAVG.setValue(np.int16(settings.value('AlineAVG')))
-        self.ui.Ysteps.setValue(np.int16(settings.value('Ysteps')))
-        self.ui.YStepSize.setValue(np.float32(settings.value('YStepSize')))
-        self.ui.BlineAVG.setValue(np.int16(settings.value('BlineAVG')))
-        self.ui.DepthStart.setValue(np.int16(settings.value('DepthStart')))
-        self.ui.DepthRange.setValue(np.int16(settings.value('DepthRange')))
-        self.ui.PreClock.setValue(np.int16(settings.value('PreClock')))
-        self.ui.PostClock.setValue(np.int16(settings.value('PostClock')))
-        self.ui.XStart.setValue(np.float32(settings.value('XStart')))
-        self.ui.XStop.setValue(np.float32(settings.value('XStop')))
-        self.ui.YStart.setValue(np.float32(settings.value('YStart')))
-        self.ui.YStop.setValue(np.float32(settings.value('YStop')))
-        self.ui.Overlap.setValue(np.float32(settings.value('Overlap')))
-        self.ui.ImageZStart.setValue(np.float32(settings.value('ImageZStart')))
-        self.ui.ImageZDepth.setValue(np.float32(settings.value('ImageZDepth')))
-        self.ui.ImageZnumber.setValue(np.int16(settings.value('ImageZnumber')))
-        self.ui.SliceZStart.setValue(np.float32(settings.value('SliceZStart')))
-        self.ui.SliceZDepth.setValue(np.float32(settings.value('SliceZDepth')))
-        self.ui.SliceZnumber.setValue(np.int16(settings.value('SliceZnumber')))
-        self.ui.PostSamples_2.setValue(np.int16(settings.value('PostSamples_2')))
-        self.ui.TrigDura.setValue(np.int16(settings.value('TrigDura')))
-        self.ui.TriggerTimeout_2.setValue(np.int16(settings.value('TriggerTimeout_2')))
-        self.ui.Disp_DIR.setText(settings.value('Disp_DIR'))
-        self.ui.DelaySamples.setValue(np.int16(settings.value('DelaySamples')))
-        self.ui.XPosition.setValue(np.float32(settings.value('XPosition')))
-        self.ui.YPosition.setValue(np.float32(settings.value('YPosition')))
-        self.ui.ZPosition.setValue(np.float32(settings.value('ZPosition')))
-        self.ui.BG_DIR.setText(settings.value('BG_DIR'))
-        self.ui.definedZero.setValue(np.float32(settings.value('definedZero')))
-        self.ui.XdefinedZero.setValue(np.float32(settings.value('XdefinedZero')))
-        self.ui.YdefinedZero.setValue(np.float32(settings.value('YdefinedZero')))
-        self.ui.KnownDepth.setValue(np.int16(settings.value('KnownDepth')))
-        self.ui.DefinedZeroRange.setValue(np.int16(settings.value('DefinedZeroRange')))
-        self.ui.AlineCleanTop.setValue(np.int16(settings.value('AlineCleanTop')))
-        self.ui.AlineCleanBot.setValue(np.int16(settings.value('AlineCleanBot')))
-        self.ui.AlinePeakMax.setValue(np.int16(settings.value('AlinePeakMax')))
-        self.ui.AlinePeakMin.setValue(np.int16(settings.value('AlinePeakMin')))
-        self.ui.XforAline.setValue(np.int16(settings.value('XforAline')))
-        self.ui.FPSAline.setValue(np.int16(settings.value('FPSAline')))
-        self.ui.TrimSamples.setValue(np.int16(settings.value('TrimSamples')))
-        self.ui.Xmin.setValue(np.int16(settings.value('Xmin')))
-        self.ui.Ymin.setValue(np.int16(settings.value('Ymin')))
-        self.ui.Zmin.setValue(np.int16(settings.value('Zmin')))
-        self.ui.Xmax.setValue(np.int16(settings.value('Xmax')))
-        self.ui.Ymax.setValue(np.int16(settings.value('Ymax')))
-        self.ui.Zmax.setValue(np.int16(settings.value('Zmax')))
-        self.ui.SliceX.setValue(np.float32(settings.value('SliceX')))
-        self.ui.SliceY.setValue(np.float32(settings.value('SliceY')))
-        self.ui.SliceZStart.setValue(np.float32(settings.value('SliceZStart')))
-        self.ui.SliceSpeed.setValue(np.float32(settings.value('SliceSpeed')))
-        self.ui.SliceLength.setValue(np.float32(settings.value('SliceLength')))
-        self.ui.scale.setValue(np.int16(settings.value('scale')))
-        self.ui.AgarValue.setValue(np.float32(settings.value('AgarValue')))
-        
-        self.ui.XSpeed.setValue(np.float32(settings.value('XSpeed')))
-        self.ui.YSpeed.setValue(np.float32(settings.value('YSpeed')))
-        self.ui.ZSpeed.setValue(np.float32(settings.value('ZSpeed')))
-        
-    def save_settings(self,settings):
-        settings.setValue("FFTresults",self.ui.FFTresults.currentText())
-        settings.setValue("Objective",self.ui.Objective.currentText())
-        settings.setValue("Xsteps",self.ui.Xsteps.value())
-        settings.setValue("XStepSize",self.ui.XStepSize.value())
-        settings.setValue("XBias",self.ui.XBias.value())
-        settings.setValue("AlineAVG",self.ui.AlineAVG.value())
-        settings.setValue("Ysteps",self.ui.Ysteps.value())
-        settings.setValue("YStepSize",self.ui.YStepSize.value())
-        settings.setValue("BlineAVG",self.ui.BlineAVG.value())
-        settings.setValue("DepthStart",self.ui.DepthStart.value())
-        settings.setValue("DepthRange",self.ui.DepthRange.value())
-        settings.setValue("PreClock",self.ui.PreClock.value())
-        settings.setValue("PostClock",self.ui.PostClock.value())
-        settings.setValue("XStart",self.ui.XStart.value())
-        settings.setValue("XStop",self.ui.XStop.value())
-        settings.setValue("YStart",self.ui.YStart.value())
-        settings.setValue("YStop",self.ui.YStop.value())
-        settings.setValue("Overlap",self.ui.Overlap.value())
-        settings.setValue("ImageZStart",self.ui.ImageZStart.value())
-        settings.setValue("ImageZDepth",self.ui.ImageZDepth.value())
-        settings.setValue("ImageZnumber",self.ui.ImageZnumber.value())
-        settings.setValue("SliceZStart",self.ui.SliceZStart.value())
-        settings.setValue("SliceZDepth",self.ui.SliceZDepth.value())
-        settings.setValue("SliceZnumber",self.ui.SliceZnumber.value())
-        settings.setValue("PostSamples_2",self.ui.PostSamples_2.value())
-        settings.setValue("TrigDura",self.ui.TrigDura.value())
-        settings.setValue("TriggerTimeout_2",self.ui.TriggerTimeout_2.value())
-        settings.setValue("Disp_DIR",self.ui.Disp_DIR.text())
-        settings.setValue("DelaySamples",self.ui.DelaySamples.value())
-        settings.setValue("XPosition",self.ui.XPosition.value())
-        settings.setValue("YPosition",self.ui.YPosition.value())
-        settings.setValue("ZPosition",self.ui.ZPosition.value())
-        settings.setValue("BG_DIR",self.ui.BG_DIR.text())
-        settings.setValue("definedZero",self.ui.definedZero.value())
-        settings.setValue("KnownDepth",self.ui.KnownDepth.value())
-        settings.setValue("DefinedZeroRange",self.ui.DefinedZeroRange.value())
-        settings.setValue("XdefinedZero",self.ui.XdefinedZero.value())
-        settings.setValue("YdefinedZero",self.ui.YdefinedZero.value())
-        settings.setValue("AlineCleanTop",self.ui.AlineCleanTop.value())
-        settings.setValue("AlineCleanBot",self.ui.AlineCleanBot.value())
-        settings.setValue("AlinePeakMax",self.ui.AlinePeakMax.value())
-        settings.setValue("AlinePeakMin",self.ui.AlinePeakMin.value())
-        settings.setValue("XforAline",self.ui.XforAline.value())
-        settings.setValue("FPSAline",self.ui.FPSAline.value())
-        settings.setValue("TrimSamples",self.ui.TrimSamples.value())
-        settings.setValue("Xmin",self.ui.Xmin.value())
-        settings.setValue("Ymin",self.ui.Ymin.value())
-        settings.setValue("Zmin",self.ui.Zmin.value())
-        settings.setValue("Xmax",self.ui.Xmax.value())
-        settings.setValue("Ymax",self.ui.Ymax.value())
-        settings.setValue("Zmax",self.ui.Zmax.value())
-        settings.setValue("SliceX",self.ui.SliceX.value())
-        settings.setValue("SliceY",self.ui.SliceY.value())
-        settings.setValue("SliceZStart",self.ui.SliceZStart.value())
-        settings.setValue("SliceSpeed",self.ui.SliceSpeed.value())
-        settings.setValue("SliceLength",self.ui.SliceLength.value())
-        settings.setValue("scale",self.ui.scale.value())
-        settings.setValue("AgarValue",self.ui.AgarValue.value())
-        
-        settings.setValue("XSpeed",self.ui.XSpeed.value())
-        settings.setValue("YSpeed",self.ui.YSpeed.value())
-        settings.setValue("ZSpeed",self.ui.ZSpeed.value())
-
-        
-        
-        
         
         

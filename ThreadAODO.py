@@ -20,9 +20,13 @@ SIM = False
 ###########################################
 from PyQt5.QtCore import  QThread
 if not SIM:
-    import nidaqmx as ni
-    from nidaqmx.constants import AcquisitionType as Atype
-    from nidaqmx.constants import Edge
+    try:
+        import nidaqmx as ni
+        from nidaqmx.constants import AcquisitionType as Atype
+        from nidaqmx.constants import Edge
+    except:
+        SIM = True
+    
 from Generaic_functions import GenAODO
 import time
 import traceback
