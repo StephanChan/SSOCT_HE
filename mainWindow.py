@@ -9,6 +9,7 @@ from GUI import Ui_MainWindow
 import os
 from PyQt5 import QtWidgets as QW
 from PyQt5.QtWidgets import  QMainWindow, QFileDialog, QWidget, QVBoxLayout
+from Dialogs import BlineDialog, StageDialog
 import PyQt5.QtCore as qc
 import numpy as np
 from Actions import *
@@ -92,6 +93,8 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.LoadSettings()
+        if self.ui.SliceDir.isChecked():
+            self.ui.SliceDir.setText('Backward')
         if maya_installed:
             self.ui.mayavi_widget = MayaviQWidget()
             self.ui.mayavi_widget.setMinimumSize(qc.QSize(100, 100))
@@ -140,11 +143,11 @@ class MainWindow(QMainWindow):
                     self.ui.__getattribute__(ii).setText(settings.value(ii))
                 except:
                     print(ii, ' setting missing, using default...')
-            # elif type(self.ui.__getattribute__(ii)) == QW.QPushButton:
-            #     try:
-            #         self.ui.__getattribute__(ii).setChecked(settings.value(ii))
-            #     except:
-            #         print(ii, ' setting missing, using default...')
+            elif type(self.ui.__getattribute__(ii)) == QW.QPushButton:
+                try:
+                    self.ui.__getattribute__(ii).setChecked(settings.value(ii))
+                except:
+                    print(ii, ' setting missing, using default...')
                 
     def SaveSettings(self):
         settings = qc.QSettings("config.ini", qc.QSettings.IniFormat)
@@ -159,6 +162,8 @@ class MainWindow(QMainWindow):
                 settings.setValue(ii,self.ui.__getattribute__(ii).toPlainText())
             elif type(self.ui.__getattribute__(ii)) == QW.QLineEdit:
                 settings.setValue(ii,self.ui.__getattribute__(ii).text())
+            elif type(self.ui.__getattribute__(ii)) == QW.QPushButton:
+                settings.setValue(ii,self.ui.__getattribute__(ii).isChecked())
             
     def connectActions(self):
         self.ui.Xsteps.valueChanged.connect(self.update_galvoXwaveform)

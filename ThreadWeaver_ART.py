@@ -8,6 +8,7 @@ Created on Wed Jan 24 11:10:17 2024
 #################################################################
 # THIS KING THREAD IS USING ART8912, WHICH IS MASTER AND the AODO board WILL BE SLAVE
 from PyQt5.QtCore import  QThread
+from PyQt5.QtWidgets import QDialog
 import time
 import numpy as np
 from Generaic_functions import *
@@ -24,6 +25,7 @@ ZPIXELSIZE = 5 # um, axial pixel size
 class WeaverThread(QThread):
     def __init__(self):
         super().__init__()
+        
         self.mosaic = None
         self.exit_message = 'ACQ thread successfully exited'
         
@@ -50,7 +52,11 @@ class WeaverThread(QThread):
                     self.log.write(message)
                     
                 elif self.item.action == 'SurfScan':
-                    interrupt, status = self.SurfScan()
+                    interrupt = self.SurfPreScan()
+                    if not interrupt == 'Stop':
+                        interrupt, status = self.SurfScan()
+                    else:
+                        status = "action aborted by user..."
                     # reset RUN button
                     self.ui.RunButton.setChecked(False)
                     self.ui.RunButton.setText('Run')
@@ -351,7 +357,7 @@ class WeaverThread(QThread):
                                         self.ui.YStop.value(),\
                                         self.ui.Xsteps.value()*self.ui.XStepSize.value()/1000,\
                                         self.ui.Overlap.value())
-
+        total_stripes = len(self.Mosaic)
         # calculate the number of Cscans per stripe
         Ystep = self.ui.YStepSize.value()*self.ui.Ysteps.value()
         CscansPerStripe = np.int16((self.ui.YStop.value()-self.ui.YStart.value())*1000/Ystep)
@@ -388,7 +394,15 @@ class WeaverThread(QThread):
             self.ui.XPosition.setValue(self.Mosaic[0].x)
             an_action = AODOAction('Xmove2')
             self.AODOQueue.put(an_action)
-            tmp = self.StagebackQueue.get()
+            self.StagebackQueue.get()
+            
+            # Auto adjust focus according to surface height in X min and X max
+            Ztilt = (self.ui.XStopHeight.value()-self.ui.XStartHeight.value())/total_stripes
+            # print(Ztilt, self.ui.ZPosition.value(), self.ui.ZPosition.value()+Ztilt)
+            self.ui.ZPosition.setValue(self.ui.ZPosition.value()+Ztilt)
+            an_action = AODOAction('Zmove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
             #######################################################################
             # update scan direction and agarTiles for each new strip
             scan_direction = np.uint32(np.mod(scan_direction+1,2))
@@ -491,6 +505,7 @@ class WeaverThread(QThread):
         save = self.ui.Save.isChecked()
         FFTDevice = self.ui.FFTDevice.currentText()
         scale = self.ui.scale.value()
+        Zpos = self.ui.ZPosition.value()
         # set downsampled FOV
         self.ui.Xsteps.setValue(Xsteps)
         self.ui.Ysteps.setValue(Ysteps//10)
@@ -513,7 +528,7 @@ class WeaverThread(QThread):
                                         self.ui.YStop.value(),\
                                         self.ui.Xsteps.value()*self.ui.XStepSize.value()/1000,\
                                         self.ui.Overlap.value())
-
+        total_stripes = len(self.Mosaic)
         # calculate the number of Cscans per stripe
         Ystep = self.ui.YStepSize.value()*self.ui.Ysteps.value()
         CscansPerStripe = np.int16((self.ui.YStop.value()-self.ui.YStart.value())*1000\
@@ -531,7 +546,6 @@ class WeaverThread(QThread):
         self.DnSQueue.put(an_action)
         # init tile threshold array
         self.tile_flag = np.zeros((len(self.Mosaic),CscansPerStripe),dtype = np.uint8)
-        self.tile_surf = np.zeros((len(self.Mosaic),CscansPerStripe),dtype = np.float32)
         interrupt = None
         stripes = 1
         scan_direction = 0 # init scan direction to be backward
@@ -555,6 +569,15 @@ class WeaverThread(QThread):
             self.AODOQueue.put(an_action)
             self.StagebackQueue.get()
             
+            # Auto adjust focus according to surface height in X min and X max
+            Ztilt = (self.ui.XStopHeight.value()-self.ui.XStartHeight.value())/total_stripes
+            # print(Ztilt, self.ui.ZPosition.value(), self.ui.ZPosition.value()+Ztilt)
+            self.ui.ZPosition.setValue(self.ui.ZPosition.value()+Ztilt)
+            
+            an_action = AODOAction('Zmove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            
             scan_direction = np.uint32(np.mod(scan_direction+1,2))
             # configure AODO
             an_action = AODOAction('ConfigTask', scan_direction)
@@ -572,14 +595,14 @@ class WeaverThread(QThread):
                 # start ATS9351 for one Cscan acquisition
                 an_action = DAction('StartAcquire')
                 self.DQueue.put(an_action)
-                start = time.time()
+                # start = time.time()
                 ###################################### collecting data
                 # collect data from digitizer
                 an_action = self.DbackQueue.get() # never time out
-                message = 'time to fetch data: '+str(round(time.time()-start,3))+'s'
+                # message = 'time to fetch data: '+str(round(time.time()-start,3))+'s'
                 # self.ui.PrintOut.append(message)
-                print(message)
-                self.log.write(message)
+                # print(message)
+                # self.log.write(message)
                 memoryLoc = an_action.action
                 ####################################### display data 
                 # need to do FFT before display and save
@@ -594,7 +617,7 @@ class WeaverThread(QThread):
                 value = np.mean(cscan)
                 if value > self.ui.AgarValue.value():
                     self.tile_flag[stripes - 1][cscans] = 1
-                    self.tile_surf[stripes - 1][cscans] = self.autoFocus(cscan)
+                    # self.tile_surf[stripes - 1][cscans] = self.autoFocus(cscan)
                 
                 # increment files imaged
                 self.ui.statusbar.showMessage('finished '+str(stripes)+'th strip, '+str(cscans)+'th Cscan ')
@@ -622,7 +645,11 @@ class WeaverThread(QThread):
         self.ui.Save.setChecked(save)
         self.ui.FFTDevice.setCurrentText(FFTDevice)
         self.ui.scale.setValue(scale)
-
+        
+        self.ui.ZPosition.setValue(Zpos)
+        an_action = AODOAction('Zmove2')
+        self.AODOQueue.put(an_action)
+        self.StagebackQueue.get()
         # print(self.tile_flag)
         return interrupt
     
@@ -633,13 +660,13 @@ class WeaverThread(QThread):
         cscan =cscan.reshape([Ypixels,Xpixels,cscan.shape[1]])
         cscan = cscan[:,::50, :]
         cscan = cscan.reshape([Ypixels*Xpixels//50, cscan.shape[2]])
-        # print(cscan.shape)
+        print(cscan.shape)
         aip = np.mean(cscan,1)
         # get mask of tissue
         mask = aip > self.ui.AgarValue.value()
         # get Alines of tissue
         tissue_vol = cscan[mask,:]
-        # print(tissue_vol.shape)
+        print(tissue_vol.shape)
         # find tissue surface
         surf_profile = np.zeros(tissue_vol.shape[0])
         for ii in range(tissue_vol.shape[0]):
@@ -752,7 +779,7 @@ class WeaverThread(QThread):
                 message = 'user stopped acquisition...'
                 return message
             ########################################################
-            self.ui.ZPosition.setValue(self.ui.ImageZStart.value()+ii*self.ui.ImageZDepth.value()/1000)
+            self.ui.ZPosition.setValue(self.ui.XStartHeight.value()+ii*self.ui.ImageZDepth.value()/1000)
             an_action = AODOAction('Zmove2')
             self.AODOQueue.put(an_action)
             self.StagebackQueue.get()
@@ -794,12 +821,6 @@ class WeaverThread(QThread):
         #     return message
         # self.ui.statusbar.showMessage(message)
         # go to start X
-        # start vibratome
-        self.ui.VibEnabled.setText('Stop Vibratome')
-        self.ui.VibEnabled.setChecked(True)
-        an_action = AODOAction('startVibratome')
-        self.AODOQueue.put(an_action)
-        self.StagebackQueue.get()
         
         self.ui.XPosition.setValue(self.ui.SliceX.value())
         an_action = AODOAction('Xmove2')
@@ -810,13 +831,6 @@ class WeaverThread(QThread):
         interrupt = self.check_interrupt()
         if interrupt == 'Stop':
             message = 'user stopped acquisition...'
-        ########################################################
-            # stop vibratome
-            self.ui.VibEnabled.setText('Start Vibratome')
-            self.ui.VibEnabled.setChecked(False)
-            an_action = AODOAction('stopVibratome')
-            self.AODOQueue.put(an_action)
-            self.StagebackQueue.get()
             return message
         
         # go to start Y
@@ -829,14 +843,14 @@ class WeaverThread(QThread):
         interrupt = self.check_interrupt()
         if interrupt == 'Stop':
             message = 'user stopped acquisition...'
-        ########################################################
-            # stop vibratome
-            self.ui.VibEnabled.setText('Start Vibratome')
-            self.ui.VibEnabled.setChecked(False)
-            an_action = AODOAction('stopVibratome')
-            self.AODOQueue.put(an_action)
-            self.StagebackQueue.get()
             return message
+        
+        # start vibratome
+        self.ui.VibEnabled.setText('Stop Vibratome')
+        self.ui.VibEnabled.setChecked(True)
+        an_action = AODOAction('startVibratome')
+        self.AODOQueue.put(an_action)
+        self.StagebackQueue.get()
         
         # go to start Z
         self.ui.ZPosition.setValue(zpos)

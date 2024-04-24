@@ -30,6 +30,7 @@ import sys
 import numpy as np
 from queue import Queue
 from PyQt5.QtWidgets import QApplication
+from Dialogs import BlineDialog, StageDialog
 from PyQt5 import QtWidgets as QW
 import PyQt5.QtCore as qc
 from mainWindow import MainWindow
@@ -272,9 +273,25 @@ class GUI(MainWindow):
         if self.ui.ACQMode.currentText() in ['RptAline','RptBline','RptCscan','SurfScan','SurfScan+Slice','RptSlice']:
             if self.ui.RunButton.isChecked():
                 self.ui.RunButton.setText('Stop')
-                
-                an_action = WeaverAction(self.ui.ACQMode.currentText())
-                WeaverQueue.put(an_action)
+                # for surfScan and SurfSlice, popup a dialog to double check stage position
+                if self.ui.ACQMode.currentText() in ['SurfScan','SurfScan+Slice','RptSlice']:
+                    dlg = StageDialog( self.ui.XPosition.value(), self.ui.YPosition.value(), self.ui.ZPosition.value())
+                    dlg.setWindowTitle("double-check stage position")
+                    if dlg.exec():
+                        an_action = WeaverAction(self.ui.ACQMode.currentText())
+                        WeaverQueue.put(an_action)
+                    else:
+                        # reset RUN button
+                        self.ui.RunButton.setChecked(False)
+                        self.ui.RunButton.setText('Run')
+                        self.ui.PauseButton.setChecked(False)
+                        self.ui.PauseButton.setText('Pause')
+                        print('user aborted due to stage position incorrect...')
+                        
+                else:
+                    # for other actions, directly do the task
+                    an_action = WeaverAction(self.ui.ACQMode.currentText())
+                    WeaverQueue.put(an_action)
             else:
                 # time.sleep(0.5)
                 self.ui.RunButton.setText('Run')
@@ -290,7 +307,7 @@ class GUI(MainWindow):
             # self.CenterGalvo()
         else:
             self.Slice()
-
+        
     def InitStages(self):
         an_action = AODOAction('Init')
         AODOQueue.put(an_action)

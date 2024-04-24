@@ -225,8 +225,8 @@ class DnSThread(QThread):
     def Init_SurfScan(self, raw = False, args = []):
         
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
-        if self.Digitizer == 'ART8912':
-            Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+        # if self.Digitizer == 'ART8912':
+        #     Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
         
         #######################################
@@ -260,6 +260,9 @@ class DnSThread(QThread):
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
         # print('get shape')
         data = data.reshape([Ypixels,Xpixels,Zpixels])
+        # trim fly-back pixels
+        data = data[:,self.ui.PreClock.value():self.ui.Xsteps.value()*self.ui.AlineAVG.value()+self.ui.PreClock.value()]
+        Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         #######################################
         # for even strips, need to flip data in Y dimension because scanning was in backward direction
         surfX = args[1][0]
