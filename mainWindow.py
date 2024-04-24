@@ -186,7 +186,6 @@ class MainWindow(QMainWindow):
         self.ui.Overlap.valueChanged.connect(self.update_Mosaic)
         self.ui.FOV.textChanged.connect(self.update_Mosaic)
         
-        self.ui.ImageZStart.valueChanged.connect(self.Calculate_ImageDepth)
         self.ui.ImageZDepth.valueChanged.connect(self.Calculate_ImageDepth)
         self.ui.ImageZnumber.valueChanged.connect(self.Calculate_ImageDepth)
         

@@ -48,19 +48,6 @@ global Digitizer
 
 Digitizer = 'ART8912'
 
-# init all Queues as global variable
-# for any queue, you can do queue-in at multiple places, but you can only do queue-out at one place
-# global AODOQueue # AODO stands for analog output and digital output
-# global StagebackQueue # stage finish moving report queue
-# global WeaverQueue # King of all threads, gives command to other threads
-# global DnSQueue # DnS stands for display and save
-# global PauseQueue 
-# global GPUQueue 
-# global DQueue # D stands for digitizer
-# global DbackQueue # Dback stands for digitizer respond back, digitizer respond back if data collection is done
-# global StopDQueue # StopD stands for stop digitizer, for stopping digitizer in continuous acquisition
-# global GPU2weaverQueue
-
 AODOQueue = Queue(maxsize = 0)
 StagebackQueue = Queue(maxsize = 0)
 WeaverQueue = Queue(maxsize = 0)
@@ -69,7 +56,6 @@ PauseQueue = Queue(maxsize = 0)
 GPUQueue = Queue(maxsize = 0)
 DQueue = Queue(maxsize = 0)
 DbackQueue = Queue(maxsize = 0)
-StopDQueue = Queue(maxsize = 0)
 GPU2weaverQueue = Queue(maxsize = 0)
      
 # wrap digitzer thread with queues and Memory
@@ -86,7 +72,6 @@ if Digitizer == 'ATS9351':
             self.ui = ui
             self.queue = DQueue
             self.DbackQueue = DbackQueue
-            self.StopDQueue = StopDQueue
             self.log = log
     
     from ThreadWeaver_ATS import WeaverThread
@@ -102,7 +87,6 @@ if Digitizer == 'ATS9351':
             self.AODOQueue = AODOQueue
             self.StagebackQueue = StagebackQueue
             self.PauseQueue = PauseQueue
-            self.StopDQueue = StopDQueue
             self.DbackQueue = DbackQueue
             self.GPUQueue = GPUQueue
             self.DQueue = DQueue
@@ -123,7 +107,6 @@ elif Digitizer == 'ART8912':
             self.ui = ui
             self.queue = DQueue
             self.DbackQueue = DbackQueue
-            self.StopDQueue = StopDQueue
             self.log = log
 
     # since ART8912 is master, AODO is slave,we need a separate king thread to organize them
@@ -140,7 +123,6 @@ elif Digitizer == 'ART8912':
             self.AODOQueue = AODOQueue
             self.StagebackQueue = StagebackQueue
             self.PauseQueue = PauseQueue
-            self.StopDQueue = StopDQueue
             self.DbackQueue = DbackQueue
             self.GPUQueue = GPUQueue
             self.DQueue = DQueue
@@ -190,7 +172,6 @@ class GUI(MainWindow):
         self.log = LOG(self.ui)
         self.ui.RunButton.clicked.connect(self.run_task)
         self.ui.PauseButton.clicked.connect(self.Pause_task)
-        
         self.ui.CenterGalvo.clicked.connect(self.CenterGalvo)
         
         # change window length for FFT
@@ -227,10 +208,7 @@ class GUI(MainWindow):
         self.ui.SliceDir.clicked.connect(self.SliceDirection)
         self.ui.VibEnabled.clicked.connect(self.Vibratome)
         self.ui.SliceN.valueChanged.connect(self.change_slice_number)
-        # self.ui.Gotozero.stateChanged.connect(self.Gotozero)
         self.Init_allThreads()
-        # configure digitizer with inital settings from GUI
-        self.ConfigureD()
         
     def Init_allThreads(self):
         self.Weaver_thread = WeaverThread_2(self.ui, self.log)
@@ -444,14 +422,9 @@ class GUI(MainWindow):
         an_action = WeaverAction('dispersion_compensation')
         WeaverQueue.put(an_action)
         
-            
     def redo_background(self):
         an_action = WeaverAction('get_background')
         WeaverQueue.put(an_action)
-        
-    def ConfigureD(self):
-        an_action = DAction('ConfigureBoard')
-        DQueue.put(an_action)
         
     def UninitBoard(self):
         an_action = DAction('UninitBoard')

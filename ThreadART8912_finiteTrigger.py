@@ -43,12 +43,14 @@ class ART8912_finiteTrigger(QThread):
         super().__init__()
         self.MemoryLoc = 0
         self.exit_message = 'Digitizer thread successfully exited'
-        if not SIM:
-            self.InitBoard()
+
         
         
         
     def run(self):
+        if not SIM:
+            self.InitBoard()
+            self.ConfigureBoard()
         self.QueueOut()
         
     def QueueOut(self):
