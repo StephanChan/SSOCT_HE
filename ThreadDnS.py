@@ -31,6 +31,7 @@ class DnSThread(QThread):
         self.display_actions = 0
         
     def run(self):
+        self.sliceNum = self.ui.SliceN.value()-1
         self.QueueOut()
         
     def QueueOut(self):
@@ -287,7 +288,7 @@ class DnSThread(QThread):
         # print('display Bline')
         plane = np.mean(data,2)
         self.ui.tileMean.setValue(np.mean(plane))
-        if np.mean(plane)>self.ui.AgarValue.value():
+        if np.sum(plane > self.ui.AgarValue.value())>100:
             self.ui.TissueRadio.setChecked(True)
         else:
             self.ui.TissueRadio.setChecked(False)

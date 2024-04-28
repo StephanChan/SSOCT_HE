@@ -166,6 +166,9 @@
             </item>
             <item>
              <widget class="QDoubleSpinBox" name="tileMean">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="maximumSize">
                <size>
                 <width>100</width>
@@ -196,6 +199,9 @@
             </item>
             <item>
              <widget class="QLabel" name="label_27">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="maximumSize">
                <size>
                 <width>16777215</width>
@@ -1492,14 +1498,48 @@ p, li { white-space: pre-wrap; }
              <string>Cut and Image sequence</string>
             </property>
             <layout class="QGridLayout" name="gridLayout_18">
-             <item row="0" column="0">
+             <item row="5" column="0">
+              <widget class="QSpinBox" name="SliceZDepth">
+               <property name="maximum">
+                <number>1000</number>
+               </property>
+               <property name="value">
+                <number>100</number>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="1">
+              <widget class="QSpinBox" name="backReget">
+               <property name="value">
+                <number>5</number>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="0">
+              <widget class="QLabel" name="label_3">
+               <property name="text">
+                <string>Redo fastScan every</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="1">
+              <widget class="QSpinBox" name="ImageZDepth">
+               <property name="maximum">
+                <number>1000</number>
+               </property>
+               <property name="value">
+                <number>100</number>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
               <widget class="QLabel" name="SliceZstartLabel_3">
                <property name="text">
                 <string>Cut Start(mm)</string>
                </property>
               </widget>
              </item>
-             <item row="1" column="0">
+             <item row="3" column="0">
               <widget class="QDoubleSpinBox" name="SliceZStart">
                <property name="decimals">
                 <number>3</number>
@@ -1512,7 +1552,14 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="2" column="0">
+             <item row="3" column="1">
+              <widget class="QDoubleSpinBox" name="SMPthickness">
+               <property name="value">
+                <double>1.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="0">
               <widget class="QLabel" name="SliceDepthLabel_3">
                <property name="maximumSize">
                 <size>
@@ -1525,7 +1572,7 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="2" column="1">
+             <item row="4" column="1">
               <widget class="QLabel" name="ImageDepthLabel_3">
                <property name="maximumSize">
                 <size>
@@ -1538,39 +1585,7 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="3" column="0">
-              <widget class="QDoubleSpinBox" name="SliceZDepth">
-               <property name="decimals">
-                <number>1</number>
-               </property>
-               <property name="minimum">
-                <double>1.000000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>10000.000000000000000</double>
-               </property>
-               <property name="value">
-                <double>100.000000000000000</double>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="1">
-              <widget class="QDoubleSpinBox" name="ImageZDepth">
-               <property name="decimals">
-                <number>1</number>
-               </property>
-               <property name="minimum">
-                <double>1.000000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>10000.000000000000000</double>
-               </property>
-               <property name="value">
-                <double>100.000000000000000</double>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="0">
+             <item row="1" column="1">
               <widget class="QLabel" name="SliceZnumberLabel_3">
                <property name="maximumSize">
                 <size>
@@ -1579,40 +1594,7 @@ p, li { white-space: pre-wrap; }
                 </size>
                </property>
                <property name="text">
-                <string>#Cut planes</string>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="1">
-              <widget class="QLabel" name="ImageZnumberLabel_3">
-               <property name="maximumSize">
-                <size>
-                 <width>16777215</width>
-                 <height>16777206</height>
-                </size>
-               </property>
-               <property name="text">
-                <string>#Image planes</string>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="0">
-              <widget class="QSpinBox" name="SliceZnumber">
-               <property name="maximum">
-                <number>10000</number>
-               </property>
-               <property name="value">
-                <number>10</number>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="1">
-              <widget class="QSpinBox" name="ImageZnumber">
-               <property name="maximum">
-                <number>10000</number>
-               </property>
-               <property name="value">
-                <number>10</number>
+                <string>Sample thickness(mm)</string>
                </property>
               </widget>
              </item>

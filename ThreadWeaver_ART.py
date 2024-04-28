@@ -52,6 +52,10 @@ class WeaverThread(QThread):
                     self.log.write(message)
                     
                 elif self.item.action == 'SurfScan':
+                    self.ui.ZPosition.setValue(self.ui.XStartHeight.value())
+                    an_action = AODOAction('Zmove2')
+                    self.AODOQueue.put(an_action)
+                    self.StagebackQueue.get()
                     interrupt = self.SurfPreScan()
                     if not interrupt == 'Stop':
                         interrupt, status = self.SurfScan()
@@ -77,10 +81,16 @@ class WeaverThread(QThread):
                     # self.ui.PrintOut.append(message)
                     self.log.write(message)
                 elif self.item.action == 'RptSlice':
-                    message = self.RptSlice()
+                    message = self.RptSlice(self.ui.SliceZStart.value(), np.uint16(self.ui.SMPthickness.value()*1000/self.ui.SliceZDepth.value()))
                     self.ui.statusbar.showMessage(message)
                     # self.ui.PrintOut.append(message)
                     self.log.write(message)
+                    # reset RUN button
+                    self.ui.RunButton.setChecked(False)
+                    self.ui.RunButton.setText('Run')
+                    self.ui.PauseButton.setChecked(False)
+                    self.ui.PauseButton.setText('Pause')
+                    self.ui.statusbar.showMessage(status)
                 elif self.item.action == 'Gotozero':
                     message = self.Gotozero()
                     self.ui.statusbar.showMessage(message)
@@ -614,8 +624,8 @@ class WeaverThread(QThread):
                     cscan =self.GPU2weaverQueue.get()
                 cscan = self.GPU2weaverQueue.get()
                 # print('got FFT data from GPU')
-                value = np.mean(cscan)
-                if value > self.ui.AgarValue.value():
+                value = np.mean(cscan,1)
+                if np.sum(value > self.ui.AgarValue.value())>100:
                     self.tile_flag[stripes - 1][cscans] = 1
                     # self.tile_surf[stripes - 1][cscans] = self.autoFocus(cscan)
                 
@@ -686,11 +696,11 @@ class WeaverThread(QThread):
             self.ui.statusbar.showMessage(message)
             # self.ui.PrintOut.append(message)
             self.log.write(message)
-            
-            message = ' this mode has not been configured, abort...'
+            message = self.MultiCutPerImage()
             self.ui.statusbar.showMessage(message)
             # self.ui.PrintOut.append(message)
             self.log.write(message)
+            
             
         elif self.ui.SliceZDepth.value() - self.ui.ImageZDepth.value() >1:
             message = ' slicing deeper than imaging, image multiple times per slice...'
@@ -720,7 +730,7 @@ class WeaverThread(QThread):
         return message
     
     def OneImagePerCut(self):
-        for ii in range(self.ui.ImageZnumber.value()):
+        for ii in range(np.uint16(self.ui.SMPthickness.value()*1000//self.ui.ImageZDepth.value())):
             ##################################################
             interrupt = self.check_interrupt()
             if interrupt == 'Stop':
@@ -728,12 +738,12 @@ class WeaverThread(QThread):
                 return message
             ########################################################
             # cut one slice
-            message = self.SingleSlice(self.ui.SliceZStart.value()+ii*self.ui.SliceZDepth.value()/1000)
+            message = self.SingleSlice(self.ui.SliceZStart.value()+ii*self.ui.SliceZDepth.value()/1000.0)
             print(message)
             if message != 'Slice success':
                 return message
             # remeasure background
-            if ii%5 == 0:
+            if ii%self.ui.backReget.value() == 0:
                 self.get_background()
                 # time.sleep(1)
             ##################################################
@@ -779,7 +789,7 @@ class WeaverThread(QThread):
                 message = 'user stopped acquisition...'
                 return message
             ########################################################
-            self.ui.ZPosition.setValue(self.ui.XStartHeight.value()+ii*self.ui.ImageZDepth.value()/1000)
+            self.ui.ZPosition.setValue(self.ui.XStartHeight.value()+ii*self.ui.ImageZDepth.value()/1000.0)
             an_action = AODOAction('Zmove2')
             self.AODOQueue.put(an_action)
             self.StagebackQueue.get()
@@ -790,7 +800,7 @@ class WeaverThread(QThread):
                 return message
             ########################################################
             # do surf
-            if ii%5 == 0:
+            if ii%self.ui.backReget.value() == 0:
                 interrupt = self.SurfPreScan()
                 if interrupt == 'Stop':
                     return 'SurfPreScan stopped by user...'
@@ -798,7 +808,94 @@ class WeaverThread(QThread):
             if interrupt == 'Stop':
                 return 'user stopped acquisition...'
         # LAST CUT 
-        message = self.SingleSlice(self.ui.SliceZStart.value()+(ii+1)*self.ui.SliceZDepth.value()/1000)
+        message = self.SingleSlice(self.ui.SliceZStart.value()+(ii+1)*self.ui.SliceZDepth.value()/1000.0)
+        if message != 'Slice success':
+            return message
+        return 'Mosaic+slice successful...'
+    
+    def MultiCutPerImage(self):
+        # cut first time
+        message = self.SingleSlice(self.ui.SliceZStart.value())
+        print(message)
+        if message != 'Slice success':
+            return message
+        for ii in range(np.int16(self.ui.SMPthickness.value()*1000//self.ui.ImageZDepth.value())):
+            # remeasure background
+            if ii%self.ui.backReget.value() == 0:
+                self.get_background()
+            ##################################################
+            interrupt = self.check_interrupt()
+            if interrupt == 'Stop':
+                message = 'user stopped acquisition...'
+                return message
+            ########################################################
+            # move to defined zero
+            self.ui.ZPosition.setValue(self.ui.definedZero.value())
+            an_action = AODOAction('Zmove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            ##################################################
+            interrupt = self.check_interrupt()
+            if interrupt == 'Stop':
+                message = 'user stopped acquisition...'
+                return message
+            ########################################################
+
+            # move to X Y Z
+            self.ui.XPosition.setValue(self.ui.XStart.value())
+            self.ui.YPosition.setValue(self.ui.YStart.value())
+            an_action = AODOAction('Xmove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            ##################################################
+            interrupt = self.check_interrupt()
+            if interrupt == 'Stop':
+                message = 'user stopped acquisition...'
+                return message
+            ########################################################
+            an_action = AODOAction('Ymove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            ##################################################
+            interrupt = self.check_interrupt()
+            if interrupt == 'Stop':
+                message = 'user stopped acquisition...'
+                return message
+            ########################################################
+            # move to next image height
+            self.ui.ZPosition.setValue(self.ui.XStartHeight.value()+ii*self.ui.ImageZDepth.value()/1000.0)
+            an_action = AODOAction('Zmove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            ##################################################
+            interrupt = self.check_interrupt()
+            if interrupt == 'Stop':
+                message = 'user stopped acquisition...'
+                return message
+            ########################################################
+            # do surf
+            if ii%self.ui.backReget.value() == 0:
+                interrupt = self.SurfPreScan()
+                if interrupt == 'Stop':
+                    return 'SurfPreScan stopped by user...'
+            interrupt, status = self.SurfScan()
+            if interrupt == 'Stop':
+                return 'user stopped acquisition...'
+            
+            ##################################################
+            interrupt = self.check_interrupt()
+            if interrupt == 'Stop':
+                message = 'user stopped acquisition...'
+                return message
+            ########################################################
+            # cut slices
+            message = self.RptSlice(self.ui.SliceZStart.value()+ii*self.ui.ImageZDepth.value()/1000.0+self.ui.SliceZDepth.value()/1000.0, \
+                                    np.uint16(self.ui.ImageZDepth.value()//self.ui.SliceZDepth.value()))
+            print(message)
+            if message != 'Slice success':
+                return message
+        # LAST CUT 
+        message = self.SingleSlice(self.ui.SliceZStart.value()+(ii+1)*self.ui.SliceZDepth.value()/1000.0)
         if message != 'Slice success':
             return message
         return 'Mosaic+slice successful...'
@@ -894,32 +991,51 @@ class WeaverThread(QThread):
         self.StagebackQueue.get()
         return 'Slice success'
         
-    def RptSlice(self):
+    def RptSlice(self, start_height, cuts):
         # move to defined zero
         self.ui.ZPosition.setValue(self.ui.definedZero.value())
         an_action = AODOAction('Zmove2')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
-        # self.ui.Gotozero.setChecked(True)
-        # message = self.Gotozero()
-        # if message != 'gotozero success...':
-        #     return message
-        # self.ui.statusbar.showMessage(message)
+        ##################################################
+        interrupt = self.check_interrupt()
+        if interrupt == 'Stop':
+            message = 'user stopped acquisition...'
+            return message
+        ########################################################
         # go to start X
         self.ui.XPosition.setValue(self.ui.SliceX.value())
         an_action = AODOAction('Xmove2')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
+        ##################################################
+        interrupt = self.check_interrupt()
+        if interrupt == 'Stop':
+            message = 'user stopped acquisition...'
+            return message
+        ########################################################
         # go to start Y
         self.ui.YPosition.setValue(self.ui.SliceY.value())
         an_action = AODOAction('Ymove2')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
+        ##################################################
+        interrupt = self.check_interrupt()
+        if interrupt == 'Stop':
+            message = 'user stopped acquisition...'
+            return message
+        ########################################################
         # go to start Z
-        self.ui.ZPosition.setValue(self.ui.SliceZStart.value())
+        self.ui.ZPosition.setValue(start_height)
         an_action = AODOAction('Zmove2')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
+        ##################################################
+        interrupt = self.check_interrupt()
+        if interrupt == 'Stop':
+            message = 'user stopped acquisition...'
+            return message
+        ########################################################
         # slicing
         # start vibratome
         self.ui.VibEnabled.setText('Stop Vibratome')
@@ -927,19 +1043,7 @@ class WeaverThread(QThread):
         an_action = AODOAction('startVibratome')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
-        for ii in range(self.ui.SliceZnumber.value()):
-            ##################################################
-            interrupt = self.check_interrupt()
-            if interrupt == 'Stop':
-                message = 'user stopped acquisition...'
-                # stop vibratome
-                self.ui.VibEnabled.setText('Start Vibratome')
-                self.ui.VibEnabled.setChecked(False)
-                an_action = AODOAction('stopVibratome')
-                self.AODOQueue.put(an_action)
-                self.StagebackQueue.get()
-                return message
-            ########################################################
+        for ii in range(cuts):
             if self.ui.SliceDir.isChecked():
                 sign = -1
             else:
@@ -979,7 +1083,7 @@ class WeaverThread(QThread):
                 self.StagebackQueue.get()
                 return message
             
-            self.ui.ZPosition.setValue(self.ui.ZPosition.value()+self.ui.SliceZDepth.value()/1000)
+            self.ui.ZPosition.setValue(self.ui.ZPosition.value()+self.ui.SliceZDepth.value()/1000.0)
             an_action = AODOAction('Zmove2')
             self.AODOQueue.put(an_action)
             self.StagebackQueue.get()
@@ -990,9 +1094,7 @@ class WeaverThread(QThread):
         an_action = AODOAction('stopVibratome')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
-        return 'Slice done'
-        
-        
+        return 'Slice success'
         
     def Gotozero(self):
         mode = self.ui.ACQMode.currentText()

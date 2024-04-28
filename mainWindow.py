@@ -186,12 +186,12 @@ class MainWindow(QMainWindow):
         self.ui.Overlap.valueChanged.connect(self.update_Mosaic)
         self.ui.FOV.textChanged.connect(self.update_Mosaic)
         
-        self.ui.ImageZDepth.valueChanged.connect(self.Calculate_ImageDepth)
-        self.ui.ImageZnumber.valueChanged.connect(self.Calculate_ImageDepth)
+        # self.ui.ImageZDepth.valueChanged.connect(self.Calculate_ImageDepth)
+        # self.ui.ImageZnumber.valueChanged.connect(self.Calculate_ImageDepth)
         
-        self.ui.SliceZStart.valueChanged.connect(self.Calculate_SliceDepth)
-        self.ui.SliceZDepth.valueChanged.connect(self.Calculate_SliceDepth)
-        self.ui.SliceZnumber.valueChanged.connect(self.Calculate_SliceDepth)
+        # self.ui.SliceZStart.valueChanged.connect(self.Calculate_SliceDepth)
+        # self.ui.SliceZDepth.valueChanged.connect(self.Calculate_SliceDepth)
+        # self.ui.SliceZnumber.valueChanged.connect(self.Calculate_SliceDepth)
         # change brigtness and contrast
         # self.ui.ACQMode.currentIndexChanged.connect(self.Adjust_contrast)
         # self.ui.FFTDevice.currentIndexChanged.connect(self.Update_scale)
