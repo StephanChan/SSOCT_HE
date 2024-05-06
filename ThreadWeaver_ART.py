@@ -397,6 +397,11 @@ class WeaverThread(QThread):
         an_action = AODOAction('Ymove2')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
+        # move Z stage up by user defined distance to put focus at user defined depth
+        self.ui.ZPosition.setValue(self.ui.ZPosition.value()+self.ui.ZIncrease.value())
+        an_action = AODOAction('Zmove2')
+        self.AODOQueue.put(an_action)
+        self.StagebackQueue.get()
         ############################################################# Iterate through strips for one surfscan
         while np.any(self.Mosaic) and interrupt != 'Stop': 
             cscans = 0
@@ -409,7 +414,7 @@ class WeaverThread(QThread):
             # Auto adjust focus according to surface height in X min and X max
             Ztilt = (self.ui.XStopHeight.value()-self.ui.XStartHeight.value())/total_stripes
             # print(Ztilt, self.ui.ZPosition.value(), self.ui.ZPosition.value()+Ztilt)
-            self.ui.ZPosition.setValue(self.ui.ZPosition.value()+Ztilt)
+            self.ui.ZPosition.setValue(self.ui.ZPosition.value()+Ztilt+self.ui.ZIncrease.value())
             an_action = AODOAction('Zmove2')
             self.AODOQueue.put(an_action)
             self.StagebackQueue.get()
