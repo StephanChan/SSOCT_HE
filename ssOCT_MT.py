@@ -82,6 +82,7 @@ if Digitizer == 'ATS9351':
             self.Memory = Memory
             self.memoryCount = memoryCount
             self.ui = ui
+            self.Digitizer = Digitizer
             self.queue = WeaverQueue
             self.DnSQueue = DnSQueue
             self.AODOQueue = AODOQueue
@@ -118,6 +119,7 @@ elif Digitizer == 'ART8912':
             self.Memory = Memory
             self.memoryCount = memoryCount
             self.ui = ui
+            self.Digitizer = Digitizer
             self.queue = WeaverQueue
             self.DnSQueue = DnSQueue
             self.AODOQueue = AODOQueue

@@ -72,7 +72,7 @@ class DnSThread(QThread):
                 elif self.item.action == 'agarTile':
                     self.SurfFilename()
                 elif self.item.action == 'WriteAgar':
-                    self.WriteAgar(self.item.data)
+                    self.WriteAgar(self.item.data, self.item.args)
                 elif self.item.action == 'Init_SurfScan':
                     self.Init_SurfScan(self.item.data, self.item.args)
                     
@@ -109,7 +109,8 @@ class DnSThread(QThread):
                 Zpixels = self.ui.PreSamples.value()+self.ui.PostSamples.value()
                 # data = np.float32(data/pow(2,16))
             elif self.Digitizer == 'ART8912':
-                Zpixels = self.ui.PostSamples_2.value()
+                Zpixels = self.ui.PostSamples_2.value()#-self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
+                # data = data[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]
                 # data = np.float32(data/pow(2,12))
         # get number of X pixels
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
@@ -119,6 +120,9 @@ class DnSThread(QThread):
         Yrpt = self.ui.BlineAVG.value()
         # reshape data to [Ypixels*Xpixels, Zpixels]
         data = data.reshape([Yrpt*Xpixels,Zpixels])
+        if raw and self.Digitizer == 'ART8912':
+            Zpixels = self.ui.PostSamples_2.value()-self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
+            data = data[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]
 
         self.Aline = data
         data = np.float32(np.mean(data,0))
@@ -417,8 +421,9 @@ class DnSThread(QThread):
         # self.ui.PrintOut.append(message)
         self.log.write(message)
         
-    def WriteAgar(self, data):
-        filename = 'slice-'+str(self.sliceNum)+'-agarTiles.bin'
+    def WriteAgar(self, data, args):
+        [Ystep, Xstep] = args
+        filename = 'slice-'+str(self.sliceNum)+'-agarTiles X-'+str(Xstep)+'-by Y-'+str(Ystep)+'-.bin'
         filePath = self.ui.DIR.toPlainText()
         filePath = filePath + "/" + filename
         # print(filePath)

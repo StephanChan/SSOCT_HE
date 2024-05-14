@@ -233,7 +233,7 @@
             <property name="maximumSize">
              <size>
               <width>600</width>
-              <height>700</height>
+              <height>300</height>
              </size>
             </property>
             <property name="autoFillBackground">
@@ -2186,6 +2186,16 @@ p, li { white-space: pre-wrap; }
            <widget class="QPushButton" name="LoadBG">
             <property name="text">
              <string>Load Background</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="2">
+           <widget class="QSpinBox" name="PeakWindow">
+            <property name="maximum">
+             <number>200</number>
+            </property>
+            <property name="value">
+             <number>75</number>
             </property>
            </widget>
           </item>

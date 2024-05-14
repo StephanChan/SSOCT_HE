@@ -349,8 +349,7 @@ class WeaverThread(QThread):
     def SurfScan(self):
         an_action = DnSAction('restart_tilenum') # data in Memory[memoryLoc]
         self.DnSQueue.put(an_action)
-        an_action = DnSAction('WriteAgar', data = self.tile_flag)
-        self.DnSQueue.put(an_action)
+
         
         self.InitMemory()
         # configure digitizer
@@ -371,6 +370,8 @@ class WeaverThread(QThread):
         # calculate the number of Cscans per stripe
         Ystep = self.ui.YStepSize.value()*self.ui.Ysteps.value()
         CscansPerStripe = np.int16((self.ui.YStop.value()-self.ui.YStart.value())*1000/Ystep)
+        an_action = DnSAction('WriteAgar', data = self.tile_flag, args = [ CscansPerStripe, total_stripes])
+        self.DnSQueue.put(an_action)
         if CscansPerStripe <=0:
             return 'invalid Mosaic positions, abort aquisition...'
         # calculate the total number of tiles per slice
@@ -414,7 +415,7 @@ class WeaverThread(QThread):
             # Auto adjust focus according to surface height in X min and X max
             Ztilt = (self.ui.XStopHeight.value()-self.ui.XStartHeight.value())/total_stripes
             # print(Ztilt, self.ui.ZPosition.value(), self.ui.ZPosition.value()+Ztilt)
-            self.ui.ZPosition.setValue(self.ui.ZPosition.value()+Ztilt+self.ui.ZIncrease.value())
+            self.ui.ZPosition.setValue(self.ui.ZPosition.value()+Ztilt)
             an_action = AODOAction('Zmove2')
             self.AODOQueue.put(an_action)
             self.StagebackQueue.get()
@@ -1446,17 +1447,19 @@ class WeaverThread(QThread):
         Aline = np.float32(ALINE[0,:])-self.background
 
         plt.figure()
-        plt.plot(np.abs(Aline))
+        plt.plot(Aline)
+        plt.title('raw Aline w/o background')
         
         L=len(Aline)
         fR=np.fft.fft(Aline)/L # FFT of interference signal
 
         plt.figure()
         plt.plot(np.abs(fR[20:]))
+        plt.title('Aline w/o compensation')
         
         z = np.argmax(np.abs(fR[50:300]))+50
-        low_position = max(10,z-75)
-        high_position = min(L//2,z+75)
+        low_position = max(10,z-self.ui.PeakWindow.value())
+        high_position = min(L//2,z+self.ui.PeakWindow.value())
 
         fR[0:low_position]=0
         fR[high_position:L-high_position]=0
@@ -1464,6 +1467,7 @@ class WeaverThread(QThread):
         
         plt.figure()
         plt.plot(np.abs(fR))
+        plt.title('Aline windowing the peak')
         
         Aline = np.fft.ifft(fR)
 
@@ -1476,8 +1480,10 @@ class WeaverThread(QThread):
         
         plt.figure()
         plt.plot(phi_diff)
+        plt.title('phase difference')
         # plt.figure()
         message = 'max phase difference is: '+str(np.max(np.abs(phi_diff)))+'\n'
+        print(message)
         # self.ui.PrintOut.append(message)
         self.log.write(message)
         # fR = np.fft.fft(ALINE, axis=1)/L
