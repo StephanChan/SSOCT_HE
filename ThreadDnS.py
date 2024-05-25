@@ -54,7 +54,8 @@ class DnSThread(QThread):
                     self.Display_Cscan(self.item.data, self.item.raw)
                 elif self.item.action == 'SurfScan':
                     self.Display_SurfScan(self.item.data, self.item.raw, self.item.args)
-                
+                elif self.item.action == 'display_mosaic':
+                    self.Display_mosaic()
                 elif self.item.action == 'Clear':
                     self.surf = []
                 elif self.item.action == 'UpdateContrastXY':
@@ -327,15 +328,7 @@ class DnSThread(QThread):
         # print('before surf image update')
         plane_ds=plane[::scale,::scale]
         self.surf[Ypixels//scale*fileX:Ypixels//scale*(fileX+1),Xpixels//scale*fileY:Xpixels//scale*(fileY+1)] = plane_ds[0:Ypixels//scale,0:Xpixels//scale]
-        # print('append tile')
-        pixmap = ImagePlot(self.surf, self.ui.Surfmin.value(), self.ui.Surfmax.value())
-        # print('gen pixmap')
-        # clear content on the waveformLabel
-        self.ui.SampleMosaic.clear()
-        # print('clear window')
-        # update iamge on the waveformLabel
-        self.ui.SampleMosaic.setPixmap(pixmap)
-        # print('update window')
+
         if self.ui.Save.isChecked():
             if raw:
                 data = np.uint16(self.Cscan)
@@ -343,7 +336,13 @@ class DnSThread(QThread):
                 data = np.uint16(self.Cscan/SCALE*65535)
             self.WriteData(data, self.SurfFilename([Ypixels,Xpixels,Zpixels]))
 
-            
+    def Display_mosaic(self):
+        pixmap = ImagePlot(self.surf, self.ui.Surfmin.value(), self.ui.Surfmax.value())
+        # print('gen pixmap')
+        # clear content on the waveformLabel
+        self.ui.SampleMosaic.clear()
+        self.ui.SampleMosaic.setPixmap(pixmap)
+        
     def Update_contrast_XY(self):
         if self.ui.ACQMode.currentText() in ['SingleAline', 'RptAline']:
             data = np.float32(np.mean(self.Aline,0))
