@@ -213,7 +213,7 @@ class DnSThread(QThread):
             self.ui.TissueRadio.setChecked(True)
         else:
             self.ui.TissueRadio.setChecked(False)
-        pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
+        pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value()/5)
         # clear content on the waveformLabel
         self.ui.XYplane.clear()
         # update image on the waveformLabel
@@ -297,7 +297,7 @@ class DnSThread(QThread):
         else:
             self.ui.TissueRadio.setChecked(False)
         # print('identify agar')
-        pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
+        pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value()/5)
         # clear content on the waveformLabel
         self.ui.XYplane.clear()
         # update iamge on the waveformLabel
@@ -361,7 +361,7 @@ class DnSThread(QThread):
             self.ui.XZplane.setPixmap(pixmap)
             
             plane = np.mean(data,2)# has to be first index, otherwise the memory space is not continuous
-            pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value()/4)
+            pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value()/5)
             # clear content on the waveformLabel
             self.ui.XYplane.clear()
             # update image on the waveformLabel

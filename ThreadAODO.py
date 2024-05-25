@@ -238,11 +238,11 @@ class AODOThread(QThread):
                 self.DOtask.write(DOwaveform, auto_start = False)
                 # self.DOtask.start()
                 # print(DOwaveform.shape)
-                steps = np.sum(DOwaveform)/25000.0*2/pow(2,1)
-                message = 'distance per Cscan: '+str(steps)+'mm'
-                # self.ui.PrintOut.append(message)
-                print(message)
-                self.log.write(message)
+                # steps = np.sum(DOwaveform)/25000.0*2/pow(2,1)
+                # message = 'distance per Cscan: '+str(steps)+'mm'
+                # # self.ui.PrintOut.append(message)
+                # print(message)
+                # self.log.write(message)
         return 'AODO configuration success'
         
     def StartTask(self):
@@ -256,7 +256,7 @@ class AODOThread(QThread):
             
     def StopTask(self, direction = 1):
         if not SIM:
-            self.AOtask.wait_until_done(timeout = 6)
+            self.AOtask.wait_until_done(timeout = 60)
             self.AOtask.stop()
             # self.AOtask.close()
             # print(self.ui.ACQMode.currentText())
@@ -274,6 +274,9 @@ class AODOThread(QThread):
             self.AOtask.close()
             if self.ui.ACQMode.currentText() in ['SingleCscan','SurfScan','SurfScan+Slice'] or self.Digitizer == 'ATS9351':
                 self.DOtask.close()
+            message = 'X :'+str(self.Xpos)+' Y :'+str(self.Ypos)+' Z :'+str(self.Zpos)
+            print(message)
+            self.log.write(message)
 
     def startVibratome(self):
         if not SIM:
@@ -306,17 +309,20 @@ class AODOThread(QThread):
             else:
                 print('continuous acquisition already stopped...')
         
-    def CloseTask(self):
-        try:
-            self.AOtask.close()
-        except:
-            pass
-        try:
-            self.DOtask.close()
-        except:
-            pass
-        print('closed AODO')
-        return 'AODO write task done'
+    # def CloseTask(self):
+    #     try:
+    #         self.AOtask.close()
+    #     except:
+    #         pass
+    #     try:
+    #         self.DOtask.close()
+    #     except:
+    #         pass
+    #     # print('closed AODO')
+    #     message = 'X :'+str(self.Xpos)+' Y :'+str(self.Ypos)+'Z :'+str(self.Zpos)
+    #     print(message)
+    #     self.log.write(message)
+    #     return 'AODO write task done'
                 
     def centergalvo(self):
         if not SIM:
@@ -472,10 +478,10 @@ class AODOThread(QThread):
                 DOtask.write(DOwaveform, auto_start = True)
                 DOtask.wait_until_done(timeout =300)
                 DOtask.stop()
-                message = axis+' current pos: '+str(pos)
-                print(message)
-                # self.ui.PrintOut.append(message)
-                self.log.write(message)
+                # message = axis+' current pos: '+str(pos)
+                # print(message)
+                # # self.ui.PrintOut.append(message)
+                # self.log.write(message)
                 # settingtask.write(XDISABLE + YDISABLE + ZDISABLE, auto_start = True)
                 
         if axis == 'X':
@@ -487,6 +493,10 @@ class AODOThread(QThread):
         elif axis == 'Z':
             self.Zpos = self.Zpos+distance
             # self.ui.ZPosition.setValue(self.Zpos)
+        message = 'X :'+str(self.Xpos)+' Y :'+str(self.Ypos)+' Z :'+str(self.Zpos)
+        print(message)
+        self.log.write(message)
+        
         self.StagebackQueue.put(0)
         # print('after move func', self.Ypos, self.ui.YPosition.value())
         

@@ -277,7 +277,7 @@
                 <number>100</number>
                </property>
                <property name="value">
-                <number>1000</number>
+                <number>100</number>
                </property>
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -455,16 +455,16 @@
                 </size>
                </property>
                <property name="maximum">
-                <number>1000</number>
+                <number>100</number>
                </property>
                <property name="singleStep">
-                <number>5</number>
+                <number>2</number>
                </property>
                <property name="pageStep">
-                <number>20</number>
+                <number>10</number>
                </property>
                <property name="value">
-                <number>100</number>
+                <number>30</number>
                </property>
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -480,13 +480,13 @@
                 </size>
                </property>
                <property name="maximum">
-                <number>50</number>
+                <number>100</number>
                </property>
                <property name="singleStep">
-                <number>1</number>
+                <number>2</number>
                </property>
                <property name="pageStep">
-                <number>5</number>
+                <number>10</number>
                </property>
                <property name="value">
                 <number>0</number>
@@ -1379,7 +1379,7 @@ p, li { white-space: pre-wrap; }
              <item row="1" column="4">
               <widget class="QPushButton" name="SliceDir">
                <property name="text">
-                <string>Forward</string>
+                <string>Backward</string>
                </property>
                <property name="checkable">
                 <bool>true</bool>
@@ -1466,7 +1466,7 @@ p, li { white-space: pre-wrap; }
              <item row="3" column="0">
               <widget class="QDoubleSpinBox" name="SliceZStart">
                <property name="decimals">
-                <number>3</number>
+                <number>2</number>
                </property>
                <property name="maximum">
                 <double>50.000000000000000</double>
@@ -1828,7 +1828,7 @@ p, li { white-space: pre-wrap; }
                 </size>
                </property>
                <property name="decimals">
-                <number>3</number>
+                <number>2</number>
                </property>
                <property name="minimum">
                 <double>0.000000000000000</double>
@@ -1911,7 +1911,7 @@ p, li { white-space: pre-wrap; }
                 </size>
                </property>
                <property name="decimals">
-                <number>3</number>
+                <number>2</number>
                </property>
                <property name="maximum">
                 <double>5.000000000000000</double>

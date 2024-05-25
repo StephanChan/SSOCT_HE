@@ -71,6 +71,10 @@ class WeaverThread(QThread):
                     self.log.write(status)
                     
                 elif self.item.action == 'SurfScan+Slice':
+                    self.ui.SMPthickness.setEnabled(False)
+                    self.ui.SliceZDepth.setEnabled(False)
+                    self.ui.ImageZDepth.setEnabled(False)
+                    self.ui.SMPthickness.setEnabled(False)
                     message = self.SurfSlice()
                     self.ui.statusbar.showMessage(message)
                     # self.ui.PrintOut.append(message)
@@ -403,6 +407,14 @@ class WeaverThread(QThread):
         an_action = AODOAction('Zmove2')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
+        # TODO:MOVE Z STAGE BY THE SURFACE PROFILE MEASUREMENT
+        # if self.ui.adjustZbySurf.isChecked():
+        #     surf_mean = np.mean(self.tile_surface(self.tile_surface>1))
+        #     distance = -(self.ui.fixedSurf.value()-surf_mean) * 4.4/1000.0
+        #     self.ui.ZPosition.setValue(self.ui.ZPosition.value()+distance)
+            # an_action = AODOAction('Zmove2')
+            # self.AODOQueue.put(an_action)
+            # self.StagebackQueue.get()
         ############################################################# Iterate through strips for one surfscan
         while np.any(self.Mosaic) and interrupt != 'Stop': 
             cscans = 0
@@ -524,14 +536,14 @@ class WeaverThread(QThread):
         Zpos = self.ui.ZPosition.value()
         # set downsampled FOV
         self.ui.Xsteps.setValue(Xsteps)
-        self.ui.Ysteps.setValue(Ysteps//10)
+        self.ui.Ysteps.setValue(Ysteps//20)
         self.ui.XStepSize.setValue(XStepSize)
-        self.ui.YStepSize.setValue(YStepSize*10)
+        self.ui.YStepSize.setValue(YStepSize*20)
         self.ui.AlineAVG.setValue(1)
         self.ui.BlineAVG.setValue(1)
         self.ui.Save.setChecked(False)
         self.ui.FFTDevice.setCurrentText('GPU')
-        self.ui.scale.setValue(1)
+        self.ui.scale.setValue(5)
         self.InitMemory()
         # configure digitizer
         an_action = DAction('ConfigureBoard')
@@ -748,6 +760,9 @@ class WeaverThread(QThread):
             print(message)
             if message != 'Slice success':
                 return message
+            message = '/nCUT HEIGHT:'+str(self.ui.SliceZStart.value()+ii*self.ui.SliceZDepth.value()/1000.0)+'/n'
+            print(message)
+            self.log.write(message)
             # remeasure background
             if ii%self.ui.backReget.value() == 0:
                 self.get_background()
@@ -799,6 +814,9 @@ class WeaverThread(QThread):
             an_action = AODOAction('Zmove2')
             self.AODOQueue.put(an_action)
             self.StagebackQueue.get()
+            message = '/nIMAGE HEIGHT:'+str(self.ui.XStartHeight.value()+ii*self.ui.ImageZDepth.value()/1000.0)+'/n'
+            print(message)
+            self.log.write(message)
             ##################################################
             interrupt = self.check_interrupt()
             if interrupt == 'Stop':
@@ -979,9 +997,9 @@ class WeaverThread(QThread):
         # slicing
        
         if self.ui.SliceDir.isChecked():
-            sign = -1
-        else:
             sign = 1
+        else:
+            sign = -1
         self.ui.YPosition.setValue(self.ui.SliceLength.value()*sign+self.ui.YPosition.value())
         speed = self.ui.YSpeed.value()
         self.ui.YSpeed.setValue(self.ui.SliceSpeed.value())

@@ -39,7 +39,7 @@ from Generaic_functions import LOG
 import time
 # init global memory for temporary storage of generated raw data
 global memoryCount
-memoryCount = 3
+memoryCount = 5
 
 global Memory
 Memory = list(range(memoryCount))
@@ -354,9 +354,9 @@ class GUI(MainWindow):
         
     def SliceDirection(self):
         if self.ui.SliceDir.isChecked():
-            self.ui.SliceDir.setText('Backward')
-        else:
             self.ui.SliceDir.setText('Forward')
+        else:
+            self.ui.SliceDir.setText('Backward')
             
     def change_slice_number(self):
         an_action = DnSAction('change_slice_number')
