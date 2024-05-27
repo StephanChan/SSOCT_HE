@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\帅斌\Documents\SSOCT_HE\SSOCT_HE-master\SSOCT_HE-master\GUI.ui'
+# Form implementation generated from reading ui file 'D:\SSOCT_HE\software\GUI.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.10
 #
@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1658, 1161)
+        MainWindow.resize(1658, 900)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout_14 = QtWidgets.QGridLayout(self.centralwidget)
@@ -70,8 +70,8 @@ class Ui_MainWindow(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.XYplane.sizePolicy().hasHeightForWidth())
         self.XYplane.setSizePolicy(sizePolicy)
-        self.XYplane.setMinimumSize(QtCore.QSize(0, 0))
-        self.XYplane.setMaximumSize(QtCore.QSize(800, 500))
+        self.XYplane.setMinimumSize(QtCore.QSize(0, 150))
+        self.XYplane.setMaximumSize(QtCore.QSize(700, 150))
         font = QtGui.QFont()
         font.setPointSize(25)
         self.XYplane.setFont(font)
@@ -81,8 +81,8 @@ class Ui_MainWindow(object):
         self.XYplane.setObjectName("XYplane")
         self.verticalLayout.addWidget(self.XYplane)
         self.XZplane = QtWidgets.QLabel(self.centralwidget)
-        self.XZplane.setMinimumSize(QtCore.QSize(300, 400))
-        self.XZplane.setMaximumSize(QtCore.QSize(800, 2000))
+        self.XZplane.setMinimumSize(QtCore.QSize(300, 200))
+        self.XZplane.setMaximumSize(QtCore.QSize(700, 400))
         font = QtGui.QFont()
         font.setPointSize(25)
         self.XZplane.setFont(font)
@@ -124,7 +124,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_2.setObjectName("verticalLayout_2")
         self.SampleMosaic = QtWidgets.QLabel(self.centralwidget)
         self.SampleMosaic.setMinimumSize(QtCore.QSize(300, 300))
-        self.SampleMosaic.setMaximumSize(QtCore.QSize(2000, 5000))
+        self.SampleMosaic.setMaximumSize(QtCore.QSize(2000, 600))
         font = QtGui.QFont()
         font.setPointSize(25)
         self.SampleMosaic.setFont(font)
@@ -165,7 +165,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_5.setObjectName("verticalLayout_5")
         self.MUS_mosaic = QtWidgets.QLabel(self.centralwidget)
         self.MUS_mosaic.setMinimumSize(QtCore.QSize(0, 0))
-        self.MUS_mosaic.setMaximumSize(QtCore.QSize(2000, 5000))
+        self.MUS_mosaic.setMaximumSize(QtCore.QSize(2000, 600))
         font = QtGui.QFont()
         font.setPointSize(25)
         self.MUS_mosaic.setFont(font)
@@ -361,12 +361,6 @@ class Ui_MainWindow(object):
         self.XBiasLabel = QtWidgets.QLabel(self.groupBox)
         self.XBiasLabel.setObjectName("XBiasLabel")
         self.gridLayout_12.addWidget(self.XBiasLabel, 6, 1, 1, 1)
-        self.CenterGalvo = QtWidgets.QPushButton(self.groupBox)
-        self.CenterGalvo.setMinimumSize(QtCore.QSize(0, 50))
-        self.CenterGalvo.setAutoFillBackground(False)
-        self.CenterGalvo.setCheckable(False)
-        self.CenterGalvo.setObjectName("CenterGalvo")
-        self.gridLayout_12.addWidget(self.CenterGalvo, 5, 1, 1, 1)
         self.YrangeLabel = QtWidgets.QLabel(self.groupBox)
         self.YrangeLabel.setObjectName("YrangeLabel")
         self.gridLayout_12.addWidget(self.YrangeLabel, 1, 1, 1, 1)
@@ -374,6 +368,12 @@ class Ui_MainWindow(object):
         self.XrangeLabel.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.XrangeLabel.setObjectName("XrangeLabel")
         self.gridLayout_12.addWidget(self.XrangeLabel, 0, 1, 1, 1)
+        self.CenterGalvo = QtWidgets.QPushButton(self.groupBox)
+        self.CenterGalvo.setMinimumSize(QtCore.QSize(0, 50))
+        self.CenterGalvo.setAutoFillBackground(False)
+        self.CenterGalvo.setCheckable(False)
+        self.CenterGalvo.setObjectName("CenterGalvo")
+        self.gridLayout_12.addWidget(self.CenterGalvo, 4, 1, 1, 1)
         self.horizontalLayout_2.addWidget(self.groupBox)
         self.DepthBox = QtWidgets.QGroupBox(self.FOVTab)
         self.DepthBox.setMaximumSize(QtCore.QSize(300, 400))
@@ -1537,9 +1537,9 @@ class Ui_MainWindow(object):
         self.YStepsizeLabel.setText(_translate("MainWindow", "Ystep size(um)"))
         self.AlineAvgLabel.setText(_translate("MainWindow", "Aline average"))
         self.XBiasLabel.setText(_translate("MainWindow", "Galvo shift(mm)"))
-        self.CenterGalvo.setText(_translate("MainWindow", "CenterGalvo"))
         self.YrangeLabel.setText(_translate("MainWindow", "Y(mm):"))
         self.XrangeLabel.setText(_translate("MainWindow", "X(mm)："))
+        self.CenterGalvo.setText(_translate("MainWindow", "CenterGalvo"))
         self.DepthBox.setTitle(_translate("MainWindow", "Depth Setting"))
         self.DepthStartLabel.setText(_translate("MainWindow", "Z Start(pixel)"))
         self.DepthRangeLabel.setText(_translate("MainWindow", "Z Range(pixel)"))
@@ -1624,8 +1624,8 @@ class Ui_MainWindow(object):
         self.DIR.setHtml(_translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'SimSun\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'Microsoft YaHei UI\';\">D:/SSOCT_HE/data</span></p></body></html>"))
+"</style></head><body style=\" font-family:\'Microsoft YaHei UI\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">D:/SSOCT_HE/data</p></body></html>"))
         self.LoadDispersion.setText(_translate("MainWindow", "Load Compensation"))
         self.Tabs.setTabText(self.Tabs.indexOf(self.Generaltab), _translate("MainWindow", "Save"))
         self.ClockSetting.setTitle(_translate("MainWindow", "Clock Setting"))
@@ -1747,8 +1747,8 @@ class Ui_MainWindow(object):
         self.ClockTerm.setHtml(_translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'SimSun\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'Microsoft YaHei UI\';\">/AODO/PFI0</span></p></body></html>"))
+"</style></head><body style=\" font-family:\'Microsoft YaHei UI\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">/AODO/PFI0</p></body></html>"))
         self.Tabs.setTabText(self.Tabs.indexOf(self.Lasertab), _translate("MainWindow", "Laser"))
         self.label_26.setText(_translate("MainWindow", "current AIP"))
         self.menumenu1.setTitle(_translate("MainWindow", "menu1"))

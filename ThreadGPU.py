@@ -22,20 +22,20 @@ import traceback
 class GPUThread(QThread):
     def __init__(self):
         super().__init__()
-        # self.ui = ui
-        # self.queue = GPUQueue
-        # self.displayQueue = DisplayQueue
         # TODO: write windowing and dispersion function
         self.exit_message = 'GPU thread successfully exited\n'
+        self.FFT_actions = 0 # count how many FFT actions have taken place
+        
+    def defwin(self):
         if not (SIM or self.SIM):
             self.winfunc = cupy.ElementwiseKernel(
                 'float32 x, complex64 y',
                 'complex64 z',
                 'z=x*y',
                 'winfunc')
-        self.FFT_actions = 0 # count how many FFT actions have taken place
-        
+            
     def run(self):
+        self.defwin()
         self.update_Dispersion()
         self.update_background()
         # self.update_FFTlength()

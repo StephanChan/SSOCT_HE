@@ -63,7 +63,7 @@ class WeaverThread(QThread):
                         status = "action aborted by user..."
                     # reset RUN button
                     self.ui.RunButton.setChecked(False)
-                    self.ui.RunButton.setText('Run')
+                    self.ui.RunButton.setText('Go')
                     self.ui.PauseButton.setChecked(False)
                     self.ui.PauseButton.setText('Pause')
                     self.ui.statusbar.showMessage(status)
@@ -91,7 +91,7 @@ class WeaverThread(QThread):
                     self.log.write(message)
                     # reset RUN button
                     self.ui.RunButton.setChecked(False)
-                    self.ui.RunButton.setText('Run')
+                    self.ui.RunButton.setText('Go')
                     self.ui.PauseButton.setChecked(False)
                     self.ui.PauseButton.setText('Pause')
                     self.ui.statusbar.showMessage(status)
@@ -746,7 +746,7 @@ class WeaverThread(QThread):
             self.log.write(message)
             
         self.ui.RunButton.setChecked(False)
-        self.ui.RunButton.setText('Run')
+        self.ui.RunButton.setText('Go')
         self.ui.PauseButton.setChecked(False)
         self.ui.PauseButton.setText('Pause')
         return message

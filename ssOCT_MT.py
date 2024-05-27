@@ -50,7 +50,7 @@ Digitizer = 'ART8912'
 
 # simulation switch
 global SIM
-SIM = True
+SIM = False
 # 3D visualization switch
 global use_maya
 use_maya = False
