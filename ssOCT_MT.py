@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """
 Created on Sun Dec 10 20:14:40 2023
@@ -45,8 +46,14 @@ global Memory
 Memory = list(range(memoryCount))
 
 global Digitizer
-
 Digitizer = 'ART8912'
+
+# simulation switch
+global SIM
+SIM = True
+# 3D visualization switch
+global use_maya
+use_maya = False
 
 AODOQueue = Queue(maxsize = 0)
 StagebackQueue = Queue(maxsize = 0)
@@ -57,7 +64,9 @@ GPUQueue = Queue(maxsize = 0)
 DQueue = Queue(maxsize = 0)
 DbackQueue = Queue(maxsize = 0)
 GPU2weaverQueue = Queue(maxsize = 0)
-     
+    
+
+        
 # wrap digitzer thread with queues and Memory
 if Digitizer == 'ATS9351':
     # ATS9351 outputs 16bit data range
@@ -73,6 +82,7 @@ if Digitizer == 'ATS9351':
             self.queue = DQueue
             self.DbackQueue = DbackQueue
             self.log = log
+            self.SIM = SIM
     
     from ThreadWeaver_ATS import WeaverThread
     class WeaverThread_2(WeaverThread):
@@ -109,6 +119,7 @@ elif Digitizer == 'ART8912':
             self.queue = DQueue
             self.DbackQueue = DbackQueue
             self.log = log
+            self.SIM = SIM
 
     # since ART8912 is master, AODO is slave,we need a separate king thread to organize them
     from ThreadWeaver_ART import WeaverThread
@@ -144,6 +155,7 @@ class GPUThread_2(GPUThread):
             self.Digitizer = Digitizer
             self.GPU2weaverQueue = GPU2weaverQueue
             self.log = log
+            self.SIM = SIM
             self.AMPLIFICATION = AMPLIFICATION
 # wrap AODO thread with queue
 from ThreadAODO import AODOThread
@@ -155,6 +167,7 @@ class AODOThread_2(AODOThread):
         self.Digitizer = Digitizer
         self.StagebackQueue = StagebackQueue
         self.log = log
+        self.SIM = SIM
 
 # wrap Display and save thread with queue        
 from ThreadDnS import DnSThread
@@ -165,12 +178,16 @@ class DnSThread_2(DnSThread):
         self.queue = DnSQueue
         self.Digitizer = Digitizer
         self.log = log
+        self.use_maya = use_maya
         
+
 # wrap MainWindow object with queues and threads   
      
 class GUI(MainWindow):
     def __init__(self):
         super().__init__()
+        if use_maya:
+            self.addMaya()
         self.log = LOG(self.ui)
         self.ui.RunButton.clicked.connect(self.run_task)
         self.ui.PauseButton.clicked.connect(self.Pause_task)
@@ -263,7 +280,7 @@ class GUI(MainWindow):
                     else:
                         # reset RUN button
                         self.ui.RunButton.setChecked(False)
-                        self.ui.RunButton.setText('Run')
+                        self.ui.RunButton.setText('Go')
                         self.ui.PauseButton.setChecked(False)
                         self.ui.PauseButton.setText('Pause')
                         print('user aborted due to stage position incorrect...')
@@ -274,7 +291,7 @@ class GUI(MainWindow):
                     WeaverQueue.put(an_action)
             else:
                 # time.sleep(0.5)
-                self.ui.RunButton.setText('Run')
+                self.ui.RunButton.setText('Go')
                 self.Stop_task()
                 
                 # self.CenterGalvo()
@@ -283,7 +300,7 @@ class GUI(MainWindow):
             WeaverQueue.put(an_action)
             # time.sleep(0.5)
             self.ui.RunButton.setChecked(False)
-            self.ui.RunButton.setText('Run')
+            self.ui.RunButton.setText('Go')
             # self.CenterGalvo()
         else:
             self.Slice()
@@ -386,10 +403,10 @@ class GUI(MainWindow):
     def Pause_task(self):
         if self.ui.PauseButton.isChecked():
             PauseQueue.put('Pause')
-            self.ui.PauseButton.setText('Unpause')
+            self.ui.PauseButton.setText('Resume')
             self.ui.statusbar.showMessage('acquisition paused...')
         else:
-            PauseQueue.put('unPause')
+            PauseQueue.put('Resume')
             self.ui.PauseButton.setText('Pause')
             self.ui.statusbar.showMessage('acquisition resumed...')
       

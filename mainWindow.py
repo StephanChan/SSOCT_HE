@@ -28,6 +28,7 @@ except:
     print('maya import failed, no 3D visulization')
     maya_installed = False
 
+
 if maya_installed:
     class Visualization(HasTraits):
         scene = Instance(MlabSceneModel, ())
@@ -94,16 +95,8 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)
         self.LoadSettings()
         if self.ui.SliceDir.isChecked():
-            self.ui.SliceDir.setText('Backward')
-        if maya_installed:
-            self.ui.mayavi_widget = MayaviQWidget()
-            self.ui.mayavi_widget.setMinimumSize(qc.QSize(100, 100))
-            self.ui.mayavi_widget.setMaximumSize(qc.QSize(600, 600))
-            self.ui.mayavi_widget.setObjectName("XYZView")
-            
-            # self.ui.verticalLayout_2.removeWidget(self.ui.tmp_label)
-            # self.ui.verticalLayout_2.addWidget(self.ui.mayavi_widget)
-            self.ui.verticalLayout_2.replaceWidget(self.ui.tmp_label, self.ui.mayavi_widget)
+            self.ui.SliceDir.setText('Forward')
+        
         #################### load configuration settings
         
         self.Update_laser()
@@ -111,7 +104,17 @@ class MainWindow(QMainWindow):
         self.update_Mosaic()
         self.connectActions()
         
-
+    def addMaya(self):
+        if maya_installed:
+            self.ui.mayavi_widget = MayaviQWidget()
+            self.ui.mayavi_widget.setMinimumSize(qc.QSize(100, 100))
+            self.ui.mayavi_widget.setMaximumSize(qc.QSize(1000, 1000))
+            self.ui.mayavi_widget.setObjectName("XYZView")
+            
+            # self.ui.verticalLayout_2.removeWidget(self.ui.tmp_label)
+            # self.ui.verticalLayout_2.addWidget(self.ui.mayavi_widget)
+            self.ui.verticalLayout_5.replaceWidget(self.ui.MUS_mosaic, self.ui.mayavi_widget)
+            self.ui.verticalLayout_5.removeWidget(self.ui.MUS_mosaic)
         
     def LoadSettings(self):
         settings = qc.QSettings("config.ini", qc.QSettings.IniFormat)
@@ -184,7 +187,6 @@ class MainWindow(QMainWindow):
         self.ui.YStart.valueChanged.connect(self.update_Mosaic)
         self.ui.YStop.valueChanged.connect(self.update_Mosaic)
         self.ui.Overlap.valueChanged.connect(self.update_Mosaic)
-        self.ui.FOV.textChanged.connect(self.update_Mosaic)
         
         # self.ui.ImageZDepth.valueChanged.connect(self.Calculate_ImageDepth)
         # self.ui.ImageZnumber.valueChanged.connect(self.Calculate_ImageDepth)
@@ -264,7 +266,7 @@ class MainWindow(QMainWindow):
         Xrange=self.ui.Xsteps.value()*self.ui.XStepSize.value()/1000
         # update X range in lable
         self.ui.XrangeLabel.setText('X(mm): '+str(Xrange))
-        self.ui.FOV.setText('XFOV(mm): '+str(Xrange))
+        self.ui.YrangeLabel.setText('Y(mm): '+str(self.ui.Ysteps.value()*self.ui.YStepSize.value()/1000))
         # generate waveform
         DOwaveform, AOwaveform, status = GenAODO(mode='RptBline', \
                                                  Aline_frq = self.Aline_frq, \

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1414</width>
-    <height>996</height>
+    <width>1658</width>
+    <height>1161</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,43 +17,28 @@
    <layout class="QGridLayout" name="gridLayout_14">
     <item row="0" column="0">
      <layout class="QGridLayout" name="gridLayout">
+      <property name="verticalSpacing">
+       <number>6</number>
+      </property>
       <item row="0" column="4">
-       <widget class="QPushButton" name="PauseButton">
+       <widget class="QDoubleSpinBox" name="tileMean">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="minimumSize">
          <size>
-          <width>200</width>
+          <width>100</width>
           <height>0</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
           <width>100</width>
-          <height>100</height>
-         </size>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>15</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Pause</string>
-        </property>
-        <property name="checkable">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="5">
-       <widget class="QPushButton" name="ConfigButton">
-        <property name="maximumSize">
-         <size>
-          <width>200</width>
           <height>16777215</height>
          </size>
         </property>
-        <property name="text">
-         <string>Load Config</string>
+        <property name="maximum">
+         <double>1000.000000000000000</double>
         </property>
        </widget>
       </item>
@@ -77,30 +62,62 @@
          </font>
         </property>
         <property name="text">
-         <string>Run</string>
+         <string>Go</string>
         </property>
         <property name="checkable">
          <bool>true</bool>
         </property>
        </widget>
       </item>
-      <item row="0" column="0">
-       <spacer name="horizontalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+      <item row="0" column="9">
+       <widget class="QLabel" name="label_31">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
         </property>
-        <property name="sizeType">
-         <enum>QSizePolicy::Fixed</enum>
+        <property name="text">
+         <string>Current surface</string>
         </property>
-        <property name="sizeHint" stdset="0">
+       </widget>
+      </item>
+      <item row="0" column="5">
+       <widget class="QLabel" name="label_25">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>AIP Threshold for Agar</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="13">
+       <widget class="QPushButton" name="ConfigButton">
+        <property name="minimumSize">
          <size>
-          <width>40</width>
-          <height>20</height>
+          <width>100</width>
+          <height>50</height>
          </size>
         </property>
-       </spacer>
+        <property name="maximumSize">
+         <size>
+          <width>200</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>11</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Load Config</string>
+        </property>
+       </widget>
       </item>
-      <item row="1" column="0" colspan="6">
+      <item row="1" column="0" colspan="14">
        <layout class="QHBoxLayout" name="horizontalLayout">
         <property name="spacing">
          <number>1</number>
@@ -120,14 +137,14 @@
             </property>
             <property name="minimumSize">
              <size>
-              <width>450</width>
-              <height>100</height>
+              <width>0</width>
+              <height>0</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>600</width>
-              <height>600</height>
+              <width>800</width>
+              <height>500</height>
              </size>
             </property>
             <property name="font">
@@ -139,7 +156,7 @@
              <bool>true</bool>
             </property>
             <property name="text">
-             <string>XY view</string>
+             <string>AIP</string>
             </property>
             <property name="scaledContents">
              <bool>true</bool>
@@ -150,100 +167,35 @@
            </widget>
           </item>
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_11">
-            <item>
-             <widget class="QLabel" name="label_26">
-              <property name="maximumSize">
-               <size>
-                <width>16777215</width>
-                <height>40</height>
-               </size>
-              </property>
-              <property name="text">
-               <string>avg signal</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QDoubleSpinBox" name="tileMean">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>100</width>
-                <height>16777215</height>
-               </size>
-              </property>
-              <property name="maximum">
-               <double>1000.000000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLabel" name="label_25">
-              <property name="text">
-               <string>Threshold</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QDoubleSpinBox" name="AgarValue">
-              <property name="minimum">
-               <double>-1.000000000000000</double>
-              </property>
-              <property name="maximum">
-               <double>1000.000000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLabel" name="label_27">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>16777215</width>
-                <height>40</height>
-               </size>
-              </property>
-              <property name="text">
-               <string>tissue?</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QCheckBox" name="TissueRadio">
-              <property name="text">
-               <string/>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
            <widget class="QLabel" name="XZplane">
             <property name="minimumSize">
              <size>
-              <width>100</width>
-              <height>300</height>
+              <width>300</width>
+              <height>400</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>600</width>
-              <height>300</height>
+              <width>800</width>
+              <height>2000</height>
              </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>25</pointsize>
+             </font>
             </property>
             <property name="autoFillBackground">
              <bool>true</bool>
             </property>
             <property name="text">
-             <string>XZ view</string>
+             <string>Bline</string>
             </property>
             <property name="scaledContents">
              <bool>true</bool>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -251,9 +203,14 @@
            <widget class="QGroupBox" name="BCbox1">
             <property name="maximumSize">
              <size>
-              <width>600</width>
+              <width>5000</width>
               <height>90</height>
              </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>11</pointsize>
+             </font>
             </property>
             <property name="title">
              <string>Brightness&amp;Contrast</string>
@@ -320,15 +277,35 @@
            <number>6</number>
           </property>
           <item>
-           <widget class="QLabel" name="tmp_label">
+           <widget class="QLabel" name="SampleMosaic">
             <property name="minimumSize">
              <size>
-              <width>100</width>
-              <height>100</height>
+              <width>300</width>
+              <height>300</height>
              </size>
             </property>
+            <property name="maximumSize">
+             <size>
+              <width>2000</width>
+              <height>5000</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>25</pointsize>
+             </font>
+            </property>
+            <property name="autoFillBackground">
+             <bool>true</bool>
+            </property>
             <property name="text">
-             <string/>
+             <string>Sample AIP</string>
+            </property>
+            <property name="scaledContents">
+             <bool>true</bool>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -336,16 +313,21 @@
            <widget class="QGroupBox" name="BCbox2">
             <property name="maximumSize">
              <size>
-              <width>700</width>
+              <width>5000</width>
               <height>90</height>
              </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>11</pointsize>
+             </font>
             </property>
             <property name="title">
              <string>Brightness&amp;Contrast</string>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
              <item>
-              <widget class="QScrollBar" name="XYZmax">
+              <widget class="QScrollBar" name="Surfmax">
                <property name="minimumSize">
                 <size>
                  <width>0</width>
@@ -353,16 +335,16 @@
                 </size>
                </property>
                <property name="maximum">
-                <number>1000</number>
-               </property>
-               <property name="singleStep">
-                <number>10</number>
-               </property>
-               <property name="pageStep">
                 <number>100</number>
                </property>
+               <property name="singleStep">
+                <number>2</number>
+               </property>
+               <property name="pageStep">
+                <number>5</number>
+               </property>
                <property name="value">
-                <number>1000</number>
+                <number>20</number>
                </property>
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -370,7 +352,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QScrollBar" name="XYZmin">
+              <widget class="QScrollBar" name="Surfmin">
                <property name="minimumSize">
                 <size>
                  <width>0</width>
@@ -402,17 +384,17 @@
         <item>
          <layout class="QVBoxLayout" name="verticalLayout_5">
           <item>
-           <widget class="QLabel" name="SampleMosaic">
+           <widget class="QLabel" name="MUS_mosaic">
             <property name="minimumSize">
              <size>
-              <width>300</width>
-              <height>300</height>
+              <width>0</width>
+              <height>0</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>700</width>
-              <height>700</height>
+              <width>2000</width>
+              <height>5000</height>
              </size>
             </property>
             <property name="font">
@@ -424,7 +406,7 @@
              <bool>true</bool>
             </property>
             <property name="text">
-             <string>sample surface</string>
+             <string/>
             </property>
             <property name="scaledContents">
              <bool>true</bool>
@@ -438,16 +420,21 @@
            <widget class="QGroupBox" name="BCbox3">
             <property name="maximumSize">
              <size>
-              <width>700</width>
+              <width>5000</width>
               <height>90</height>
              </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>11</pointsize>
+             </font>
             </property>
             <property name="title">
              <string>Brightness&amp;Contrast</string>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_20">
              <item>
-              <widget class="QScrollBar" name="Surfmax">
+              <widget class="QScrollBar" name="XYZmax">
                <property name="minimumSize">
                 <size>
                  <width>0</width>
@@ -455,7 +442,7 @@
                 </size>
                </property>
                <property name="maximum">
-                <number>100</number>
+                <number>300</number>
                </property>
                <property name="singleStep">
                 <number>2</number>
@@ -464,7 +451,7 @@
                 <number>10</number>
                </property>
                <property name="value">
-                <number>30</number>
+                <number>50</number>
                </property>
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -472,7 +459,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QScrollBar" name="Surfmin">
+              <widget class="QScrollBar" name="XYZmin">
                <property name="minimumSize">
                 <size>
                  <width>0</width>
@@ -480,7 +467,7 @@
                 </size>
                </property>
                <property name="maximum">
-                <number>100</number>
+                <number>300</number>
                </property>
                <property name="singleStep">
                 <number>2</number>
@@ -503,11 +490,79 @@
         </item>
        </layout>
       </item>
-      <item row="2" column="0" colspan="6">
+      <item row="0" column="8">
+       <widget class="QCheckBox" name="TissueRadio">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="10">
+       <widget class="QDoubleSpinBox" name="SurfHeight">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>0</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="12">
+       <widget class="QPushButton" name="PauseButton">
+        <property name="minimumSize">
+         <size>
+          <width>200</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>100</width>
+          <height>100</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>20</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Pause</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="7">
+       <widget class="QLabel" name="label_27">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>40</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Not Agar?</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="14">
        <widget class="QTabWidget" name="Tabs">
         <property name="maximumSize">
          <size>
-          <width>2000</width>
+          <width>5000</width>
           <height>300</height>
          </size>
         </property>
@@ -685,40 +740,7 @@
              <string>FOV setting</string>
             </property>
             <layout class="QGridLayout" name="gridLayout_12">
-             <item row="2" column="0" rowspan="2">
-              <widget class="QPushButton" name="CenterGalvo">
-               <property name="autoFillBackground">
-                <bool>false</bool>
-               </property>
-               <property name="text">
-                <string>CenterGalvo</string>
-               </property>
-               <property name="checkable">
-                <bool>false</bool>
-               </property>
-              </widget>
-             </item>
-             <item row="6" column="2">
-              <widget class="QSpinBox" name="BlineAVG">
-               <property name="whatsThis">
-                <string extracomment="bline average"/>
-               </property>
-               <property name="minimum">
-                <number>1</number>
-               </property>
-               <property name="maximum">
-                <number>10000</number>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="2">
-              <widget class="QLabel" name="BlineAvgLabel">
-               <property name="text">
-                <string>Bline average</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
+             <item row="1" column="2">
               <widget class="QSpinBox" name="Xsteps">
                <property name="wrapping">
                 <bool>false</bool>
@@ -737,7 +759,14 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="2">
+             <item row="0" column="3">
+              <widget class="QLabel" name="YstepsLabel">
+               <property name="text">
+                <string>Y pixels</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="3">
               <widget class="QSpinBox" name="Ysteps">
                <property name="wrapping">
                 <bool>false</bool>
@@ -753,7 +782,41 @@
                </property>
               </widget>
              </item>
-             <item row="6" column="1">
+             <item row="6" column="3">
+              <widget class="QLabel" name="BlineAvgLabel">
+               <property name="text">
+                <string>Bline average</string>
+               </property>
+              </widget>
+             </item>
+             <item row="7" column="3">
+              <widget class="QSpinBox" name="BlineAVG">
+               <property name="whatsThis">
+                <string extracomment="bline average"/>
+               </property>
+               <property name="minimum">
+                <number>1</number>
+               </property>
+               <property name="maximum">
+                <number>10000</number>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QLabel" name="XstepsLabel">
+               <property name="text">
+                <string>X pixels</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="2">
+              <widget class="QLabel" name="XStepsizeLabel">
+               <property name="text">
+                <string>Xstep size(um)</string>
+               </property>
+              </widget>
+             </item>
+             <item row="7" column="2">
               <widget class="QSpinBox" name="AlineAVG">
                <property name="maximum">
                 <number>10000</number>
@@ -763,10 +826,17 @@
                </property>
               </widget>
              </item>
-             <item row="3" column="2" rowspan="2">
+             <item row="4" column="3">
+              <widget class="QLabel" name="YStepsizeLabel">
+               <property name="text">
+                <string>Ystep size(um)</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="3">
               <widget class="QDoubleSpinBox" name="YStepSize">
                <property name="decimals">
-                <number>3</number>
+                <number>2</number>
                </property>
                <property name="minimum">
                 <double>0.000000000000000</double>
@@ -779,34 +849,30 @@
                </property>
               </widget>
              </item>
-             <item row="4" column="0">
-              <widget class="QLabel" name="XBiasLabel">
+             <item row="6" column="2">
+              <widget class="QLabel" name="AlineAvgLabel">
                <property name="text">
-                <string>X shift(mm)</string>
+                <string>Aline average</string>
                </property>
               </widget>
              </item>
-             <item row="0" column="0" rowspan="2">
-              <widget class="QLabel" name="XrangeLabel">
-               <property name="maximumSize">
-                <size>
-                 <width>16777215</width>
-                 <height>30</height>
-                </size>
+             <item row="5" column="2">
+              <widget class="QDoubleSpinBox" name="XStepSize">
+               <property name="decimals">
+                <number>2</number>
                </property>
-               <property name="text">
-                <string>X (mm)：</string>
+               <property name="minimum">
+                <double>0.000000000000000</double>
                </property>
-              </widget>
-             </item>
-             <item row="2" column="2">
-              <widget class="QLabel" name="YStepsizeLabel">
-               <property name="text">
-                <string>Ystep size(um)</string>
+               <property name="maximum">
+                <double>10000.000000000000000</double>
+               </property>
+               <property name="value">
+                <double>1.000000000000000</double>
                </property>
               </widget>
              </item>
-             <item row="5" column="0" rowspan="2">
+             <item row="7" column="1">
               <widget class="QDoubleSpinBox" name="XBias">
                <property name="minimum">
                 <double>-100.000000000000000</double>
@@ -819,47 +885,49 @@
                </property>
               </widget>
              </item>
-             <item row="0" column="1">
-              <widget class="QLabel" name="XstepsLabel">
+             <item row="6" column="1">
+              <widget class="QLabel" name="XBiasLabel">
                <property name="text">
-                <string>X pixels</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="1">
-              <widget class="QLabel" name="XStepsizeLabel">
-               <property name="text">
-                <string>Xstep size(um)</string>
+                <string>Galvo shift(mm)</string>
                </property>
               </widget>
              </item>
              <item row="5" column="1">
-              <widget class="QLabel" name="AlineAvgLabel">
+              <widget class="QPushButton" name="CenterGalvo">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>50</height>
+                </size>
+               </property>
+               <property name="autoFillBackground">
+                <bool>false</bool>
+               </property>
                <property name="text">
-                <string>Aline average</string>
+                <string>CenterGalvo</string>
+               </property>
+               <property name="checkable">
+                <bool>false</bool>
                </property>
               </widget>
              </item>
-             <item row="0" column="2">
-              <widget class="QLabel" name="YstepsLabel">
+             <item row="1" column="1">
+              <widget class="QLabel" name="YrangeLabel">
                <property name="text">
-                <string>Y pixels</string>
+                <string>Y(mm):</string>
                </property>
               </widget>
              </item>
-             <item row="3" column="1" rowspan="2">
-              <widget class="QDoubleSpinBox" name="XStepSize">
-               <property name="decimals">
-                <number>3</number>
+             <item row="0" column="1">
+              <widget class="QLabel" name="XrangeLabel">
+               <property name="maximumSize">
+                <size>
+                 <width>16777215</width>
+                 <height>16777215</height>
+                </size>
                </property>
-               <property name="minimum">
-                <double>0.000000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>10000.000000000000000</double>
-               </property>
-               <property name="value">
-                <double>1.000000000000000</double>
+               <property name="text">
+                <string>X(mm)：</string>
                </property>
               </widget>
              </item>
@@ -875,7 +943,7 @@
              </size>
             </property>
             <property name="title">
-             <string>Bline setting</string>
+             <string>Depth Setting</string>
             </property>
             <layout class="QGridLayout" name="gridLayout_4">
              <item row="0" column="0">
@@ -1094,20 +1162,6 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="4">
-              <widget class="QTextEdit" name="FOV">
-               <property name="enabled">
-                <bool>false</bool>
-               </property>
-               <property name="html">
-                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Microsoft YaHei UI'; font-size:15pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;XFOV(mm): &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-              </widget>
-             </item>
              <item row="2" column="1">
               <widget class="QLabel" name="label_30">
                <property name="text">
@@ -1164,7 +1218,31 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="2" column="4">
+             <item row="0" column="2">
+              <widget class="QLabel" name="label_4">
+               <property name="text">
+                <string>Increase by(mm)</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="QDoubleSpinBox" name="XStopHeight"/>
+             </item>
+             <item row="0" column="3">
+              <widget class="QLabel" name="YstartLabel_2">
+               <property name="text">
+                <string>Ystart(mm)</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="2">
+              <widget class="QDoubleSpinBox" name="Overlap">
+               <property name="value">
+                <double>10.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="2">
               <widget class="QLabel" name="OverlapLabel_2">
                <property name="maximumSize">
                 <size>
@@ -1177,30 +1255,6 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="0" column="2">
-              <widget class="QLabel" name="label_4">
-               <property name="text">
-                <string>Increase by(mm)</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="1">
-              <widget class="QDoubleSpinBox" name="XStopHeight"/>
-             </item>
-             <item row="3" column="4">
-              <widget class="QDoubleSpinBox" name="Overlap">
-               <property name="value">
-                <double>10.000000000000000</double>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="3">
-              <widget class="QLabel" name="YstartLabel_2">
-               <property name="text">
-                <string>Ystart(mm)</string>
-               </property>
-              </widget>
-             </item>
             </layout>
            </widget>
           </item>
@@ -1208,7 +1262,7 @@ p, li { white-space: pre-wrap; }
            <widget class="QLabel" name="MosaicLabel">
             <property name="minimumSize">
              <size>
-              <width>400</width>
+              <width>350</width>
               <height>200</height>
              </size>
             </property>
@@ -1235,7 +1289,7 @@ p, li { white-space: pre-wrap; }
              </size>
             </property>
             <property name="title">
-             <string>PreSurfBox</string>
+             <string>Display Downsampling</string>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">
              <item>
@@ -2083,42 +2137,16 @@ p, li { white-space: pre-wrap; }
           <string>Save</string>
          </attribute>
          <layout class="QGridLayout" name="gridLayout_10">
-          <item row="1" column="2">
-           <widget class="QPushButton" name="RedoDC">
-            <property name="text">
-             <string>REDO Compensation </string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <widget class="QSpinBox" name="SliceN">
-            <property name="minimum">
-             <number>1</number>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="2">
-           <widget class="QLineEdit" name="Disp_DIR">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>100</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="3">
-           <widget class="QLineEdit" name="BG_DIR">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>100</height>
-             </size>
-            </property>
-           </widget>
-          </item>
           <item row="1" column="0">
            <widget class="QCheckBox" name="Save">
+            <property name="font">
+             <font>
+              <pointsize>25</pointsize>
+             </font>
+            </property>
+            <property name="layoutDirection">
+             <enum>Qt::LeftToRight</enum>
+            </property>
             <property name="text">
              <string>Save?</string>
             </property>
@@ -2130,20 +2158,50 @@ p, li { white-space: pre-wrap; }
             </property>
            </widget>
           </item>
-          <item row="2" column="0">
-           <widget class="QTextEdit" name="DIR">
-            <property name="maximumSize">
+          <item row="7" column="2">
+           <widget class="QLabel" name="label_32">
+            <property name="text">
+             <string>Dispersion compenstaion window half size:</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="3">
+           <widget class="QPushButton" name="redoBG">
+            <property name="text">
+             <string>DO background</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1">
+           <widget class="QLabel" name="label_28">
+            <property name="text">
+             <string>Current Slice</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="3">
+           <widget class="QSpinBox" name="PeakWindow">
+            <property name="maximum">
+             <number>200</number>
+            </property>
+            <property name="value">
+             <number>75</number>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QSpinBox" name="SliceN">
+            <property name="minimumSize">
              <size>
-              <width>400</width>
-              <height>16777215</height>
+              <width>0</width>
+              <height>50</height>
              </size>
             </property>
-            <property name="html">
-             <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Microsoft YaHei UI'; font-size:15pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;D:/SSOCT_HE/data&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <property name="minimum">
+             <number>1</number>
             </property>
            </widget>
           </item>
@@ -2154,48 +2212,74 @@ p, li { white-space: pre-wrap; }
             </property>
            </widget>
           </item>
-          <item row="1" column="3">
-           <widget class="QPushButton" name="redoBG">
+          <item row="1" column="2">
+           <widget class="QPushButton" name="RedoDC">
             <property name="text">
-             <string>Reget background</string>
+             <string>DO Compensation </string>
             </property>
            </widget>
           </item>
-          <item row="4" column="1">
-           <widget class="QSpinBox" name="CuSlice">
-            <property name="value">
-             <number>1</number>
+          <item row="5" column="2">
+           <widget class="QLineEdit" name="Disp_DIR">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>100</height>
+             </size>
             </property>
            </widget>
           </item>
-          <item row="3" column="1">
-           <widget class="QLabel" name="label_28">
-            <property name="text">
-             <string>Current Slice</string>
+          <item row="5" column="3">
+           <widget class="QLineEdit" name="BG_DIR">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>100</height>
+             </size>
             </property>
            </widget>
           </item>
-          <item row="3" column="2">
-           <widget class="QPushButton" name="LoadDispersion">
-            <property name="text">
-             <string>Load Compensation</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="3">
+          <item row="6" column="3">
            <widget class="QPushButton" name="LoadBG">
             <property name="text">
              <string>Load Background</string>
             </property>
            </widget>
           </item>
-          <item row="4" column="2">
-           <widget class="QSpinBox" name="PeakWindow">
-            <property name="maximum">
-             <number>200</number>
+          <item row="5" column="0">
+           <widget class="QTextEdit" name="DIR">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>400</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="html">
+             <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'SimSun'; font-size:15pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Microsoft YaHei UI';&quot;&gt;D:/SSOCT_HE/data&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="1">
+           <widget class="QSpinBox" name="CuSlice">
+            <property name="enabled">
+             <bool>false</bool>
             </property>
             <property name="value">
-             <number>75</number>
+             <number>1</number>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="2">
+           <widget class="QPushButton" name="LoadDispersion">
+            <property name="text">
+             <string>Load Compensation</string>
             </property>
            </widget>
           </item>
@@ -3425,8 +3509,8 @@ p, li { white-space: pre-wrap; }
                 <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Microsoft YaHei UI'; font-size:15pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;/AODO/PFI0&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'SimSun'; font-size:15pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Microsoft YaHei UI';&quot;&gt;/AODO/PFI0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
               </widget>
              </item>
@@ -3437,6 +3521,66 @@ p, li { white-space: pre-wrap; }
         </widget>
        </widget>
       </item>
+      <item row="0" column="3">
+       <widget class="QLabel" name="label_26">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>40</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>current AIP</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="6">
+       <widget class="QDoubleSpinBox" name="AgarValue">
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="minimum">
+         <double>-1.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>1000.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="0" column="11">
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
      </layout>
     </item>
    </layout>
@@ -3446,7 +3590,7 @@ p, li { white-space: pre-wrap; }
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1414</width>
+     <width>1658</width>
      <height>33</height>
     </rect>
    </property>

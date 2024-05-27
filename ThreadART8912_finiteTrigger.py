@@ -27,16 +27,16 @@ CONTINUOUS = 0x7FFFFFFF
 global SIM
 SIM = False
 
-if not SIM:
-    try:
-        sys.path.append(r"C:\\Program Files (x86)\\ART Technology\\ArtScope\\Samples\\Python\\")
-        
-        from ART_SCOPE_Lib.functions import Functions
-        from ART_SCOPE_Lib.constants import *
-        from ART_SCOPE_Lib.lib import *
-        from ART_SCOPE_Lib.errors import check_for_error, ArtScopeError
-    except:
-        SIM = True
+
+try:
+    sys.path.append(r"C:\\Program Files (x86)\\ART Technology\\ArtScope\\Samples\\Python\\")
+    
+    from ART_SCOPE_Lib.functions import Functions
+    from ART_SCOPE_Lib.constants import *
+    from ART_SCOPE_Lib.lib import *
+    from ART_SCOPE_Lib.errors import check_for_error, ArtScopeError
+except:
+    SIM = True
 
 class ART8912_finiteTrigger(QThread):
     def __init__(self):
@@ -48,7 +48,7 @@ class ART8912_finiteTrigger(QThread):
         
         
     def run(self):
-        if not SIM:
+        if not (SIM or self.SIM):
             self.InitBoard()
             self.ConfigureBoard()
         self.QueueOut()
@@ -59,21 +59,21 @@ class ART8912_finiteTrigger(QThread):
         while self.item.action != 'exit':
             try:
                 if self.item.action == 'ConfigureBoard':
-                    if not SIM:
+                    if not (SIM or self.SIM):
                         self.ConfigureBoard()
                 elif self.item.action == 'StartAcquire':
-                    if not SIM:
+                    if not (SIM or self.SIM):
                         self.StartAcquire()
                     else:
                         self.simData()
                 elif self.item.action == 'atomBoard':
-                    if not SIM:
+                    if not (SIM or self.SIM):
                         self.atomBoard()
                 elif self.item.action == 'UninitBoard':
-                    if not SIM:
+                    if not (SIM or self.SIM):
                         self.UninitBoard()
                 elif self.item.action == 'InitBoard':
-                    if not SIM:
+                    if not (SIM or self.SIM):
                         self.InitBoard()
                 elif self.item.action == 'simData':
                     self.simData()
@@ -91,7 +91,7 @@ class ART8912_finiteTrigger(QThread):
             # self.log.write(message)
             self.item = self.queue.get()
             # start = time.time()
-        if not SIM:
+        if not (SIM or self.SIM):
             self.UninitBoard()
         print(self.exit_message)
         

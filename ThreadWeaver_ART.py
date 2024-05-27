@@ -247,7 +247,7 @@ class WeaverThread(QThread):
                if interrupt == 'Pause':
                    interrupt = self.PauseQueue.get()  # never time out
                    # if unpause button is clicked        
-                   if interrupt == 'unPause':
+                   if interrupt == 'Resume':
                          # self.ui.PauseButton.setChecked(False)
                          interrupt = None
             except:
@@ -488,6 +488,8 @@ class WeaverThread(QThread):
                     self.ui.statusbar.showMessage('Imaging '+str(stripes)+'th strip, '+str(cscans)+'th Cscan ')
                     # increment files imaged
                     cscans +=1
+                    an_action = DnSAction('display_mosaic') # data in Memory[memoryLoc]
+                    self.DnSQueue.put(an_action)
                 ############################ get user input
                 interrupt = self.check_interrupt()
             
@@ -510,7 +512,7 @@ class WeaverThread(QThread):
                interrupt = self.PauseQueue.get()  # never time out
                # print('queue output:',interrupt)
                # if unpause button is clicked        
-               if interrupt == 'unPause':
+               if interrupt == 'Resume':
                    # self.ui.PauseButton.setChecked(False)
                    interrupt = None
         except:
@@ -652,6 +654,8 @@ class WeaverThread(QThread):
                 cscans +=1
                 ######################################## check if Pause button is clicked
                 interrupt = self.check_interrupt()
+            an_action = DnSAction('display_mosaic') # data in Memory[memoryLoc]
+            self.DnSQueue.put(an_action)
             # print('finished this cycle for presurf')
             an_action = AODOAction('CloseTask')
             self.AODOQueue.put(an_action)

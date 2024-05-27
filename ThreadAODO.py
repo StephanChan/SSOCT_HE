@@ -19,13 +19,13 @@ global SIM
 SIM = False
 ###########################################
 from PyQt5.QtCore import  QThread
-if not SIM:
-    try:
-        import nidaqmx as ni
-        from nidaqmx.constants import AcquisitionType as Atype
-        from nidaqmx.constants import Edge
-    except:
-        SIM = True
+
+try:
+    import nidaqmx as ni
+    from nidaqmx.constants import AcquisitionType as Atype
+    from nidaqmx.constants import Edge
+except:
+    SIM = True
     
 from Generaic_functions import GenAODO
 import time
@@ -155,7 +155,7 @@ class AODOThread(QThread):
         # print('Z pos: ',self.Zpos)
     
     def Uninit(self):
-        if not SIM:
+        if not (SIM or self.SIM):
             settingtask = ni.Task('setting')
             settingtask.do_channels.add_do_chan(lines='AODO/port2/line0:7')
             tmp = np.uint32(YDISABLE + XDISABLE + ZDISABLE)
@@ -171,7 +171,7 @@ class AODOThread(QThread):
             return 'Laser invalid!'
         # self.CloseTask()
         
-        if not SIM: # if not running simulation mode
+        if not (SIM or self.SIM): # if not running simulation mode
             # Generate waveform
             DOwaveform,AOwaveform,status = GenAODO(mode=self.ui.ACQMode.currentText(), \
                                                    Aline_frq = self.Aline_freq, \
@@ -246,7 +246,7 @@ class AODOThread(QThread):
         return 'AODO configuration success'
         
     def StartTask(self):
-        if not SIM:
+        if not (SIM or self.SIM):
             self.AOtask.start()
             if self.ui.ACQMode.currentText() in ['SingleCscan','SurfScan','SurfScan+Slice'] or self.Digitizer == 'ATS9351':
                 self.DOtask.start()
@@ -255,7 +255,7 @@ class AODOThread(QThread):
 
             
     def StopTask(self, direction = 1):
-        if not SIM:
+        if not (SIM or self.SIM):
             self.AOtask.wait_until_done(timeout = 60)
             self.AOtask.stop()
             # self.AOtask.close()
@@ -270,7 +270,7 @@ class AODOThread(QThread):
                 self.ui.YPosition.setValue(self.Ypos)
     
     def CloseTask(self):
-        if not SIM:
+        if not (SIM or self.SIM):
             self.AOtask.close()
             if self.ui.ACQMode.currentText() in ['SingleCscan','SurfScan','SurfScan+Slice'] or self.Digitizer == 'ATS9351':
                 self.DOtask.close()
@@ -279,7 +279,7 @@ class AODOThread(QThread):
             self.log.write(message)
 
     def startVibratome(self):
-        if not SIM:
+        if not (SIM or self.SIM):
             settingtask = ni.Task('vibratome')
             settingtask.do_channels.add_do_chan(lines='AODO/PFI2')
             settingtask.write(True, auto_start = True)
@@ -289,7 +289,7 @@ class AODOThread(QThread):
         self.StagebackQueue.put(0)
         
     def stopVibratome(self):
-        if not SIM:
+        if not (SIM or self.SIM):
             settingtask = ni.Task('vibratome')
             settingtask.do_channels.add_do_chan(lines='AODO/PFI2')
             settingtask.write(False, auto_start = True)
@@ -299,7 +299,7 @@ class AODOThread(QThread):
         self.StagebackQueue.put(0)
         
     def StopNClose_Continuous(self):
-        if not SIM:
+        if not (SIM or self.SIM):
             if self.AOtask:
                 self.AOtask.stop()
                 self.AOtask.close()
@@ -325,7 +325,7 @@ class AODOThread(QThread):
     #     return 'AODO write task done'
                 
     def centergalvo(self):
-        if not SIM:
+        if not (SIM or self.SIM):
             with ni.Task('AO task') as AOtask:
                 AOtask.ao_channels.add_ao_voltage_chan(physical_channel='AODO/ao0', \
                                                       min_val=- 10.0, max_val=10.0, \
@@ -456,7 +456,7 @@ class AODOThread(QThread):
             self.log.write(message)
             self.StagebackQueue.put(0)
             return 0
-        if not SIM:
+        if not (SIM or self.SIM):
             with ni.Task('Move task') as DOtask, ni.Task('stageEnable') as stageEnabletask:
                 # configure stage direction and enable
                 stageEnabletask.do_channels.add_do_chan(lines='AODO/port2/line0:7')
@@ -501,7 +501,7 @@ class AODOThread(QThread):
         # print('after move func', self.Ypos, self.ui.YPosition.value())
         
     def StepMove(self, axis, Direction):
-        if not SIM:
+        if not (SIM or self.SIM):
             if axis == 'X':
                 distance = self.ui.Xstagestepsize.value() if Direction == 'UP' else -self.ui.Xstagestepsize.value() 
                 self.ui.XPosition.setValue(self.ui.XPosition.value()+distance)

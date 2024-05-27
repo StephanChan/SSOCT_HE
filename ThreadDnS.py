@@ -15,8 +15,9 @@ SCALE =10000
 import matplotlib.pyplot as plt
 import datetime
 
-global SIM
-SIM = False
+# global SIM
+# SIM = False
+# use_maya = False
 
 class DnSThread(QThread):
     def __init__(self):
@@ -53,7 +54,8 @@ class DnSThread(QThread):
                     self.Display_Cscan(self.item.data, self.item.raw)
                 elif self.item.action == 'SurfScan':
                     self.Display_SurfScan(self.item.data, self.item.raw, self.item.args)
-                
+                elif self.item.action == 'display_mosaic':
+                    self.Display_mosaic()
                 elif self.item.action == 'Clear':
                     self.surf = []
                 elif self.item.action == 'UpdateContrastXY':
@@ -201,6 +203,7 @@ class DnSThread(QThread):
 
         self.Cscan = data
         plane = np.transpose(data[0,:,:]).copy()# has to be first index, otherwise the memory space is not continuous
+        # print(plane.shape)
         pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
         # clear content on the waveformLabel
         self.ui.XZplane.clear()
@@ -208,18 +211,20 @@ class DnSThread(QThread):
         self.ui.XZplane.setPixmap(pixmap)
         
         plane = np.mean(data,2)# has to be first index, otherwise the memory space is not continuous
+        # print(plane.shape)
         self.ui.tileMean.setValue(np.mean(plane))
         if np.mean(plane)>self.ui.AgarValue.value():
             self.ui.TissueRadio.setChecked(True)
         else:
             self.ui.TissueRadio.setChecked(False)
-        pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value()/5)
+        pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value()/3)
         # clear content on the waveformLabel
         self.ui.XYplane.clear()
         # update image on the waveformLabel
         self.ui.XYplane.setPixmap(pixmap)
         ###################### plot 3D visulaization
-        self.ui.mayavi_widget.visualization.update_data(self.Cscan/500)
+        if self.use_maya:
+            self.ui.mayavi_widget.visualization.update_data(self.Cscan/500)
         if self.ui.Save.isChecked():
             if raw:
                 data = np.uint16(self.Cscan)
@@ -239,12 +244,22 @@ class DnSThread(QThread):
         surfX = args[1][0]
         surfY = np.int32(args[1][1]/args[1][0])
         scale = self.ui.scale.value()
-        self.surf = np.zeros([ surfX*Ypixels//scale,surfY*Xpixels//scale],dtype = np.float32)
+        self.surf = np.zeros([ surfX*(Ypixels//scale),surfY*(Xpixels//scale)],dtype = np.float32)
         pixmap = ImagePlot(self.surf, self.ui.Surfmin.value(), self.ui.Surfmax.value())
         # clear content on the waveformLabel
         self.ui.SampleMosaic.clear()
         # update iamge on the waveformLabel
         self.ui.SampleMosaic.setPixmap(pixmap)
+        
+        
+        #######################################
+
+        # self.surfMUS = np.zeros([ surfX*(Ypixels//scale),surfY*(Xpixels//scale)],dtype = np.float32)
+        # pixmap = ImagePlot(self.surfMUS, self.ui.XYZmin.value(), self.ui.XYZmax.value())
+        # # clear content on the waveformLabel
+        # self.ui.MUS_mosaic.clear()
+        # # update iamge on the waveformLabel
+        # self.ui.MUS_mosaic.setPixmap(pixmap)
             
     def Display_SurfScan(self, data, raw = False, args = []):
         # get number of Z pixels
@@ -297,7 +312,7 @@ class DnSThread(QThread):
         else:
             self.ui.TissueRadio.setChecked(False)
         # print('identify agar')
-        pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value()/5)
+        pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value()/3)
         # clear content on the waveformLabel
         self.ui.XYplane.clear()
         # update iamge on the waveformLabel
@@ -306,21 +321,14 @@ class DnSThread(QThread):
         scale = self.ui.scale.value()
 
         ###################### plot 3D visulaization
-        if not SIM:
+        if self.use_maya:
             self.ui.mayavi_widget.visualization.update_data(self.Cscan/500)
         # print('display 3D')
         # self.totalTiles = args[1][1]
         # print('before surf image update')
-        self.surf[Ypixels//scale*fileX:Ypixels//scale*(fileX+1),Xpixels//scale*fileY:Xpixels//scale*(fileY+1)] = plane[::scale,::scale]
-        # print('append tile')
-        pixmap = ImagePlot(self.surf, self.ui.Surfmin.value(), self.ui.Surfmax.value())
-        # print('gen pixmap')
-        # clear content on the waveformLabel
-        self.ui.SampleMosaic.clear()
-        # print('clear window')
-        # update iamge on the waveformLabel
-        self.ui.SampleMosaic.setPixmap(pixmap)
-        # print('update window')
+        plane_ds=plane[::scale,::scale]
+        self.surf[Ypixels//scale*fileX:Ypixels//scale*(fileX+1),Xpixels//scale*fileY:Xpixels//scale*(fileY+1)] = plane_ds[0:Ypixels//scale,0:Xpixels//scale]
+
         if self.ui.Save.isChecked():
             if raw:
                 data = np.uint16(self.Cscan)
@@ -328,7 +336,13 @@ class DnSThread(QThread):
                 data = np.uint16(self.Cscan/SCALE*65535)
             self.WriteData(data, self.SurfFilename([Ypixels,Xpixels,Zpixels]))
 
-            
+    def Display_mosaic(self):
+        pixmap = ImagePlot(self.surf, self.ui.Surfmin.value(), self.ui.Surfmax.value())
+        # print('gen pixmap')
+        # clear content on the waveformLabel
+        self.ui.SampleMosaic.clear()
+        self.ui.SampleMosaic.setPixmap(pixmap)
+        
     def Update_contrast_XY(self):
         if self.ui.ACQMode.currentText() in ['SingleAline', 'RptAline']:
             data = np.float32(np.mean(self.Aline,0))
@@ -361,14 +375,14 @@ class DnSThread(QThread):
             self.ui.XZplane.setPixmap(pixmap)
             
             plane = np.mean(data,2)# has to be first index, otherwise the memory space is not continuous
-            pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value()/5)
+            pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value()/3)
             # clear content on the waveformLabel
             self.ui.XYplane.clear()
             # update image on the waveformLabel
             self.ui.XYplane.setPixmap(pixmap)
             
     def Update_contrast_Surf(self):
-        
+        # print(self.surf.shape)
         pixmap = ImagePlot(self.surf, self.ui.Surfmin.value(), self.ui.Surfmax.value())
         # clear content on the waveformLabel
         self.ui.SampleMosaic.clear()
@@ -376,7 +390,8 @@ class DnSThread(QThread):
         self.ui.SampleMosaic.setPixmap(pixmap)
             
     def Update_contrast_XYZ(self):
-        self.ui.mayavi_widget.visualization.update_contrast(self.ui.XYZmin.value(), self.ui.XYZmax.value())
+        if self.use_maya:
+            self.ui.mayavi_widget.visualization.update_contrast(self.ui.XYZmin.value(), self.ui.XYZmax.value())
     
     def restart_tilenum(self):
         self.tileNum = 1

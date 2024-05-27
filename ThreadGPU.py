@@ -8,11 +8,11 @@ from PyQt5.QtCore import  QThread
 import time
 global SIM
 SIM = False
-if not SIM:
-    try:
-        import cupy
-    except:
-        SIM = True
+
+try:
+    import cupy
+except:
+    SIM = True
 import numpy as np
 from Actions import DnSAction
 import os
@@ -27,7 +27,7 @@ class GPUThread(QThread):
         # self.displayQueue = DisplayQueue
         # TODO: write windowing and dispersion function
         self.exit_message = 'GPU thread successfully exited\n'
-        if not SIM:
+        if not (SIM or self.SIM):
             self.winfunc = cupy.ElementwiseKernel(
                 'float32 x, complex64 y',
                 'complex64 z',
@@ -83,7 +83,7 @@ class GPUThread(QThread):
         # get depth pixels after FFT
         Pixel_start = self.ui.DepthStart.value()
         Pixel_range = self.ui.DepthRange.value()
-        if not SIM:
+        if not (SIM or self.SIM):
             self.data_CPU = np.float32(self.Memory[memoryLoc].copy())
             Alines =len(self.data_CPU)//samples
             self.data_CPU=self.data_CPU.reshape([Alines, samples])
@@ -149,7 +149,7 @@ class GPUThread(QThread):
         # get depth pixels after FFT
         Pixel_start = self.ui.DepthStart.value()
         Pixel_range = self.ui.DepthRange.value()
-        if not SIM:
+        if not (SIM or self.SIM):
             self.data_CPU = np.float32(self.Memory[memoryLoc].copy())
             Alines =len(self.data_CPU)//samples
             self.data_CPU=self.data_CPU.reshape([Alines, samples])
