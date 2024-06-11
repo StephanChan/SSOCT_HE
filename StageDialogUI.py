@@ -30,7 +30,7 @@ class Ui_Dialog(object):
         self.label_2.setObjectName("label_2")
         self.gridLayout.addWidget(self.label_2, 2, 0, 1, 1)
         self.Xpos = QtWidgets.QDoubleSpinBox(Dialog)
-        self.Xpos.setMaximum(150.0)
+        self.Xpos.setMaximum(300.0)
         self.Xpos.setObjectName("Xpos")
         self.gridLayout.addWidget(self.Xpos, 1, 1, 1, 1)
         self.label = QtWidgets.QLabel(Dialog)

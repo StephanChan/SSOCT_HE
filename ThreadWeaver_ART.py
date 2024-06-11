@@ -20,7 +20,7 @@ from scipy.signal import hilbert
 import datetime
 
 global ZPIXELSIZE
-ZPIXELSIZE = 5 # um, axial pixel size
+ZPIXELSIZE = 4.4 # um, axial pixel size
 
 class WeaverThread(QThread):
     def __init__(self):
@@ -94,7 +94,7 @@ class WeaverThread(QThread):
                     self.ui.RunButton.setText('Go')
                     self.ui.PauseButton.setChecked(False)
                     self.ui.PauseButton.setText('Pause')
-                    self.ui.statusbar.showMessage(status)
+                    # self.ui.statusbar.showMessage(status)
                 elif self.item.action == 'Gotozero':
                     message = self.Gotozero()
                     self.ui.statusbar.showMessage(message)
@@ -390,12 +390,12 @@ class WeaverThread(QThread):
         # init variables
         interrupt = None
         stripes = 1
-        scan_direction = 0 # init scan direction to be backward
+        scan_direction = 1 # init scan direction to be backward
         agarTiles = 0
         
         # stage move to start of this stripe
         self.ui.XPosition.setValue(self.Mosaic[0].x)
-        self.ui.YPosition.setValue(self.Mosaic[0].ystart)
+        self.ui.YPosition.setValue(self.Mosaic[0].ystop)
         an_action = AODOAction('Xmove2')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
@@ -403,7 +403,10 @@ class WeaverThread(QThread):
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
         # move Z stage up by user defined distance to put focus at user defined depth
-        self.ui.ZPosition.setValue(self.ui.ZPosition.value()+self.ui.ZIncrease.value())
+        # self.ui.ZPosition.setValue(self.ui.ZPosition.value()+self.ui.ZIncrease.value())
+        delta_z = (self.ui.SurfHeight.value()-self.ui.SurfSet.value())*ZPIXELSIZE/1000.0
+        self.ui.ZIncrease.setValue(delta_z)
+        self.ui.ZPosition.setValue(self.ui.ZPosition.value()+  delta_z)
         an_action = AODOAction('Zmove2')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
@@ -442,10 +445,14 @@ class WeaverThread(QThread):
                     cscans += 1
                 else:
                     ###################################### move to next tissue tile
-                    self.ui.YPosition.setValue(self.ui.YPosition.value()+Ystep/1000 * agarTiles * (-1)**(scan_direction+1))
+                    ydistance = self.ui.YPosition.value()+Ystep/1000.0 * agarTiles * (-1)**(scan_direction+1)
+                    message = 'agarTiles:'+str(agarTiles)+' ypos:'+str(round(ydistance,3))
+                    self.log.write(message)
+                    self.ui.YPosition.setValue(ydistance)
                     an_action = AODOAction('Ymove2')
                     self.AODOQueue.put(an_action)
-                    tmp = self.StagebackQueue.get()
+                    self.StagebackQueue.get()
+                    
                     # reset agar tiles
                     agarTiles = 0
                     ###################################### start one Cscan
@@ -576,13 +583,17 @@ class WeaverThread(QThread):
         self.DnSQueue.put(an_action)
         # init tile threshold array
         self.tile_flag = np.zeros((len(self.Mosaic),CscansPerStripe),dtype = np.uint8)
+        self.tile_surf = np.zeros((len(self.Mosaic),CscansPerStripe),dtype = np.uint8)
+        self.tmp_cscan = np.zeros([self.ui.Ysteps.value()*self.ui.BlineAVG.value() * \
+                                   (self.ui.Xsteps.value()*self.ui.AlineAVG.value()+ self.ui.PreClock.value()*2 + self.ui.PostClock.value()),\
+                                                     self.ui.DepthRange.value()])
         interrupt = None
         stripes = 1
-        scan_direction = 0 # init scan direction to be backward
+        scan_direction = 1 # init scan direction to be backward
         
         # stage move to start of this stripe
         self.ui.XPosition.setValue(self.Mosaic[0].x)
-        self.ui.YPosition.setValue(self.Mosaic[0].ystart)
+        self.ui.YPosition.setValue(self.Mosaic[0].ystop)
         an_action = AODOAction('Xmove2')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
@@ -648,6 +659,14 @@ class WeaverThread(QThread):
                 if np.sum(value > self.ui.AgarValue.value())>100:
                     self.tile_flag[stripes - 1][cscans] = 1
                     # self.tile_surf[stripes - 1][cscans] = self.autoFocus(cscan)
+                    # index = value > self.ui.AgarValue.value()
+                    # aline = np.mean(cscan(index,:),0) # average all Alines
+                    # self.tile_surf[stripes - 1][cscans] = findchangept(aline)
+                    # self.ui.SurfHeight.setValue(self.tile_surf[stripes - 1][cscans])
+                    # message = 'tile surf is:'+str(self.tile_surf[stripes - 1][cscans])
+                    # print(message)
+                    # self.log.write(message)
+                    self.tmp_cscan = self.tmp_cscan + cscan/100.0
                 
                 # increment files imaged
                 self.ui.statusbar.showMessage('finished '+str(stripes)+'th strip, '+str(cscans)+'th Cscan ')
@@ -663,9 +682,40 @@ class WeaverThread(QThread):
             self.Mosaic = np.delete(self.Mosaic, 0)
             stripes = stripes + 1
             
+        ######################################################### find average slice surface
+        self.tmp_cscan = self.tmp_cscan.reshape([self.ui.Ysteps.value()*self.ui.BlineAVG.value(),\
+                                                 self.ui.Xsteps.value()*self.ui.AlineAVG.value()+ self.ui.PreClock.value()*2 + self.ui.PostClock.value(),\
+                                                     self.ui.DepthRange.value()])
+        
+        self.tmp_cscan = self.tmp_cscan[:,self.ui.PreClock.value():self.ui.PreClock.value()+self.ui.Xsteps.value()*self.ui.AlineAVG.value(),:]
+        self.tmp_cscan = self.tmp_cscan[:,::20,:]
+        # find tile surface
+        self.surf = np.zeros([self.tmp_cscan.shape[0],self.tmp_cscan.shape[1]])
+        for yy in range(self.tmp_cscan.shape[0]):
+            for xx in range(self.tmp_cscan.shape[1]):
+                self.surf[yy,xx] = findchangept(self.tmp_cscan[yy,xx,:])
+        # import matplotlib.pyplot as plt
+        # plt.figure()
+        # plt.imshow(self.surf)
+        # plt.figure()
+        # plt.imshow(self.tmp_cscan[10,:,:])
+        # plt.figure()
+        # # load surface
+        # surface_path = self.ui.Surf_DIR.text()
+        # if os.path.isfile(surface_path):
+        #     surface = np.fromfile(surface_path, dtype=np.float32)
+        #     surface = surface[::20,::20]
+        
+        # # subtract
+
+        self.ui.SurfHeight.setValue(np.mean(self.surf))
+        message = 'tile surf is:'+str(np.mean(self.surf))
+        print(message)
+        self.log.write(message)
+        
         # print('finished presurf')
         # wait one second for the last tile to be displayed
-        time.sleep(2)
+        time.sleep(1)
         self.ui.DSing.setChecked(False)
         # reset FOV
         self.ui.Xsteps.setValue(Xsteps)

@@ -94,6 +94,7 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.LoadSettings()
+        self.setStageMinMax()
         if self.ui.SliceDir.isChecked():
             self.ui.SliceDir.setText('Forward')
         
@@ -103,6 +104,16 @@ class MainWindow(QMainWindow):
         self.update_galvoXwaveform()
         self.update_Mosaic()
         self.connectActions()
+        
+    def setStageMinMax(self):
+        self.ui.XPosition.setMinimum(self.ui.X0min.value()+self.ui.X1min.value())
+        self.ui.XPosition.setMaximum(self.ui.X0max.value()+self.ui.X1max.value())
+        
+        self.ui.YPosition.setMinimum(self.ui.Ymin.value())
+        self.ui.YPosition.setMaximum(self.ui.Ymax.value())
+        
+        self.ui.ZPosition.setMinimum(self.ui.Zmin.value())
+        self.ui.ZPosition.setMaximum(self.ui.Zmax.value())
         
     def addMaya(self):
         if maya_installed:
@@ -172,6 +183,9 @@ class MainWindow(QMainWindow):
         self.ui.Xsteps.valueChanged.connect(self.update_galvoXwaveform)
         self.ui.XStepSize.valueChanged.connect(self.update_galvoXwaveform)
         self.ui.AlineAVG.valueChanged.connect(self.update_galvoXwaveform)
+        self.ui.Ysteps.valueChanged.connect(self.update_galvoXwaveform)
+        self.ui.YStepSize.valueChanged.connect(self.update_galvoXwaveform)
+        self.ui.BlineAVG.valueChanged.connect(self.update_galvoXwaveform)
         self.ui.XBias.valueChanged.connect(self.update_galvoXwaveform)
         self.ui.Objective.currentTextChanged.connect(self.update_galvoXwaveform)
         self.ui.PreClock.valueChanged.connect(self.update_galvoXwaveform)
@@ -204,7 +218,27 @@ class MainWindow(QMainWindow):
         self.ui.LoadDispersion.clicked.connect(self.chooseCompenstaion)
         self.ui.LoadBG.clicked.connect(self.chooseBackground)
         self.ui.ConfigButton.clicked.connect(self.LoadConfig)
+        self.ui.X0min.valueChanged.connect(self.setStageMinMax)
+        self.ui.X0max.valueChanged.connect(self.setStageMinMax)
+        self.ui.X1min.valueChanged.connect(self.setStageMinMax)
+        self.ui.X1max.valueChanged.connect(self.setStageMinMax)
+        self.ui.Ymin.valueChanged.connect(self.setStageMinMax)
+        self.ui.Ymax.valueChanged.connect(self.setStageMinMax)
+        self.ui.Zmin.valueChanged.connect(self.setStageMinMax)
+        self.ui.Zmax.valueChanged.connect(self.setStageMinMax)
+        
+        self.ui.LoadSurface.clicked.connect(self.chooseSurfaceFile)
 
+    def chooseSurfaceFile(self):
+        fileName_choose, filetype = QFileDialog.getOpenFileName(self,  
+                                   "选取文件",  
+                                   os.getcwd(), # 起始路径 
+                                   "All Files (*);;Text Files (*.txt)")   # 设置文件扩展名过滤,用双分号间隔
+
+        if fileName_choose == "":
+           print("\n取消选择")
+           return
+        self.ui.Surf_DIR.setText(fileName_choose)
 
     def chooseDir(self):
         if self.ui.Save.isChecked():

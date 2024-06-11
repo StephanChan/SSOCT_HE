@@ -7,7 +7,7 @@ Created on Tue Dec 12 18:26:44 2023
 """
 
 from PyQt5.QtCore import  QThread
-from Generaic_functions import LinePlot, ImagePlot
+from Generaic_functions import LinePlot, ImagePlot, findchangept
 import numpy as np
 import traceback
 global SCALE
@@ -288,12 +288,12 @@ class DnSThread(QThread):
         surfX = args[1][0]
         surfY = np.int32(args[1][1]/args[1][0])
         fileY = args[0][1]-1
-        if np.mod(fileY,2) == 0:
+        if np.mod(fileY,2) == 1:
             fileX = args[0][0]
         else:
             fileX = surfX - args[0][0]-1
             
-        if np.mod(fileY,2)==1:
+        if np.mod(fileY,2)==0:
             data = np.flip(data,0)
         #######################################
         self.Cscan = data
@@ -327,14 +327,24 @@ class DnSThread(QThread):
         # self.totalTiles = args[1][1]
         # print('before surf image update')
         plane_ds=plane[::scale,::scale]
-        self.surf[Ypixels//scale*fileX:Ypixels//scale*(fileX+1),Xpixels//scale*fileY:Xpixels//scale*(fileY+1)] = plane_ds[0:Ypixels//scale,0:Xpixels//scale]
-
+        self.surf[Ypixels//scale*fileX:Ypixels//scale*(fileX+1),Xpixels//scale*(surfY-fileY-1):Xpixels//scale*(surfY-fileY)] = plane_ds[0:Ypixels//scale,0:Xpixels//scale]
+        
+            
+            
         if self.ui.Save.isChecked():
             if raw:
                 data = np.uint16(self.Cscan)
             else:
                 data = np.uint16(self.Cscan/SCALE*65535)
             self.WriteData(data, self.SurfFilename([Ypixels,Xpixels,Zpixels]))
+        # else:
+        #     # volume_ds = self.Cscan[:,::scale, :]
+        #     volume_ds = np.mean(np.mean(self.Cscan,0),1) # average over Y dimension
+        #     surf_profile = findchangept(volume_ds)
+        #     self.ui.SurfHeight.setValue(surf_profile)
+        #     message = 'tile surf is:'+str(surf_profile)
+        #     print(message)
+        #     self.log.write(message)
 
     def Display_mosaic(self):
         pixmap = ImagePlot(self.surf, self.ui.Surfmin.value(), self.ui.Surfmax.value())

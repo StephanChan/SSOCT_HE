@@ -401,9 +401,13 @@ def ImagePlot(matrix, m=0, M=1):
 def findchangept(signal):
     # python implementation of matlab function findchangepts
     L = len(signal)
+    z = np.argmax(signal)
+    last = np.min([z+30,L-2])
+    signal = signal[1:last]
+    L = len(signal)
     residual_error = np.ones(L)*9999999
     for ii in range(2,L-2,2):
-        residual_error[ii] = (ii-1)*np.var(signal[0:ii])+(L-ii+1)*np.var(signal[ii+1:-1])
+        residual_error[ii] = (ii-1)*np.var(signal[0:ii])+(L-ii+1)*np.var(signal[ii+1:L])
     pts = np.argmin(residual_error)
     # plt.plot(residual_error[2:-2])
     return pts
