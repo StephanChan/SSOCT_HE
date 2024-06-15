@@ -228,6 +228,8 @@ class MainWindow(QMainWindow):
         self.ui.Zmax.valueChanged.connect(self.setStageMinMax)
         
         self.ui.LoadSurface.clicked.connect(self.chooseSurfaceFile)
+        self.ui.LoadDarkField.clicked.connect(self.chooseDarkFieldFile)
+        self.ui.LoadFlatField.clicked.connect(self.chooseFlatFieldFile)
 
     def chooseSurfaceFile(self):
         fileName_choose, filetype = QFileDialog.getOpenFileName(self,  
@@ -239,6 +241,28 @@ class MainWindow(QMainWindow):
            print("\n取消选择")
            return
         self.ui.Surf_DIR.setText(fileName_choose)
+        
+    def chooseDarkFieldFile(self):
+        fileName_choose, filetype = QFileDialog.getOpenFileName(self,  
+                                   "选取文件",  
+                                   os.getcwd(), # 起始路径 
+                                   "All Files (*);;Text Files (*.txt)")   # 设置文件扩展名过滤,用双分号间隔
+
+        if fileName_choose == "":
+           print("\n取消选择")
+           return
+        self.ui.DarkField_DIR.setText(fileName_choose)
+    
+    def chooseFlatFieldFile(self):
+        fileName_choose, filetype = QFileDialog.getOpenFileName(self,  
+                                   "选取文件",  
+                                   os.getcwd(), # 起始路径 
+                                   "All Files (*);;Text Files (*.txt)")   # 设置文件扩展名过滤,用双分号间隔
+
+        if fileName_choose == "":
+           print("\n取消选择")
+           return
+        self.ui.FlatField_DIR.setText(fileName_choose)
 
     def chooseDir(self):
         if self.ui.Save.isChecked():

@@ -209,6 +209,7 @@ class GUI(MainWindow):
         
         self.ui.RedoDC.clicked.connect(self.redo_dispersion_compensation)
         self.ui.redoBG.clicked.connect(self.redo_background)
+        self.ui.redoSurf.clicked.connect(self.redo_surface)
         self.ui.BG_DIR.textChanged.connect(self.update_background)
         self.ui.Disp_DIR.textChanged.connect(self.update_Dispersion)
         self.ui.Xmove2.clicked.connect(self.Xmove2)
@@ -228,6 +229,11 @@ class GUI(MainWindow):
         self.ui.VibEnabled.clicked.connect(self.Vibratome)
         self.ui.SliceN.valueChanged.connect(self.change_slice_number)
         self.Init_allThreads()
+        
+        # test buttons
+        self.ui.TestButten1.clicked.connect(self.TestButton1Func)
+        self.ui.TestButten2.clicked.connect(self.TestButton2Func)
+        self.ui.TestButten3.clicked.connect(self.TestButton3Func)
         
     def Init_allThreads(self):
         self.Weaver_thread = WeaverThread_2(self.ui, self.log)
@@ -445,10 +451,28 @@ class GUI(MainWindow):
         an_action = WeaverAction('get_background')
         WeaverQueue.put(an_action)
         
+    def redo_surface(self):
+        an_action = WeaverAction('get_surface')
+        WeaverQueue.put(an_action)
+        
     def UninitBoard(self):
         an_action = DAction('UninitBoard')
         DQueue.put(an_action)
     
+    def TestButton1Func(self):
+        args = [[0, 0], [10, 100]]
+        an_action = DnSAction('Init_SurfScan', data = None, args = args)
+        DnSQueue.put(an_action)
+        
+    def TestButton2Func(self):
+        args = [[1, 1], [10, 100]]
+        an_action = DnSAction('SurfScan', data = np.ones([300*1700,150],dtype=np.float32)*50, args = args)
+        DnSQueue.put(an_action)
+    
+    def TestButton3Func(self):
+        an_action = DnSAction('display_mosaic') # data in Memory[memoryLoc]
+        DnSQueue.put(an_action)
+        
     def closeEvent(self, event):
         print('Exiting all threads')
         self.Stop_allThreads()

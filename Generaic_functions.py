@@ -398,7 +398,7 @@ def ImagePlot(matrix, m=0, M=1):
         pixmap = QPixmap(qpy.gray2qimage(np.zeros(1000,1000)))
     return pixmap
     
-def findchangept(signal):
+def findchangept(signal, step):
     # python implementation of matlab function findchangepts
     L = len(signal)
     z = np.argmax(signal)
@@ -406,7 +406,7 @@ def findchangept(signal):
     signal = signal[1:last]
     L = len(signal)
     residual_error = np.ones(L)*9999999
-    for ii in range(2,L-2,2):
+    for ii in range(2,L-2,step):
         residual_error[ii] = (ii-1)*np.var(signal[0:ii])+(L-ii+1)*np.var(signal[ii+1:L])
     pts = np.argmin(residual_error)
     # plt.plot(residual_error[2:-2])

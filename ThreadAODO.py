@@ -283,9 +283,10 @@ class AODOThread(QThread):
             self.AOtask.close()
             if self.ui.ACQMode.currentText() in ['SingleCscan','SurfScan','SurfScan+Slice'] or self.Digitizer == 'ATS9351':
                 self.DOtask.close()
-            message = 'X :'+str(round(self.Xpos,2))+' Y :'+str(round(self.Ypos,2))+' Z :'+str(round(self.Zpos,3))
+            message = 'cscan X :'+str(round(self.Xpos,2))+' Y :'+str(round(self.Ypos,2))+' Z :'+str(round(self.Zpos,3))
             print(message)
             self.log.write(message)
+        self.StagebackQueue.put(0)
 
     def startVibratome(self):
         if not (SIM or self.SIM):
