@@ -302,11 +302,12 @@ class GUI(MainWindow):
                 
                 # self.CenterGalvo()
         elif self.ui.ACQMode.currentText() in ['SingleAline','SingleBline','SingleCscan','SingleSlice']:
+            self.ui.RunButton.setText('Stop')
             an_action = WeaverAction(self.ui.ACQMode.currentText())
             WeaverQueue.put(an_action)
             # time.sleep(0.5)
-            self.ui.RunButton.setChecked(False)
-            self.ui.RunButton.setText('Go')
+            # self.ui.RunButton.setChecked(False)
+            # self.ui.RunButton.setText('Go')
             # self.CenterGalvo()
         else:
             self.Slice()

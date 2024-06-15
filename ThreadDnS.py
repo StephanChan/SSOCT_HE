@@ -111,7 +111,7 @@ class DnSThread(QThread):
         self.log.write(message)
         self.display_actions = 0
         
-    def Display_aline(self, data, raw = False):
+    def get_FOV_size(self, raw):
         # get number of Z pixels
         if not raw:
             Zpixels = self.ui.DepthRange.value()
@@ -127,6 +127,10 @@ class DnSThread(QThread):
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         if self.Digitizer == 'ART8912':
             Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+        return Zpixels, Xpixels
+            
+    def Display_aline(self, data, raw = False):
+        Zpixels, Xpixels = self.get_FOV_size(raw)
         # get number of Y pixels
         Yrpt = self.ui.BlineAVG.value()
         # reshape data to [Ypixels*Xpixels, Zpixels]
@@ -136,9 +140,9 @@ class DnSThread(QThread):
             data = data[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]
 
         self.Aline = data
-        data = np.float32(np.mean(data,0))
+        Ascan = np.float32(np.mean(data,0))
         # float32 data type
-        pixmap = LinePlot(data, [], self.ui.XYmin.value(), self.ui.XYmax.value())
+        pixmap = LinePlot(Ascan, [], self.ui.XYmin.value(), self.ui.XYmax.value())
         # clear content on the waveformLabel
         self.ui.XZplane.clear()
         # update iamge on the waveformLabel
@@ -153,30 +157,21 @@ class DnSThread(QThread):
             
     
     def Display_bline(self, data, raw = False):
-        # get number of Z pixels
-        if not raw:
-            Zpixels = self.ui.DepthRange.value()
-        else:
-            if self.Digitizer == 'ATS9351':
-                Zpixels = self.ui.PreSamples.value()+self.ui.PostSamples.value()
-                # data = np.float32(data/pow(2,16))
-            elif self.Digitizer == 'ART8912':
-                Zpixels = self.ui.PostSamples_2.value()
-                # data = np.float32(data/pow(2,12))
-        # get number of X pixels
-        Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
-        if self.Digitizer == 'ART8912':
-            Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+        Zpixels, Xpixels = self.get_FOV_size(raw)
         # get number of Y pixels
         Yrpt = self.ui.BlineAVG.value()
         # reshape data
         data = data.reshape([Yrpt,Xpixels,Zpixels])
-
+        # trim fly-back pixels
+        if self.Digitizer == 'ART8912':    
+            data = data[:,self.ui.PreClock.value():self.ui.Xsteps.value()*self.ui.AlineAVG.value()+self.ui.PreClock.value(),:]
+            Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
+            
         self.Bline = data
-        data = np.float32(np.mean(data,0))
-        data = np.transpose(data).copy()
+        Bscan = np.float32(np.mean(data,0))
+        Bscan = np.transpose(Bscan).copy()
 
-        pixmap = ImagePlot(data, self.ui.XYmin.value(), self.ui.XYmax.value())
+        pixmap = ImagePlot(Bscan, self.ui.XYmin.value(), self.ui.XYmax.value())
         # clear content on the waveformLabel
         self.ui.XZplane.clear()
         # update iamge on the waveformLabel
@@ -191,25 +186,16 @@ class DnSThread(QThread):
         
         
     def Display_Cscan(self, data, raw = False):
-        # get number of Z pixels
-        if not raw:
-            Zpixels = self.ui.DepthRange.value()
-        else:
-            if self.Digitizer == 'ATS9351':
-                Zpixels = self.ui.PreSamples.value()+self.ui.PostSamples.value()
-                # data = np.float32(data/pow(2,16))
-            elif self.Digitizer == 'ART8912':
-                Zpixels = self.ui.PostSamples_2.value()
-                # data = np.float32(data/pow(2,12))
-        # get number of X pixels
-        Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
-        if self.Digitizer == 'ART8912':
-            Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+        Zpixels, Xpixels = self.get_FOV_size(raw)
         # get number of Y pixels
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
         # reshape data
         data = data.reshape([Ypixels,Xpixels,Zpixels])
-
+        # trim fly-back pixels
+        if self.Digitizer == 'ART8912':    
+            data = data[:,self.ui.PreClock.value():self.ui.Xsteps.value()*self.ui.AlineAVG.value()+self.ui.PreClock.value(),:]
+            Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
+            
         self.Cscan = data
         plane = np.transpose(data[0,:,:]).copy()# has to be first index, otherwise the memory space is not continuous
         # print(plane.shape)
@@ -220,20 +206,14 @@ class DnSThread(QThread):
         self.ui.XZplane.setPixmap(pixmap)
         
         plane = np.mean(data,2)# has to be first index, otherwise the memory space is not continuous
-        # print(plane.shape)
-        self.ui.tileMean.setValue(np.mean(plane))
-        if np.mean(plane)>self.ui.AgarValue.value():
-            self.ui.TissueRadio.setChecked(True)
-        else:
-            self.ui.TissueRadio.setChecked(False)
         pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value()/3)
         # clear content on the waveformLabel
         self.ui.XYplane.clear()
         # update image on the waveformLabel
         self.ui.XYplane.setPixmap(pixmap)
         ###################### plot 3D visulaization
-        if self.use_maya:
-            self.ui.mayavi_widget.visualization.update_data(self.Cscan/500)
+        # if self.use_maya:
+        #     self.ui.mayavi_widget.visualization.update_data(self.Cscan/500)
         if self.ui.Save.isChecked():
             if raw:
                 data = np.uint16(self.Cscan)
@@ -242,14 +222,9 @@ class DnSThread(QThread):
             self.WriteData(data, self.CscanFilename([Ypixels,Xpixels,Zpixels]))
         
     def Init_SurfScan(self, raw = False, args = []):
-        
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
-        # if self.Digitizer == 'ART8912':
-        #     Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
         
-        #######################################
-        # for even strips, need to flip data in Y dimension because scanning was in backward direction
         surfX = args[1][0]
         surfY = np.int32(args[1][1]/args[1][0])
         scale = self.ui.scale.value()
@@ -261,75 +236,62 @@ class DnSThread(QThread):
         # update iamge on the waveformLabel
         self.ui.SampleMosaic.setPixmap(pixmap)
         
-        
-        if not self.ui.DSing.isChecked():
-            # load surface profile for high res imaging
-            if os.path.isfile(self.ui.Surf_DIR.text()):
-                self.surfCurve = np.uint16(np.fromfile(self.ui.Surf_DIR.text(), dtype=np.uint16))
-            else:
-                print('surface data not found, using all zeros')
-                self.surfCurve = np.zeros([Xpixels],dtype = np.uint16)
-            # plt.figure()
-            # plt.plot(self.surfCurve)
-            # plt.figure()
-            print('surfCurve shape:',self.surfCurve.shape)
-            # load darf field for shading correction
-            if os.path.isfile(self.ui.DarkField_DIR.text()):
-                self.darkField = np.float32(np.fromfile(self.ui.DarkField_DIR.text(), dtype=np.float32))
-                self.darkField = self.darkField.reshape([Ypixels, Xpixels])
-            else:
-                print('dark field data not found, using all zeros')
-                self.darkField = np.zeros([Ypixels, Xpixels],dtype = np.float32)
-            # load flat field for shading correction
-            if os.path.isfile(self.ui.FlatField_DIR.text()):
-                self.flatField = np.float32(np.fromfile(self.ui.FlatField_DIR.text(), dtype=np.float32))
-                self.flatField = self.flatField.reshape([Ypixels, Xpixels])
-            else:
-                print('flat data not found, using all zeros')
-                self.flatField = np.ones([Ypixels, Xpixels],dtype = np.float32)
+        # load surface profile for high res imaging
+        if os.path.isfile(self.ui.Surf_DIR.text()):
+            self.surfCurve = np.uint16(np.fromfile(self.ui.Surf_DIR.text(), dtype=np.uint16))
+        else:
+            print('surface data not found, using all zeros')
+            self.surfCurve = np.zeros([Xpixels],dtype = np.uint16)
+        # plt.figure()
+        # plt.plot(self.surfCurve)
+        # plt.figure()
+        print('surfCurve shape:',self.surfCurve.shape)
+        # load darf field for shading correction
+        if os.path.isfile(self.ui.DarkField_DIR.text()):
+            self.darkField = np.float32(np.fromfile(self.ui.DarkField_DIR.text(), dtype=np.float32))
+            self.darkField = self.darkField.reshape([Ypixels, Xpixels])
+        else:
+            print('dark field data not found, using all zeros')
+            self.darkField = np.zeros([Ypixels, Xpixels],dtype = np.float32)
+        # load flat field for shading correction
+        if os.path.isfile(self.ui.FlatField_DIR.text()):
+            self.flatField = np.float32(np.fromfile(self.ui.FlatField_DIR.text(), dtype=np.float32))
+            self.flatField = self.flatField.reshape([Ypixels, Xpixels])
+        else:
+            print('flat data not found, using all zeros')
+            self.flatField = np.ones([Ypixels, Xpixels],dtype = np.float32)
+            
         self.first_tile = True
         #######################################
+        if not self.ui.DSing.isChecked():
+            self.zmax_scale = 3
+            ############## adjust scale
+            while Xpixels%self.zmax_scale or Ypixels%self.zmax_scale:
+                self.zmax_scale -= 1
+            message = '\nslice '+str(self.SliceNum)+' zmax scale is '+str(self.zmax_scale)+'\n'
+            print(message)
+            self.log.write(message)
+            self.surfZMAX = np.zeros([ surfX*(Ypixels//self.zmax_scale),surfY*(Xpixels//self.zmax_scale)],dtype = np.float32)
+            pixmap = ImagePlot(self.surfZMAX, self.ui.XYZmin.value(), self.ui.XYZmax.value())
+            # clear content on the waveformLabel
+            self.ui.MUS_mosaic.clear()
+            # update iamge on the waveformLabel
+            self.ui.MUS_mosaic.setPixmap(pixmap)
 
-        # self.surfMUS = np.zeros([ surfX*(Ypixels//scale),surfY*(Xpixels//scale)],dtype = np.float32)
-        # pixmap = ImagePlot(self.surfMUS, self.ui.XYZmin.value(), self.ui.XYZmax.value())
-        # # clear content on the waveformLabel
-        # self.ui.MUS_mosaic.clear()
-        # # update iamge on the waveformLabel
-        # self.ui.MUS_mosaic.setPixmap(pixmap)
-        
-        # import matplotlib.pyplot as plt
-        # plt.figure()
-        # plt.imshow(self.surfCurve)
-        # plt.figure()
-        # plt.imshow(self.flatField)
-        # plt.figure()
             
     def Process_SurfScan(self, data, raw = False, args = []):
-        # get number of Z pixels
-        if not raw:
-            Zpixels = self.ui.DepthRange.value()
-        else:
-            if self.Digitizer == 'ATS9351':
-                Zpixels = self.ui.PreSamples.value()+self.ui.PostSamples.value()
-                # data = np.float32(data/pow(2,16))
-            elif self.Digitizer == 'ART8912':
-                Zpixels = self.ui.PostSamples_2.value()
-                # data = np.float32(data/pow(2,12))
-        # get number of X pixels
-        Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
-        if self.Digitizer == 'ART8912':
-            Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
+        Zpixels, Xpixels = self.get_FOV_size(raw)
         # get number of Y pixels
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
         # reshape into Ypixels x Xpixels x Zpixels
         data = data.reshape([Ypixels,Xpixels,Zpixels])
         # trim fly-back pixels
         if self.Digitizer == 'ART8912':    
-            data = data[:,self.ui.PreClock.value():self.ui.Xsteps.value()*self.ui.AlineAVG.value()+self.ui.PreClock.value()]
+            data = data[:,self.ui.PreClock.value():self.ui.Xsteps.value()*self.ui.AlineAVG.value()+self.ui.PreClock.value(),:]
             Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         
         ########################################
-        # for even strips, need to flip data in Y dimension because scanning was in backward direction
+        # for odd strips, need to flip data in Y dimension and also the sequence
         surfX = args[1][0]
         surfY = np.int32(args[1][1]/args[1][0])
         fileY = args[0][1]-1
@@ -340,41 +302,38 @@ class DnSThread(QThread):
             
         ########################################################
         if not raw:
+            # start0=time.time()
+            #######################################
+            # CPU do surface flatterning, this takes about 1 sec
+            data_flatten = np.zeros(data.shape, dtype = np.float32)
+            for xx in range(Xpixels):
+                    data_flatten[:,xx,0:data.shape[2]-self.surfCurve[xx]] = data[:,xx,self.surfCurve[xx]:]
+            # print('flatten surface take', time.time()-start0)
+            tmp = self.ui.SaveZstart.value()
+            start_pixel =  tmp if tmp>-0.5 else self.ui.SurfSet.value()+7 ################# focus set to start from 7 pixels below surface
+            thickness = self.ui.SaveZrange.value()
+            
             if not self.ui.DSing.isChecked():
-                # start0=time.time()
-                #######################################
-                # CPU do surface flatterning, this takes about 1 sec
-                data_flatten = np.zeros(data.shape, dtype = np.float32)
-                for xx in range(Xpixels):
-                        data_flatten[:,xx,0:data.shape[2]-self.surfCurve[xx]] = data[:,xx,self.surfCurve[xx]:]
-                # print('flatten surface take', time.time()-start0)
-                # print('data_flatten shape:',data_flatten.shape)
-                # plt.figure()
-                # plt.imshow(data_flatten[10,:,:])
                 # calculate data_focus and data_ds
-                tmp = self.ui.SaveZstart.value()
-                start_pixel =  tmp if tmp>-0.5 else self.ui.SurfSet.value()+7
-                thickness = self.ui.SaveZrange.value()
                 data_focus = data_flatten[:,:,start_pixel:start_pixel + thickness]
-
-                data_ds = data_flatten.reshape([Ypixels//3, 3, Xpixels//3, 3, Zpixels]).mean(-2).mean(1)
-                data_ds2 = data_flatten.reshape([Ypixels//10, 10, Xpixels//10, 10, Zpixels]).mean(-2).mean(1)
+                data_ds = data_flatten.reshape([Ypixels//self.zmax_scale, self.zmax_scale, Xpixels//self.zmax_scale, self.zmax_scale, Zpixels]).mean(-2).mean(1) #################### zmax set to use 3x3 downsampling
+                data_ds2 = data_flatten.reshape([Ypixels//10, 10, Xpixels//10, 10, Zpixels]).mean(-2).mean(1) #################### surfProfile set to use 10x10 downsampling
                 ########################################
                 # calculate AIP, surface, and zmax
                 AIP = np.mean(data_focus,2)
                 # shading correction
                 AIP = (AIP-self.darkField)/self.flatField
-                # plt.figure()
-                # plt.imshow(AIP)
-                # start0=time.time()
+                
+                # start0 = time.time()
                 surfProfile = np.zeros([data_ds2.shape[0], data_ds2.shape[1]])
                 for yy in range(data_ds2.shape[0]):
                     for xx in range(data_ds2.shape[1]):
                         surfProfile[yy,xx] = findchangept(data_ds2[yy,xx,:],2)
                 # print('calculate surface', time.time()-start0)
+                
                 kernel = np.ones([1,1,5])/5 # kernel size hard coded to be 5 in z dimension
                 zmax = np.max(ndimage.convolve(data_ds,kernel,mode = 'reflect'),2)
-                
+                # for odd strips, need to flip data in Y dimension and also the sequence
                 if np.mod(fileY,2)==1:
                     AIP = np.flip(AIP,0)
                     surfProfile = np.flip(surfProfile,0)
@@ -382,6 +341,8 @@ class DnSThread(QThread):
                     data_ds = np.flip(data_ds,0)
                     data_focus = np.flip(data_focus,0)
                 self.Cscan = data_ds
+                ######################################### save processed result
+                # check if this is the first tile
                 if self.first_tile:
                     mode = 'w'
                     self.first_tile = False
@@ -394,18 +355,19 @@ class DnSThread(QThread):
                     self.writeTiff(self.ui.DIR.toPlainText()+'/surf/vol'+str(self.sliceNum)+'/SURF.tif', surfProfile, mode)
                 if self.ui.Save.isChecked():
                     self.writeTiff(self.ui.DIR.toPlainText()+'/fitting/vol'+str(self.sliceNum)+'/MAX.tif', zmax, mode)
+                    
+                self.surfZMAX[Ypixels//self.zmax_scale*fileX:Ypixels//self.zmax_scale*(fileX+1),\
+                          Xpixels//self.zmax_scale*(surfY-fileY-1):Xpixels//self.zmax_scale*(surfY-fileY)] = zmax
             ##########################################################################
-            # for downsample imaging
             else:
-                data_ds = data
+                # for fast pre-scan imaging
+                data_ds = data_flatten
                 if np.mod(fileY,2)==1:
                     data_ds = np.flip(data_ds,0)
                 self.Cscan = data_ds
-                
-                tmp = self.ui.SaveZstart.value()
-                start_pixel =  tmp if tmp>-0.5 else self.ui.SurfSet.value()+10
-                thickness = self.ui.SaveZrange.value()
                 AIP = np.mean(data_ds[:,:,start_pixel:start_pixel + thickness],2)
+                
+                
             ############################### ###############
             # display Bline
             plane = np.transpose(data_ds[0,:,:]).copy()
@@ -415,7 +377,6 @@ class DnSThread(QThread):
             # update image on the waveformLabel
             self.ui.XZplane.setPixmap(pixmap)
             ############################## #######
-            scale = self.ui.scale.value()
             # display AIP
             pixmap = ImagePlot(AIP, self.ui.XYmin.value(), self.ui.XYmax.value())
             # clear content on the waveformLabel
@@ -429,13 +390,16 @@ class DnSThread(QThread):
             #     self.ui.mayavi_widget.visualization.update_data(data_ds/500)
             ###########################################
             # squeeze AIP into surface image
-            
+            scale = self.ui.scale.value()
             self.surf[Ypixels//scale*fileX:Ypixels//scale*(fileX+1),\
                       Xpixels//scale*(surfY-fileY-1):Xpixels//scale*(surfY-fileY)] = AIP[::scale,::scale]
+                
+            
             
         else:
             #######################################
             # for raw data, no display is available
+            thickness = Zpixels
             self.Cscan = data
             if np.mod(fileY,2)==1:
                 self.Cscan = np.flip(self.Cscan,0)
@@ -456,20 +420,27 @@ class DnSThread(QThread):
         
     def Display_mosaic(self):
         pixmap = ImagePlot(self.surf, self.ui.Surfmin.value(), self.ui.Surfmax.value())
-        # print('gen pixmap')
-        # clear content on the waveformLabel
         self.ui.SampleMosaic.clear()
         self.ui.SampleMosaic.setPixmap(pixmap)
-        # import matplotlib.pyplot as plt
-        # plt.figure()
-        # plt.imshow(self.surf)
-        # plt.figure()
+        
+        if not self.ui.DSing.isChecked():
+            pixmap = ImagePlot(self.surfZMAX, self.ui.XYZmin.value(), self.ui.XYZmax.value())
+            # clear content on the waveformLabel
+            self.ui.MUS_mosaic.clear()
+            # update iamge on the waveformLabel
+            self.ui.MUS_mosaic.setPixmap(pixmap)
+
         
     def Save_mosaic(self):
         if self.ui.Save.isChecked():
             tif = TIFF.open(self.ui.DIR.toPlainText()+'/aip/slice'+str(self.sliceNum)+'coase.tif', mode='w')
             tif.write_image(self.surf)
             tif.close()
+            if not self.ui.DSing.isChecked():
+                tif = TIFF.open(self.ui.DIR.toPlainText()+'/fitting/slice'+str(self.sliceNum)+'coase.tif', mode='w')
+                tif.write_image(self.surfZMAX)
+                tif.close()
+            
         
     def Update_contrast_XY(self):
         if self.ui.ACQMode.currentText() in ['SingleAline', 'RptAline']:
@@ -503,7 +474,7 @@ class DnSThread(QThread):
             self.ui.XZplane.setPixmap(pixmap)
             
             tmp = self.ui.SaveZstart.value()
-            start_pixel =  tmp if tmp>-0.5 else self.ui.SurfSet.value()+5
+            start_pixel =  tmp if tmp>-0.5 else self.ui.SurfSet.value()+7
             thickness = self.ui.SaveZrange.value()
             plane = np.mean(data[:,:,start_pixel:start_pixel + thickness],2)# has to be first index, otherwise the memory space is not continuous
             pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
@@ -521,8 +492,13 @@ class DnSThread(QThread):
         self.ui.SampleMosaic.setPixmap(pixmap)
             
     def Update_contrast_XYZ(self):
-        if self.use_maya:
-            self.ui.mayavi_widget.visualization.update_contrast(self.ui.XYZmin.value(), self.ui.XYZmax.value())
+        # if self.use_maya:
+        #     self.ui.mayavi_widget.visualization.update_contrast(self.ui.XYZmin.value(), self.ui.XYZmax.value())
+        pixmap = ImagePlot(self.surfZMAX, self.ui.XYZmin.value(), self.ui.XYZmax.value())
+        # clear content on the waveformLabel
+        self.ui.MUS_mosaic.clear()
+        # update iamge on the waveformLabel
+        self.ui.MUS_mosaic.setPixmap(pixmap)
     
     def restart_tilenum(self):
         self.tileNum = 1
@@ -568,10 +544,11 @@ class DnSThread(QThread):
         fp = open(filePath, 'wb')
         data.tofile(fp)
         fp.close()
-        message = 'time for saving: '+str(round(time.time()-start,3))
-        print(message)
-        # self.ui.PrintOut.append(message)
-        self.log.write(message)
+        if time.time()-start > 1:
+            message = 'time for saving: '+str(round(time.time()-start,3))
+            print(message)
+            # self.ui.PrintOut.append(message)
+            self.log.write(message)
         
     def WriteAgar(self, data, args):
         [Ystep, Xstep] = args

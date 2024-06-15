@@ -337,8 +337,9 @@ class MainWindow(QMainWindow):
                                                  postclocks = self.ui.PostClock.value())
         # show generating waveform result
         #print(self.Xwaveform)
-        current_message = self.ui.statusbar.currentMessage()
-        self.ui.statusbar.showMessage(current_message+status)
+        # current_message = self.ui.statusbar.currentMessage()
+        # self.ui.statusbar.showMessage(current_message+status)
+        print(status)
         if len(AOwaveform) > 0:
             pixmap = LinePlot(AOwaveform, DOwaveform)
             # clear content on the waveformLabel
