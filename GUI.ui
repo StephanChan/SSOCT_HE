@@ -336,8 +336,8 @@
            <widget class="QLabel" name="MUS_mosaic">
             <property name="minimumSize">
              <size>
-              <width>0</width>
-              <height>0</height>
+              <width>300</width>
+              <height>300</height>
              </size>
             </property>
             <property name="maximumSize">
@@ -684,7 +684,7 @@
            <widget class="QGroupBox" name="AcquireModeBox">
             <property name="maximumSize">
              <size>
-              <width>400</width>
+              <width>300</width>
               <height>400</height>
              </size>
             </property>
@@ -1037,9 +1037,15 @@
           </item>
           <item>
            <widget class="QGroupBox" name="DepthBox">
+            <property name="minimumSize">
+             <size>
+              <width>350</width>
+              <height>0</height>
+             </size>
+            </property>
             <property name="maximumSize">
              <size>
-              <width>300</width>
+              <width>500</width>
               <height>400</height>
              </size>
             </property>
@@ -1047,33 +1053,7 @@
              <string>Depth Setting</string>
             </property>
             <layout class="QGridLayout" name="gridLayout_4">
-             <item row="0" column="0">
-              <widget class="QLabel" name="DepthStartLabel">
-               <property name="maximumSize">
-                <size>
-                 <width>150</width>
-                 <height>20</height>
-                </size>
-               </property>
-               <property name="text">
-                <string>Z Start(pixel)</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="DepthRangeLabel">
-               <property name="maximumSize">
-                <size>
-                 <width>150</width>
-                 <height>20</height>
-                </size>
-               </property>
-               <property name="text">
-                <string>Z Range(pixel)</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="0">
+             <item row="4" column="0">
               <widget class="QSpinBox" name="DepthRange">
                <property name="maximumSize">
                 <size>
@@ -1095,7 +1075,50 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="0">
+             <item row="2" column="1">
+              <widget class="QSpinBox" name="SaveZstart">
+               <property name="minimum">
+                <number>-1</number>
+               </property>
+               <property name="maximum">
+                <number>1000</number>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="DepthStartLabel">
+               <property name="minimumSize">
+                <size>
+                 <width>200</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>150</width>
+                 <height>20</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Dsplay Start(pixel)</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="QLabel" name="label_36">
+               <property name="text">
+                <string>Save range</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLabel" name="label_35">
+               <property name="text">
+                <string>Save start</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
               <widget class="QSpinBox" name="DepthStart">
                <property name="maximumSize">
                 <size>
@@ -1111,34 +1134,47 @@
                </property>
               </widget>
              </item>
-             <item row="0" column="1">
-              <widget class="QLabel" name="label_35">
-               <property name="text">
-                <string>Save Z start</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="1">
-              <widget class="QLabel" name="label_36">
-               <property name="text">
-                <string>Save Z range</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QSpinBox" name="SaveZstart">
-               <property name="minimum">
-                <number>-1</number>
-               </property>
-               <property name="maximum">
-                <number>1000</number>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="1">
+             <item row="4" column="1">
               <widget class="QSpinBox" name="SaveZrange">
                <property name="maximum">
                 <number>1000</number>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QLabel" name="DepthRangeLabel">
+               <property name="minimumSize">
+                <size>
+                 <width>200</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>150</width>
+                 <height>20</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Dsplay Range(pixel)</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="0" colspan="2">
+              <widget class="QLabel" name="label_37">
+               <property name="maximumSize">
+                <size>
+                 <width>16777215</width>
+                 <height>20</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <pointsize>9</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Set Save start to -1 to use surface finding result</string>
                </property>
               </widget>
              </item>
@@ -1149,7 +1185,7 @@
            <widget class="QGroupBox" name="FlybackBox">
             <property name="maximumSize">
              <size>
-              <width>300</width>
+              <width>150</width>
               <height>600</height>
              </size>
             </property>
@@ -1172,6 +1208,12 @@
              </item>
              <item>
               <widget class="QSpinBox" name="PreClock">
+               <property name="maximumSize">
+                <size>
+                 <width>1000</width>
+                 <height>16777215</height>
+                </size>
+               </property>
                <property name="maximum">
                 <number>10000</number>
                </property>
@@ -1306,7 +1348,7 @@
              <item row="2" column="1">
               <widget class="QLabel" name="label_30">
                <property name="text">
-                <string>ZStart</string>
+                <string>ZStart(mm) at Xstop</string>
                </property>
               </widget>
              </item>
@@ -1339,7 +1381,7 @@
              <item row="0" column="1">
               <widget class="QLabel" name="label_29">
                <property name="text">
-                <string>ZStart(mm)</string>
+                <string>ZStart(mm) at Xstart</string>
                </property>
               </widget>
              </item>
@@ -1414,7 +1456,7 @@
              </size>
             </property>
             <property name="text">
-             <string>TextLabel</string>
+             <string>Mosaic Pattern</string>
             </property>
             <property name="scaledContents">
              <bool>true</bool>
@@ -1430,7 +1472,7 @@
              </size>
             </property>
             <property name="title">
-             <string>Display Downsampling</string>
+             <string>Display setting</string>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">
              <item>
@@ -1629,8 +1671,11 @@
              </item>
              <item row="6" column="1">
               <widget class="QSpinBox" name="backReget">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
                <property name="value">
-                <number>5</number>
+                <number>1</number>
                </property>
               </widget>
              </item>
@@ -2287,6 +2332,9 @@
              </item>
              <item>
               <widget class="QPushButton" name="RepTest2">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
                <property name="text">
                 <string>with OCT</string>
                </property>
@@ -2432,8 +2480,8 @@
              <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Microsoft YaHei UI'; font-size:15pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;D:/SSOCT_HE/data&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'SimSun'; font-size:15pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Microsoft YaHei UI';&quot;&gt;D:/SSOCT_HE/data&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -3503,6 +3551,9 @@ p, li { white-space: pre-wrap; }
             <layout class="QGridLayout" name="gridLayout_15">
              <item row="0" column="1">
               <widget class="QCheckBox" name="Gotozero">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
                <property name="text">
                 <string>Go to 0</string>
                </property>
@@ -3741,8 +3792,8 @@ p, li { white-space: pre-wrap; }
                 <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Microsoft YaHei UI'; font-size:15pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;/AODO/PFI0&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'SimSun'; font-size:15pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Microsoft YaHei UI';&quot;&gt;/AODO/PFI0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
               </widget>
              </item>

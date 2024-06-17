@@ -276,6 +276,6 @@ class ART8912_finiteTrigger(QThread):
         self.DbackQueue.put(an_action)
         self.MemoryLoc = (self.MemoryLoc+1) % self.memoryCount
 
-        print('finish acquiring')
+        # print('finish acquiring')
         # self.ui.PrintOut.append('finish acquiring')
-        self.log.write('finish acquiring')
+        # self.log.write('finish acquiring')
