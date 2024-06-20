@@ -43,13 +43,20 @@ class WeaverThread(QThread):
                     self.ui.statusbar.showMessage(message)
                     # self.ui.PrintOut.append(message)
                     self.log.write(message)
-    
+                    self.ui.RunButton.setChecked(False)
+                    self.ui.RunButton.setText('Go')
+                    self.ui.PauseButton.setChecked(False)
+                    self.ui.PauseButton.setText('Pause')
                     
                 elif self.item.action in ['SingleBline', 'SingleAline', 'SingleCscan']:
                     message = self.SingleScan(self.item.action)
                     self.ui.statusbar.showMessage(message)
                     # self.ui.PrintOut.append(message)
                     self.log.write(message)
+                    self.ui.RunButton.setChecked(False)
+                    self.ui.RunButton.setText('Go')
+                    self.ui.PauseButton.setChecked(False)
+                    self.ui.PauseButton.setText('Pause')
                     
                 elif self.item.action == 'SurfScan':
                     # make directories
@@ -79,8 +86,8 @@ class WeaverThread(QThread):
                     else:
                         status = "action aborted by user... or or focusing gives large movement:"+ str(self.ui.ZIncrease.value())
                     # reset RUN button
-                    self.ui.RunButton.setText('Go')
                     self.ui.RunButton.setChecked(False)
+                    self.ui.RunButton.setText('Go')
                     self.ui.PauseButton.setChecked(False)
                     self.ui.PauseButton.setText('Pause')
                     self.ui.statusbar.showMessage(status)
@@ -108,8 +115,8 @@ class WeaverThread(QThread):
                     self.ui.ImageZDepth.setEnabled(True)
                     self.ui.SMPthickness.setEnabled(True)
                     # reset RUN button
-                    self.ui.RunButton.setText('Go')
                     self.ui.RunButton.setChecked(False)
+                    self.ui.RunButton.setText('Go')
                     self.ui.PauseButton.setChecked(False)
                     self.ui.PauseButton.setText('Pause')
                 elif self.item.action == 'SingleSlice':
@@ -117,6 +124,10 @@ class WeaverThread(QThread):
                     self.ui.statusbar.showMessage(message)
                     # self.ui.PrintOut.append(message)
                     self.log.write(message)
+                    self.ui.RunButton.setChecked(False)
+                    self.ui.RunButton.setText('Go')
+                    self.ui.PauseButton.setChecked(False)
+                    self.ui.PauseButton.setText('Pause')
                 elif self.item.action == 'RptSlice':
                     self.ui.SMPthickness.setEnabled(False)
                     self.ui.SliceZDepth.setEnabled(False)
@@ -247,8 +258,6 @@ class WeaverThread(QThread):
             # In other modes, do FFT first
             an_action = GPUAction(self.ui.FFTDevice.currentText(), mode, memoryLoc)
             self.GPUQueue.put(an_action)
-        self.ui.RunButton.setChecked(False)
-        self.ui.RunButton.setText('Go')
         return mode + " successfully finished..."
             
     def RptScan(self, mode):
@@ -306,8 +315,6 @@ class WeaverThread(QThread):
         self.GPUQueue.put(an_action)
         an_action = DnSAction('display_counts')
         self.DnSQueue.put(an_action)
-        self.ui.PauseButton.setChecked(False)
-        self.ui.PauseButton.setText('Pause')
         return mode + ' successfully finished...'
   
     def SurfScan(self, initHeight):
@@ -431,12 +438,13 @@ class WeaverThread(QThread):
                     start = time.time()
                     # collect data from digitizer
                     an_action = self.DbackQueue.get() # never time out
+                    
                     message = 'time to fetch data: '+str(round(time.time()-start,3))+'s'
                     # self.ui.PrintOut.append(message)
                     print(message)
                     self.log.write(message)
                     
-                    self.StagebackQueue.get() # wait for stage movement 
+                    
                     ####################################### if no FFT needed, directly display data 
                     # get data location in memory space
                     memoryLoc = an_action.action
@@ -458,6 +466,9 @@ class WeaverThread(QThread):
                     # display sample surface. This will display last tile, not the current tile, because FFT is not done yet for the current tile
                     an_action = DnSAction('display_mosaic') 
                     self.DnSQueue.put(an_action)
+                    
+                    self.StagebackQueue.get() # wait for stage movement 
+                    
                 ############################ check user input
                 interrupt = self.check_interrupt()
             
@@ -493,7 +504,7 @@ class WeaverThread(QThread):
         return interrupt
         
     def SurfPreScan(self,initHeight):
-        self.Yds = 20 # accellaration scale for fast pre-scan
+        self.Yds = 30 # accellaration scale for fast pre-scan
         # clear display windows
         an_action = DnSAction('Clear')
         self.DnSQueue.put(an_action)

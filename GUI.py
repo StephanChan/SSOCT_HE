@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\帅斌\Documents\SSOCT_HE\SSOCT_HE-master\SSOCT_HE-master\GUI.ui'
+# Form implementation generated from reading ui file 'D:\SSOCT_HE\software\GUI.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.10
 #
@@ -150,7 +150,6 @@ class Ui_MainWindow(object):
         font.setPointSize(25)
         self.MUS_mosaic.setFont(font)
         self.MUS_mosaic.setAutoFillBackground(True)
-        self.MUS_mosaic.setText("")
         self.MUS_mosaic.setScaledContents(True)
         self.MUS_mosaic.setAlignment(QtCore.Qt.AlignCenter)
         self.MUS_mosaic.setObjectName("MUS_mosaic")
@@ -1610,6 +1609,7 @@ class Ui_MainWindow(object):
         self.BCbox1.setTitle(_translate("MainWindow", "Brightness&Contrast"))
         self.SampleMosaic.setText(_translate("MainWindow", "Sample AIP"))
         self.BCbox2.setTitle(_translate("MainWindow", "Brightness&Contrast"))
+        self.MUS_mosaic.setText(_translate("MainWindow", "Sample MUS"))
         self.BCbox3.setTitle(_translate("MainWindow", "Brightness&Contrast"))
         self.RunButton.setText(_translate("MainWindow", "Go"))
         self.ConfigButton.setText(_translate("MainWindow", "Load Config"))
@@ -1738,8 +1738,8 @@ class Ui_MainWindow(object):
         self.DIR.setHtml(_translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'SimSun\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'Microsoft YaHei UI\';\">D:/SSOCT_HE/data</span></p></body></html>"))
+"</style></head><body style=\" font-family:\'Microsoft YaHei UI\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">D:/SSOCT_HE/data</p></body></html>"))
         self.LoadDispersion.setText(_translate("MainWindow", "Load Compensation"))
         self.RedoDC.setText(_translate("MainWindow", "DO Compensation "))
         self.label_23.setText(_translate("MainWindow", "Start Slice#"))
@@ -1865,8 +1865,8 @@ class Ui_MainWindow(object):
         self.ClockTerm.setHtml(_translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'SimSun\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'Microsoft YaHei UI\';\">/AODO/PFI0</span></p></body></html>"))
+"</style></head><body style=\" font-family:\'Microsoft YaHei UI\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">/AODO/PFI0</p></body></html>"))
         self.Tabs.setTabText(self.Tabs.indexOf(self.Lasertab), _translate("MainWindow", "Laser"))
         self.TestButten2.setText(_translate("MainWindow", "DnS Process SurfScan"))
         self.TestButten1.setText(_translate("MainWindow", "DnS Init Surf"))

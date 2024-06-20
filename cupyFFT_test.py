@@ -11,8 +11,8 @@ import cupy as cp
 import matplotlib.pyplot as plt
 
 # define number of samples per FFT and total number of FFTs
-nSamp = 1440
-nFFT = 300000
+nSamp = 1298
+nFFT = 300*1700
 # init raw data
 data = np.sin(2*np.pi*np.random.randint(10,90)*np.arange(nSamp)/nSamp)
 data = np.float32(np.tile(data,[nFFT,1]))

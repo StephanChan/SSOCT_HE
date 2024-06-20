@@ -18,6 +18,7 @@ class Ui_Dialog(object):
         self.gridLayout = QtWidgets.QGridLayout(Dialog)
         self.gridLayout.setObjectName("gridLayout")
         self.Zpos = QtWidgets.QDoubleSpinBox(Dialog)
+        self.Zpos.setMaximum(150.0)
         self.Zpos.setObjectName("Zpos")
         self.gridLayout.addWidget(self.Zpos, 3, 1, 1, 1)
         self.Ypos = QtWidgets.QDoubleSpinBox(Dialog)

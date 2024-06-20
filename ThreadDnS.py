@@ -142,7 +142,7 @@ class DnSThread(QThread):
         self.Aline = data
         Ascan = np.float32(np.mean(data,0))
         # float32 data type
-        pixmap = LinePlot(Ascan, [], self.ui.XYmin.value(), self.ui.XYmax.value())
+        pixmap = LinePlot(Ascan, [], self.ui.XYmin.value()*20, self.ui.XYmax.value()*30)
         # clear content on the waveformLabel
         self.ui.XZplane.clear()
         # update iamge on the waveformLabel
@@ -247,28 +247,34 @@ class DnSThread(QThread):
         # plt.figure()
         print('surfCurve shape:',self.surfCurve.shape)
         # load darf field for shading correction
-        if os.path.isfile(self.ui.DarkField_DIR.text()):
-            self.darkField = np.float32(np.fromfile(self.ui.DarkField_DIR.text(), dtype=np.float32))
-            self.darkField = self.darkField.reshape([Ypixels, Xpixels])
-        else:
-            print('dark field data not found, using all zeros')
-            self.darkField = np.zeros([Ypixels, Xpixels],dtype = np.float32)
-        # load flat field for shading correction
-        if os.path.isfile(self.ui.FlatField_DIR.text()):
-            self.flatField = np.float32(np.fromfile(self.ui.FlatField_DIR.text(), dtype=np.float32))
-            self.flatField = self.flatField.reshape([Ypixels, Xpixels])
-        else:
-            print('flat data not found, using all zeros')
-            self.flatField = np.ones([Ypixels, Xpixels],dtype = np.float32)
-            
-        self.first_tile = True
-        #######################################
         if not self.ui.DSing.isChecked():
+            if os.path.isfile(self.ui.DarkField_DIR.text()):
+                self.darkField = np.float32(np.fromfile(self.ui.DarkField_DIR.text(), dtype=np.float32))
+                self.darkField = self.darkField.reshape([Xpixels, Ypixels])
+                self.darkField = self.darkField.transpose()
+            else:
+                print('dark field data not found, using all zeros')
+                self.darkField = np.zeros([Ypixels, Xpixels],dtype = np.float32)
+            # load flat field for shading correction
+            if os.path.isfile(self.ui.FlatField_DIR.text()):
+                self.flatField = np.float32(np.fromfile(self.ui.FlatField_DIR.text(), dtype=np.float32))
+                self.flatField = self.flatField.reshape([Xpixels, Ypixels])
+                self.flatField = self.flatField.transpose()
+            else:
+                print('flat data not found, using all ones')
+                self.flatField = np.ones([Ypixels, Xpixels],dtype = np.float32)
+            
+            # plt.figure()
+            # plt.imshow(self.flatField)
+            # plt.figure()
+            self.first_tile = True
+            #######################################
+        
             self.zmax_scale = 3
             ############## adjust scale
             while Xpixels%self.zmax_scale or Ypixels%self.zmax_scale:
                 self.zmax_scale -= 1
-            message = '\nslice '+str(self.SliceNum)+' zmax scale is '+str(self.zmax_scale)+'\n'
+            message = '\nslice '+str(self.sliceNum)+' zmax scale is '+str(self.zmax_scale)+'\n'
             print(message)
             self.log.write(message)
             self.surfZMAX = np.zeros([ surfX*(Ypixels//self.zmax_scale),surfY*(Xpixels//self.zmax_scale)],dtype = np.float32)
@@ -332,7 +338,7 @@ class DnSThread(QThread):
                 # print('calculate surface', time.time()-start0)
                 
                 kernel = np.ones([1,1,5])/5 # kernel size hard coded to be 5 in z dimension
-                zmax = np.max(ndimage.convolve(data_ds,kernel,mode = 'reflect'),2)
+                zmax = np.argmax(ndimage.convolve(data_ds,kernel,mode = 'reflect'),2)
                 # for odd strips, need to flip data in Y dimension and also the sequence
                 if np.mod(fileY,2)==1:
                     AIP = np.flip(AIP,0)
@@ -378,7 +384,8 @@ class DnSThread(QThread):
             self.ui.XZplane.setPixmap(pixmap)
             ############################## #######
             # display AIP
-            pixmap = ImagePlot(AIP, self.ui.XYmin.value(), self.ui.XYmax.value())
+            scale = self.ui.scale.value()
+            pixmap = ImagePlot(AIP[:,::scale], self.ui.XYmin.value(), self.ui.XYmax.value())
             # clear content on the waveformLabel
             self.ui.XYplane.clear()
             # update iamge on the waveformLabel
