@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 
+<<<<<<< HEAD
 # Form implementation generated from reading ui file 'C:\Users\帅斌\Documents\SSOCT_HE\SSOCT_HE-master\SSOCT_HE-master\GUI.ui'
+=======
+# Form implementation generated from reading ui file 'D:\SSOCT_HE\software\GUI.ui'
+>>>>>>> df06e214cb146677d944217ed089f2deb28a02df
 #
 # Created by: PyQt5 UI code generator 5.15.10
 #
@@ -81,19 +85,32 @@ class Ui_MainWindow(object):
         self.verticalLayout_18.setObjectName("verticalLayout_18")
         self.XYmax = QtWidgets.QScrollBar(self.BCbox1)
         self.XYmax.setMinimumSize(QtCore.QSize(0, 20))
+<<<<<<< HEAD
         self.XYmax.setMaximum(200)
         self.XYmax.setSingleStep(1)
         self.XYmax.setPageStep(5)
+=======
+        self.XYmax.setMaximum(4096)
+        self.XYmax.setSingleStep(10)
+        self.XYmax.setPageStep(100)
+>>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         self.XYmax.setProperty("value", 100)
         self.XYmax.setOrientation(QtCore.Qt.Horizontal)
         self.XYmax.setObjectName("XYmax")
         self.verticalLayout_18.addWidget(self.XYmax)
         self.XYmin = QtWidgets.QScrollBar(self.BCbox1)
         self.XYmin.setMinimumSize(QtCore.QSize(0, 20))
+<<<<<<< HEAD
         self.XYmin.setMaximum(100)
         self.XYmin.setSingleStep(1)
         self.XYmin.setPageStep(5)
         self.XYmin.setProperty("value", 1)
+=======
+        self.XYmin.setMaximum(4096)
+        self.XYmin.setSingleStep(10)
+        self.XYmin.setPageStep(100)
+        self.XYmin.setProperty("value", 0)
+>>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         self.XYmin.setOrientation(QtCore.Qt.Horizontal)
         self.XYmin.setObjectName("XYmin")
         self.verticalLayout_18.addWidget(self.XYmin)
@@ -123,10 +140,17 @@ class Ui_MainWindow(object):
         self.verticalLayout_19.setObjectName("verticalLayout_19")
         self.Surfmax = QtWidgets.QScrollBar(self.BCbox2)
         self.Surfmax.setMinimumSize(QtCore.QSize(0, 20))
+<<<<<<< HEAD
         self.Surfmax.setMaximum(200)
         self.Surfmax.setSingleStep(2)
         self.Surfmax.setPageStep(5)
         self.Surfmax.setProperty("value", 60)
+=======
+        self.Surfmax.setMaximum(100)
+        self.Surfmax.setSingleStep(2)
+        self.Surfmax.setPageStep(5)
+        self.Surfmax.setProperty("value", 20)
+>>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         self.Surfmax.setOrientation(QtCore.Qt.Horizontal)
         self.Surfmax.setObjectName("Surfmax")
         self.verticalLayout_19.addWidget(self.Surfmax)
@@ -164,10 +188,17 @@ class Ui_MainWindow(object):
         self.verticalLayout_20.setObjectName("verticalLayout_20")
         self.XYZmax = QtWidgets.QScrollBar(self.BCbox3)
         self.XYZmax.setMinimumSize(QtCore.QSize(0, 20))
+<<<<<<< HEAD
         self.XYZmax.setMaximum(200)
         self.XYZmax.setSingleStep(2)
         self.XYZmax.setPageStep(10)
         self.XYZmax.setProperty("value", 70)
+=======
+        self.XYZmax.setMaximum(300)
+        self.XYZmax.setSingleStep(2)
+        self.XYZmax.setPageStep(10)
+        self.XYZmax.setProperty("value", 50)
+>>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         self.XYZmax.setOrientation(QtCore.Qt.Horizontal)
         self.XYZmax.setObjectName("XYZmax")
         self.verticalLayout_20.addWidget(self.XYZmax)
@@ -176,7 +207,11 @@ class Ui_MainWindow(object):
         self.XYZmin.setMaximum(300)
         self.XYZmin.setSingleStep(2)
         self.XYZmin.setPageStep(10)
+<<<<<<< HEAD
         self.XYZmin.setProperty("value", 1)
+=======
+        self.XYZmin.setProperty("value", 0)
+>>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         self.XYZmin.setOrientation(QtCore.Qt.Horizontal)
         self.XYZmin.setObjectName("XYZmin")
         self.verticalLayout_20.addWidget(self.XYZmin)
@@ -222,7 +257,10 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.PauseButton, 0, 15, 1, 1)
         self.AgarValue = QtWidgets.QDoubleSpinBox(self.centralwidget)
         self.AgarValue.setMinimumSize(QtCore.QSize(100, 0))
+<<<<<<< HEAD
         self.AgarValue.setDecimals(1)
+=======
+>>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         self.AgarValue.setMinimum(-1.0)
         self.AgarValue.setMaximum(1000.0)
         self.AgarValue.setObjectName("AgarValue")
@@ -231,7 +269,10 @@ class Ui_MainWindow(object):
         self.tileMean.setEnabled(False)
         self.tileMean.setMinimumSize(QtCore.QSize(100, 0))
         self.tileMean.setMaximumSize(QtCore.QSize(100, 16777215))
+<<<<<<< HEAD
         self.tileMean.setDecimals(1)
+=======
+>>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         self.tileMean.setMaximum(1000.0)
         self.tileMean.setObjectName("tileMean")
         self.gridLayout.addWidget(self.tileMean, 0, 4, 1, 1)
@@ -736,6 +777,16 @@ class Ui_MainWindow(object):
         self.XSpeedlabel = QtWidgets.QLabel(self.XstageBox)
         self.XSpeedlabel.setObjectName("XSpeedlabel")
         self.gridLayout_7.addWidget(self.XSpeedlabel, 5, 0, 1, 1)
+<<<<<<< HEAD
+=======
+        self.XPosition = QtWidgets.QDoubleSpinBox(self.XstageBox)
+        self.XPosition.setMinimumSize(QtCore.QSize(100, 0))
+        self.XPosition.setMinimum(0.0)
+        self.XPosition.setMaximum(300.0)
+        self.XPosition.setProperty("value", 50.0)
+        self.XPosition.setObjectName("XPosition")
+        self.gridLayout_7.addWidget(self.XPosition, 2, 2, 1, 1)
+>>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         self.Xstagestepsizelabel = QtWidgets.QLabel(self.XstageBox)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -752,6 +803,7 @@ class Ui_MainWindow(object):
         self.XDOWN = QtWidgets.QPushButton(self.XstageBox)
         self.XDOWN.setObjectName("XDOWN")
         self.gridLayout_7.addWidget(self.XDOWN, 7, 2, 1, 1)
+<<<<<<< HEAD
         self.XUP = QtWidgets.QPushButton(self.XstageBox)
         self.XUP.setObjectName("XUP")
         self.gridLayout_7.addWidget(self.XUP, 5, 2, 1, 1)
@@ -774,6 +826,18 @@ class Ui_MainWindow(object):
         self.XPositionLabel.setMaximumSize(QtCore.QSize(16777215, 20))
         self.XPositionLabel.setObjectName("XPositionLabel")
         self.gridLayout_7.addWidget(self.XPositionLabel, 1, 1, 1, 2)
+=======
+        self.XHome = QtWidgets.QPushButton(self.XstageBox)
+        self.XHome.setObjectName("XHome")
+        self.gridLayout_7.addWidget(self.XHome, 2, 0, 1, 1)
+        self.XUP = QtWidgets.QPushButton(self.XstageBox)
+        self.XUP.setObjectName("XUP")
+        self.gridLayout_7.addWidget(self.XUP, 5, 2, 1, 1)
+        self.XPositionLabel = QtWidgets.QLabel(self.XstageBox)
+        self.XPositionLabel.setMaximumSize(QtCore.QSize(16777215, 20))
+        self.XPositionLabel.setObjectName("XPositionLabel")
+        self.gridLayout_7.addWidget(self.XPositionLabel, 1, 2, 1, 1)
+>>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         self.horizontalLayout_7.addWidget(self.XstageBox)
         self.YstageBox = QtWidgets.QGroupBox(self.StageTab)
         self.YstageBox.setMaximumSize(QtCore.QSize(16777215, 300))
@@ -793,6 +857,12 @@ class Ui_MainWindow(object):
         self.YSpeed.setProperty("value", 2.5)
         self.YSpeed.setObjectName("YSpeed")
         self.gridLayout_8.addWidget(self.YSpeed, 3, 2, 1, 1)
+<<<<<<< HEAD
+=======
+        self.YHome = QtWidgets.QPushButton(self.YstageBox)
+        self.YHome.setObjectName("YHome")
+        self.gridLayout_8.addWidget(self.YHome, 1, 0, 1, 1)
+>>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         self.Ystagestepsize = QtWidgets.QDoubleSpinBox(self.YstageBox)
         self.Ystagestepsize.setMaximum(5.0)
         self.Ystagestepsize.setProperty("value", 1.0)
@@ -801,6 +871,7 @@ class Ui_MainWindow(object):
         self.Ystagestepsizelabel = QtWidgets.QLabel(self.YstageBox)
         self.Ystagestepsizelabel.setObjectName("Ystagestepsizelabel")
         self.gridLayout_8.addWidget(self.Ystagestepsizelabel, 4, 0, 1, 1)
+<<<<<<< HEAD
         self.YUP = QtWidgets.QPushButton(self.YstageBox)
         self.YUP.setObjectName("YUP")
         self.gridLayout_8.addWidget(self.YUP, 3, 3, 1, 1)
@@ -815,23 +886,50 @@ class Ui_MainWindow(object):
         self.Ycurrent.setMaximum(50.0)
         self.Ycurrent.setObjectName("Ycurrent")
         self.gridLayout_8.addWidget(self.Ycurrent, 1, 3, 1, 1)
+=======
+>>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         self.YPosition = QtWidgets.QDoubleSpinBox(self.YstageBox)
         self.YPosition.setMinimumSize(QtCore.QSize(100, 0))
         self.YPosition.setMinimum(0.0)
         self.YPosition.setMaximum(50.0)
         self.YPosition.setProperty("value", 25.0)
         self.YPosition.setObjectName("YPosition")
+<<<<<<< HEAD
         self.gridLayout_8.addWidget(self.YPosition, 1, 0, 1, 1)
         self.YPositionLabel = QtWidgets.QLabel(self.YstageBox)
         self.YPositionLabel.setMaximumSize(QtCore.QSize(16777215, 20))
         self.YPositionLabel.setObjectName("YPositionLabel")
         self.gridLayout_8.addWidget(self.YPositionLabel, 0, 2, 1, 2)
+=======
+        self.gridLayout_8.addWidget(self.YPosition, 1, 3, 1, 1)
+        self.YPositionLabel = QtWidgets.QLabel(self.YstageBox)
+        self.YPositionLabel.setMaximumSize(QtCore.QSize(16777215, 20))
+        self.YPositionLabel.setObjectName("YPositionLabel")
+        self.gridLayout_8.addWidget(self.YPositionLabel, 0, 3, 1, 1)
+        self.YUP = QtWidgets.QPushButton(self.YstageBox)
+        self.YUP.setObjectName("YUP")
+        self.gridLayout_8.addWidget(self.YUP, 3, 3, 1, 1)
+        self.YDOWN = QtWidgets.QPushButton(self.YstageBox)
+        self.YDOWN.setObjectName("YDOWN")
+        self.gridLayout_8.addWidget(self.YDOWN, 4, 3, 1, 1)
+>>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         self.horizontalLayout_7.addWidget(self.YstageBox)
         self.ZstageBox = QtWidgets.QGroupBox(self.StageTab)
         self.ZstageBox.setMaximumSize(QtCore.QSize(16777215, 300))
         self.ZstageBox.setObjectName("ZstageBox")
         self.gridLayout_9 = QtWidgets.QGridLayout(self.ZstageBox)
         self.gridLayout_9.setObjectName("gridLayout_9")
+<<<<<<< HEAD
+=======
+        self.ZPosition = QtWidgets.QDoubleSpinBox(self.ZstageBox)
+        self.ZPosition.setMinimumSize(QtCore.QSize(100, 0))
+        self.ZPosition.setDecimals(3)
+        self.ZPosition.setMinimum(0.0)
+        self.ZPosition.setMaximum(50.0)
+        self.ZPosition.setProperty("value", 25.0)
+        self.ZPosition.setObjectName("ZPosition")
+        self.gridLayout_9.addWidget(self.ZPosition, 1, 3, 1, 1)
+>>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         self.ZDOWN = QtWidgets.QPushButton(self.ZstageBox)
         self.ZDOWN.setObjectName("ZDOWN")
         self.gridLayout_9.addWidget(self.ZDOWN, 4, 3, 1, 1)
@@ -851,6 +949,12 @@ class Ui_MainWindow(object):
         self.Zmove2.setMinimumSize(QtCore.QSize(0, 50))
         self.Zmove2.setObjectName("Zmove2")
         self.gridLayout_9.addWidget(self.Zmove2, 1, 2, 1, 1)
+<<<<<<< HEAD
+=======
+        self.ZHome = QtWidgets.QPushButton(self.ZstageBox)
+        self.ZHome.setObjectName("ZHome")
+        self.gridLayout_9.addWidget(self.ZHome, 1, 0, 1, 1)
+>>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         self.ZUP = QtWidgets.QPushButton(self.ZstageBox)
         self.ZUP.setObjectName("ZUP")
         self.gridLayout_9.addWidget(self.ZUP, 3, 3, 1, 1)
@@ -861,6 +965,7 @@ class Ui_MainWindow(object):
         self.Zstagestepsize.setProperty("value", 1.0)
         self.Zstagestepsize.setObjectName("Zstagestepsize")
         self.gridLayout_9.addWidget(self.Zstagestepsize, 4, 2, 1, 1)
+<<<<<<< HEAD
         self.ZHome = QtWidgets.QPushButton(self.ZstageBox)
         self.ZHome.setObjectName("ZHome")
         self.gridLayout_9.addWidget(self.ZHome, 0, 0, 1, 1)
@@ -882,6 +987,12 @@ class Ui_MainWindow(object):
         self.ZPositionLabel.setMaximumSize(QtCore.QSize(16777215, 20))
         self.ZPositionLabel.setObjectName("ZPositionLabel")
         self.gridLayout_9.addWidget(self.ZPositionLabel, 0, 2, 1, 2)
+=======
+        self.ZPositionLabel = QtWidgets.QLabel(self.ZstageBox)
+        self.ZPositionLabel.setMaximumSize(QtCore.QSize(16777215, 20))
+        self.ZPositionLabel.setObjectName("ZPositionLabel")
+        self.gridLayout_9.addWidget(self.ZPositionLabel, 0, 3, 1, 1)
+>>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         self.horizontalLayout_7.addWidget(self.ZstageBox)
         self.groupBox_2 = QtWidgets.QGroupBox(self.StageTab)
         self.groupBox_2.setObjectName("groupBox_2")
@@ -1716,6 +1827,7 @@ class Ui_MainWindow(object):
         self.XSpeedlabel.setText(_translate("MainWindow", "Speed"))
         self.Xstagestepsizelabel.setText(_translate("MainWindow", "Step size"))
         self.XDOWN.setText(_translate("MainWindow", "后退"))
+<<<<<<< HEAD
         self.XUP.setText(_translate("MainWindow", "前进"))
         self.XHome.setText(_translate("MainWindow", "Home"))
         self.XPositionLabel.setText(_translate("MainWindow", "Current Position:"))
@@ -1727,14 +1839,33 @@ class Ui_MainWindow(object):
         self.YDOWN.setText(_translate("MainWindow", "后退"))
         self.YHome.setText(_translate("MainWindow", "Home"))
         self.YPositionLabel.setText(_translate("MainWindow", "Current Position:"))
+=======
+        self.XHome.setText(_translate("MainWindow", "Home"))
+        self.XUP.setText(_translate("MainWindow", "前进"))
+        self.XPositionLabel.setText(_translate("MainWindow", "Position"))
+        self.YstageBox.setTitle(_translate("MainWindow", "Ystage"))
+        self.YSpeedlabel.setText(_translate("MainWindow", "Speed"))
+        self.Ymove2.setText(_translate("MainWindow", "Go to"))
+        self.YHome.setText(_translate("MainWindow", "Home"))
+        self.Ystagestepsizelabel.setText(_translate("MainWindow", "Step size"))
+        self.YPositionLabel.setText(_translate("MainWindow", "Position"))
+        self.YUP.setText(_translate("MainWindow", "前进"))
+        self.YDOWN.setText(_translate("MainWindow", "后退"))
+>>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         self.ZstageBox.setTitle(_translate("MainWindow", "Zstage"))
         self.ZDOWN.setText(_translate("MainWindow", "后退"))
         self.ZSpeedlabel.setText(_translate("MainWindow", "Speed"))
         self.Zstagestepsizelabel.setText(_translate("MainWindow", "Step size"))
         self.Zmove2.setText(_translate("MainWindow", "Go to"))
+<<<<<<< HEAD
         self.ZUP.setText(_translate("MainWindow", "前进"))
         self.ZHome.setText(_translate("MainWindow", "Home"))
         self.ZPositionLabel.setText(_translate("MainWindow", "Current Position:"))
+=======
+        self.ZHome.setText(_translate("MainWindow", "Home"))
+        self.ZUP.setText(_translate("MainWindow", "前进"))
+        self.ZPositionLabel.setText(_translate("MainWindow", "Position"))
+>>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         self.groupBox_2.setTitle(_translate("MainWindow", "Min&Max"))
         self.label_16.setText(_translate("MainWindow", "Min"))
         self.label_15.setText(_translate("MainWindow", "Z"))
@@ -1756,8 +1887,13 @@ class Ui_MainWindow(object):
         self.DIR.setHtml(_translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
+<<<<<<< HEAD
 "</style></head><body style=\" font-family:\'SimSun\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'Microsoft YaHei UI\';\">D:/SSOCT_HE/data</span></p></body></html>"))
+=======
+"</style></head><body style=\" font-family:\'Microsoft YaHei UI\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">D:/SSOCT_HE/data</p></body></html>"))
+>>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         self.LoadDispersion.setText(_translate("MainWindow", "Load Compensation"))
         self.RedoDC.setText(_translate("MainWindow", "DO Compensation "))
         self.label_23.setText(_translate("MainWindow", "Start Slice#"))
@@ -1883,8 +2019,13 @@ class Ui_MainWindow(object):
         self.ClockTerm.setHtml(_translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
+<<<<<<< HEAD
 "</style></head><body style=\" font-family:\'SimSun\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'Microsoft YaHei UI\';\">/AODO/PFI0</span></p></body></html>"))
+=======
+"</style></head><body style=\" font-family:\'Microsoft YaHei UI\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">/AODO/PFI0</p></body></html>"))
+>>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         self.Tabs.setTabText(self.Tabs.indexOf(self.Lasertab), _translate("MainWindow", "Laser"))
         self.TestButten2.setText(_translate("MainWindow", "DnS Process SurfScan"))
         self.TestButten1.setText(_translate("MainWindow", "DnS Init Surf"))
