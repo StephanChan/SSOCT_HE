@@ -174,7 +174,6 @@
                 </size>
                </property>
                <property name="maximum">
-<<<<<<< HEAD
                 <number>200</number>
                </property>
                <property name="singleStep">
@@ -182,15 +181,6 @@
                </property>
                <property name="pageStep">
                 <number>5</number>
-=======
-                <number>4096</number>
-               </property>
-               <property name="singleStep">
-                <number>10</number>
-               </property>
-               <property name="pageStep">
-                <number>100</number>
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
                </property>
                <property name="value">
                 <number>100</number>
@@ -209,7 +199,6 @@
                 </size>
                </property>
                <property name="maximum">
-<<<<<<< HEAD
                 <number>100</number>
                </property>
                <property name="singleStep">
@@ -220,18 +209,6 @@
                </property>
                <property name="value">
                 <number>1</number>
-=======
-                <number>4096</number>
-               </property>
-               <property name="singleStep">
-                <number>10</number>
-               </property>
-               <property name="pageStep">
-                <number>100</number>
-               </property>
-               <property name="value">
-                <number>0</number>
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
                </property>
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -307,11 +284,7 @@
                 </size>
                </property>
                <property name="maximum">
-<<<<<<< HEAD
                 <number>200</number>
-=======
-                <number>100</number>
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
                </property>
                <property name="singleStep">
                 <number>2</number>
@@ -320,11 +293,7 @@
                 <number>5</number>
                </property>
                <property name="value">
-<<<<<<< HEAD
                 <number>60</number>
-=======
-                <number>20</number>
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
                </property>
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -422,11 +391,7 @@
                 </size>
                </property>
                <property name="maximum">
-<<<<<<< HEAD
                 <number>200</number>
-=======
-                <number>300</number>
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
                </property>
                <property name="singleStep">
                 <number>2</number>
@@ -435,11 +400,7 @@
                 <number>10</number>
                </property>
                <property name="value">
-<<<<<<< HEAD
                 <number>70</number>
-=======
-                <number>50</number>
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
                </property>
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -464,11 +425,7 @@
                 <number>10</number>
                </property>
                <property name="value">
-<<<<<<< HEAD
                 <number>1</number>
-=======
-                <number>0</number>
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
                </property>
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -593,12 +550,9 @@
           <height>0</height>
          </size>
         </property>
-<<<<<<< HEAD
         <property name="decimals">
          <number>1</number>
         </property>
-=======
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         <property name="minimum">
          <double>-1.000000000000000</double>
         </property>
@@ -624,12 +578,9 @@
           <height>16777215</height>
          </size>
         </property>
-<<<<<<< HEAD
         <property name="decimals">
          <number>1</number>
         </property>
-=======
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         <property name="maximum">
          <double>1000.000000000000000</double>
         </property>
@@ -1905,28 +1856,6 @@
                </property>
               </widget>
              </item>
-<<<<<<< HEAD
-=======
-             <item row="2" column="2">
-              <widget class="QDoubleSpinBox" name="XPosition">
-               <property name="minimumSize">
-                <size>
-                 <width>100</width>
-                 <height>0</height>
-                </size>
-               </property>
-               <property name="minimum">
-                <double>0.000000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>300.000000000000000</double>
-               </property>
-               <property name="value">
-                <double>50.000000000000000</double>
-               </property>
-              </widget>
-             </item>
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
              <item row="7" column="0">
               <widget class="QLabel" name="Xstagestepsizelabel">
                <property name="sizePolicy">
@@ -1957,16 +1886,6 @@
                </property>
               </widget>
              </item>
-<<<<<<< HEAD
-=======
-             <item row="2" column="0">
-              <widget class="QPushButton" name="XHome">
-               <property name="text">
-                <string>Home</string>
-               </property>
-              </widget>
-             </item>
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
              <item row="5" column="2">
               <widget class="QPushButton" name="XUP">
                <property name="text">
@@ -1974,7 +1893,6 @@
                </property>
               </widget>
              </item>
-<<<<<<< HEAD
              <item row="1" column="0">
               <widget class="QPushButton" name="XHome">
                <property name="text">
@@ -2012,9 +1930,6 @@
               </widget>
              </item>
              <item row="1" column="1" colspan="2">
-=======
-             <item row="1" column="2">
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
               <widget class="QLabel" name="XPositionLabel">
                <property name="maximumSize">
                 <size>
@@ -2023,11 +1938,7 @@
                 </size>
                </property>
                <property name="text">
-<<<<<<< HEAD
                 <string>Current Position:</string>
-=======
-                <string>Position</string>
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
                </property>
               </widget>
              </item>
@@ -2079,16 +1990,6 @@
                </property>
               </widget>
              </item>
-<<<<<<< HEAD
-=======
-             <item row="1" column="0">
-              <widget class="QPushButton" name="YHome">
-               <property name="text">
-                <string>Home</string>
-               </property>
-              </widget>
-             </item>
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
              <item row="4" column="2">
               <widget class="QDoubleSpinBox" name="Ystagestepsize">
                <property name="maximum">
@@ -2106,7 +2007,6 @@
                </property>
               </widget>
              </item>
-<<<<<<< HEAD
              <item row="3" column="3">
               <widget class="QPushButton" name="YUP">
                <property name="text">
@@ -2139,9 +2039,6 @@
               </widget>
              </item>
              <item row="1" column="0">
-=======
-             <item row="1" column="3">
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
               <widget class="QDoubleSpinBox" name="YPosition">
                <property name="minimumSize">
                 <size>
@@ -2160,11 +2057,7 @@
                </property>
               </widget>
              </item>
-<<<<<<< HEAD
              <item row="0" column="2" colspan="2">
-=======
-             <item row="0" column="3">
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
               <widget class="QLabel" name="YPositionLabel">
                <property name="maximumSize">
                 <size>
@@ -2173,25 +2066,7 @@
                 </size>
                </property>
                <property name="text">
-<<<<<<< HEAD
                 <string>Current Position:</string>
-=======
-                <string>Position</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="3">
-              <widget class="QPushButton" name="YUP">
-               <property name="text">
-                <string>前进</string>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="3">
-              <widget class="QPushButton" name="YDOWN">
-               <property name="text">
-                <string>后退</string>
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
                </property>
               </widget>
              </item>
@@ -2210,31 +2085,6 @@
              <string>Zstage</string>
             </property>
             <layout class="QGridLayout" name="gridLayout_9">
-<<<<<<< HEAD
-=======
-             <item row="1" column="3">
-              <widget class="QDoubleSpinBox" name="ZPosition">
-               <property name="minimumSize">
-                <size>
-                 <width>100</width>
-                 <height>0</height>
-                </size>
-               </property>
-               <property name="decimals">
-                <number>3</number>
-               </property>
-               <property name="minimum">
-                <double>0.000000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>50.000000000000000</double>
-               </property>
-               <property name="value">
-                <double>25.000000000000000</double>
-               </property>
-              </widget>
-             </item>
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
              <item row="4" column="3">
               <widget class="QPushButton" name="ZDOWN">
                <property name="text">
@@ -2282,16 +2132,6 @@
                </property>
               </widget>
              </item>
-<<<<<<< HEAD
-=======
-             <item row="1" column="0">
-              <widget class="QPushButton" name="ZHome">
-               <property name="text">
-                <string>Home</string>
-               </property>
-              </widget>
-             </item>
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
              <item row="3" column="3">
               <widget class="QPushButton" name="ZUP">
                <property name="text">
@@ -2318,7 +2158,6 @@
                </property>
               </widget>
              </item>
-<<<<<<< HEAD
              <item row="0" column="0">
               <widget class="QPushButton" name="ZHome">
                <property name="text">
@@ -2362,9 +2201,6 @@
               </widget>
              </item>
              <item row="0" column="2" colspan="2">
-=======
-             <item row="0" column="3">
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
               <widget class="QLabel" name="ZPositionLabel">
                <property name="maximumSize">
                 <size>
@@ -2373,11 +2209,7 @@
                 </size>
                </property>
                <property name="text">
-<<<<<<< HEAD
                 <string>Current Position:</string>
-=======
-                <string>Position</string>
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
                </property>
               </widget>
              </item>
@@ -2682,18 +2514,6 @@
               <width>400</width>
               <height>16777215</height>
              </size>
-            </property>
-            <property name="html">
-             <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-<<<<<<< HEAD
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'SimSun'; font-size:15pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Microsoft YaHei UI';&quot;&gt;D:/SSOCT_HE/data&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-=======
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Microsoft YaHei UI'; font-size:15pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;D:/SSOCT_HE/data&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
             </property>
            </widget>
           </item>
@@ -3999,18 +3819,6 @@ p, li { white-space: pre-wrap; }
                  <width>300</width>
                  <height>16777215</height>
                 </size>
-               </property>
-               <property name="html">
-                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-<<<<<<< HEAD
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'SimSun'; font-size:15pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Microsoft YaHei UI';&quot;&gt;/AODO/PFI0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-=======
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Microsoft YaHei UI'; font-size:15pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;/AODO/PFI0&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
                </property>
               </widget>
              </item>

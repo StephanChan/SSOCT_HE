@@ -89,10 +89,6 @@ class AODOThread(QThread):
         while self.item.action != 'exit':
             try:
                 if self.item.action == 'Xmove2':
-<<<<<<< HEAD
-=======
-                    print('run xmove')
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
                     self.XMove(axis = 'X')
                 elif self.item.action == 'Ymove2':
                     self.DirectMove(axis = 'Y')
@@ -153,7 +149,6 @@ class AODOThread(QThread):
         self.ui.statusbar.showMessage('AODO thread successfully exited')
 
     def Init_Stages(self):
-<<<<<<< HEAD
         # self.Xpos = self.ui.XPosition.value()
         # self.Ypos = self.ui.YPosition.value()
         # self.Zpos = self.ui.ZPosition.value()
@@ -162,12 +157,7 @@ class AODOThread(QThread):
         self.ui.Zcurrent.setValue(self.ui.ZPosition.value())
         
         message = "Stage position updated..."
-=======
-        self.Xpos = self.ui.XPosition.value()
-        self.Ypos = self.ui.YPosition.value()
-        self.Zpos = self.ui.ZPosition.value()
-        message = "Stage position updated...X"+str(self.Xpos)+'Y'+str(round(self.Ypos))+'Z'+str(self.Zpos)
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
+
         self.ui.statusbar.showMessage(message)
         # self.ui.PrintOut.append(message)
         self.log.write(message)
@@ -288,16 +278,11 @@ class AODOThread(QThread):
                 # self.DOtask.close()
                 # settingtask.write(XDISABLE+ YDISABLE+ ZDISABLE, auto_start = True)
                 # update GUI Y stage position
-<<<<<<< HEAD
         Ystep = self.ui.YStepSize.value()*self.ui.Ysteps.value()/1000.0
         currentpos = self.ui.Ycurrent.value()+Ystep if direction == 1 else self.ui.Ycurrent.value()-Ystep
         self.ui.Ycurrent.setValue(currentpos)
         self.ui.YPosition.setValue(currentpos)
-=======
-                Ystep = self.ui.YStepSize.value()*self.ui.Ysteps.value()/1000.0
-                self.Ypos = self.Ypos+Ystep if direction == 1 else self.Ypos-Ystep
-                self.ui.YPosition.setValue(self.Ypos)
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
+
     
     def CloseTask(self):
         if not (SIM or self.SIM):
@@ -417,11 +402,7 @@ class AODOThread(QThread):
                 self.log.write(message)
                 print(message)
                 return message
-<<<<<<< HEAD
             distance = self.ui.XPosition.value()-self.ui.Xcurrent.value()
-=======
-            distance = self.ui.XPosition.value()-self.Xpos
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
             if distance > 0:
                 direction = XFORWARD
                 sign = 1
@@ -440,11 +421,7 @@ class AODOThread(QThread):
                 self.log.write(message)
                 print(message)
                 return message
-<<<<<<< HEAD
             distance = self.ui.XPosition.value()-self.ui.Xcurrent.value()
-=======
-            distance = self.ui.XPosition.value()-self.Xpos
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
             if distance > 0:
                 direction = X0FORWARD
                 sign = 1
@@ -462,11 +439,7 @@ class AODOThread(QThread):
                 self.log.write(message)
                 print(message)
                 return message
-<<<<<<< HEAD
             distance = self.ui.YPosition.value()-self.ui.Ycurrent.value()
-=======
-            distance = self.ui.YPosition.value()-self.Ypos
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
             if distance > 0:
                 direction = YFORWARD
                 sign = 1
@@ -484,11 +457,7 @@ class AODOThread(QThread):
                 self.log.write(message)
                 print(message)
                 return message
-<<<<<<< HEAD
             distance = self.ui.ZPosition.value()-self.ui.Zcurrent.value()
-=======
-            distance = self.ui.ZPosition.value()-self.Zpos
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
             if distance > 0:
                 direction = ZFORWARD
                 sign = 1
@@ -534,7 +503,6 @@ class AODOThread(QThread):
                 # settingtask.write(XDISABLE + YDISABLE + ZDISABLE, auto_start = True)
                 
         if axis == 'X':
-<<<<<<< HEAD
             self.ui.Xcurrent.setValue(self.ui.Xcurrent.value()+distance)
             # self.ui.XPosition.setValue(self.Xpos)
         elif axis == 'X0':
@@ -547,20 +515,6 @@ class AODOThread(QThread):
             self.ui.Zcurrent.setValue(self.ui.Zcurrent.value()+distance)
             # self.ui.ZPosition.setValue(self.Zpos)
         message = 'X :'+str(self.ui.Xcurrent.value())+' Y :'+str(round(self.ui.Ycurrent.value(),2))+' Z :'+str(self.ui.Zcurrent.value())
-=======
-            self.Xpos = self.Xpos+distance
-            # self.ui.XPosition.setValue(self.Xpos)
-        elif axis == 'X0':
-            self.Xpos = self.Xpos+distance
-            # self.ui.XPosition.setValue(self.Xpos)
-        elif axis == 'Y':
-            self.Ypos = self.Ypos+distance
-            # self.ui.YPosition.setValue(self.Ypos)
-        elif axis == 'Z':
-            self.Zpos = self.Zpos+distance
-            # self.ui.ZPosition.setValue(self.Zpos)
-        message = 'X :'+str(self.Xpos)+' Y :'+str(round(self.Ypos,2))+' Z :'+str(self.Zpos)
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         print(message)
         self.log.write(message)
         
@@ -569,7 +523,6 @@ class AODOThread(QThread):
         self.StagebackQueue.put(0)
         
     def StepMove(self, axis, Direction):
-<<<<<<< HEAD
         if axis == 'X':
             distance = self.ui.Xstagestepsize.value() if Direction == 'UP' else -self.ui.Xstagestepsize.value() 
             self.ui.XPosition.setValue(self.ui.Xcurrent.value()+distance)
@@ -588,29 +541,6 @@ class AODOThread(QThread):
     def XMove(self, axis = 'X'):
         # enable low enables, enable high disables
         current_pos = self.ui.Xcurrent.value()
-=======
-        if not (SIM or self.SIM):
-            if axis == 'X':
-                distance = self.ui.Xstagestepsize.value() if Direction == 'UP' else -self.ui.Xstagestepsize.value() 
-                self.ui.XPosition.setValue(self.ui.XPosition.value()+distance)
-                self.XMove()
-            elif axis == 'Y':
-                distance = self.ui.Ystagestepsize.value() if Direction == 'UP' else -self.ui.Ystagestepsize.value() 
-                self.ui.YPosition.setValue(self.ui.YPosition.value()+distance)
-                # self.ui.XPosition.setValue(self.Xpos)
-                self.Move(axis)
-                self.StagebackQueue.put(0)
-            elif axis == 'Z':
-                distance = self.ui.Zstagestepsize.value() if Direction == 'UP' else -self.ui.Zstagestepsize.value() 
-                self.ui.ZPosition.setValue(self.ui.ZPosition.value()+distance)
-                # self.ui.XPosition.setValue(self.Xpos)
-                self.Move(axis)
-                self.StagebackQueue.put(0)
-            
-    def XMove(self, axis = 'X'):
-        # enable low enables, enable high disables
-        current_pos = self.Xpos
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         target_pos = self.ui.XPosition.value()
         
         if target_pos>self.ui.X1max.value()+self.ui.X0max.value()+1e-5 or target_pos<self.ui.X1min.value()+self.ui.X0min.value()-1e-5:

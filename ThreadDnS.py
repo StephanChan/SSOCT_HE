@@ -142,11 +142,7 @@ class DnSThread(QThread):
         self.Aline = data
         Ascan = np.float32(np.mean(data,0))
         # float32 data type
-<<<<<<< HEAD
         pixmap = LinePlot(Ascan, [], self.ui.XYmin.value()*30, self.ui.XYmax.value()*30)
-=======
-        pixmap = LinePlot(Ascan, [], self.ui.XYmin.value()*20, self.ui.XYmax.value()*30)
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         # clear content on the waveformLabel
         self.ui.XZplane.clear()
         # update iamge on the waveformLabel
@@ -210,11 +206,7 @@ class DnSThread(QThread):
         self.ui.XZplane.setPixmap(pixmap)
         
         plane = np.mean(data,2)# has to be first index, otherwise the memory space is not continuous
-<<<<<<< HEAD
         pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
-=======
-        pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value()/3)
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
         # clear content on the waveformLabel
         self.ui.XYplane.clear()
         # update image on the waveformLabel
@@ -462,11 +454,7 @@ class DnSThread(QThread):
             data = np.float32(np.mean(self.Aline,0))
             # if self.ui.LOG.currentText() == '10log10':
             #     data=10*np.log10(data+0.000001)
-<<<<<<< HEAD
             pixmap = LinePlot(data, [], self.ui.XYmin.value()*30, self.ui.XYmax.value()*30)
-=======
-            pixmap = LinePlot(data, [], self.ui.XYmin.value(), self.ui.XYmax.value())
->>>>>>> df06e214cb146677d944217ed089f2deb28a02df
             # clear content on the waveformLabel
             self.ui.XZplane.clear()
             # update iamge on the waveformLabel
