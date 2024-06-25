@@ -1118,9 +1118,9 @@ class WeaverThread(QThread):
         self.StagebackQueue.get()
         for ii in range(cuts):
             if self.ui.SliceDir.isChecked():
-                sign = -1
-            else:
                 sign = 1
+            else:
+                sign = -1
             self.ui.YPosition.setValue(self.ui.SliceLength.value()*sign+self.ui.YPosition.value())
             speed = self.ui.YSpeed.value()
             self.ui.YSpeed.setValue(self.ui.SliceSpeed.value())
