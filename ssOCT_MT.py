@@ -158,7 +158,7 @@ class GPUThread_2(GPUThread):
             self.SIM = SIM
             self.AMPLIFICATION = AMPLIFICATION
 # wrap AODO thread with queue
-from ThreadAODO import AODOThread
+from ThreadAODO_150mm import AODOThread
 class AODOThread_2(AODOThread):
     def __init__(self, ui, log):
         super().__init__()
@@ -267,17 +267,17 @@ class GUI(MainWindow):
         
         # RptCscan is for acquiring Cscan at the same location repeatitively
         
-        # SurfScan is for imaging the sample surface
+        # Mosaic is for imaging the sample surface
         
-        # SurfScan + Slice is for serial sectioning imaging
+        # Mosaic + Slice is for serial sectioning imaging
         
         # Slice is for cut one slice only
         
-        if self.ui.ACQMode.currentText() in ['RptAline','RptBline','RptCscan','SurfScan','SurfScan+Slice','RptSlice']:
+        if self.ui.ACQMode.currentText() in ['RptAline','RptBline','RptCscan','Mosaic','Mosaic+Cut','RptCut']:
             if self.ui.RunButton.isChecked():
                 self.ui.RunButton.setText('Stop')
-                # for surfScan and SurfSlice, popup a dialog to double check stage position
-                if self.ui.ACQMode.currentText() in ['SurfScan','SurfScan+Slice','RptSlice']:
+                # for Mosaic and SurfSlice, popup a dialog to double check stage position
+                if self.ui.ACQMode.currentText() in ['Mosaic','Mosaic+Cut','RptCut']:
                     dlg = StageDialog( self.ui.XPosition.value(), self.ui.YPosition.value(), self.ui.ZPosition.value())
                     dlg.setWindowTitle("double-check stage position")
                     if dlg.exec():
@@ -462,12 +462,12 @@ class GUI(MainWindow):
     
     def TestButton1Func(self):
         args = [[0, 0], [10, 100]]
-        an_action = DnSAction('Init_SurfScan', data = None, args = args)
+        an_action = DnSAction('Init_Mosaic', data = None, args = args)
         DnSQueue.put(an_action)
         
     def TestButton2Func(self):
         args = [[1, 1], [10, 100]]
-        an_action = DnSAction('SurfScan', data = np.ones([300*1700,150],dtype=np.float32)*50, args = args)
+        an_action = DnSAction('Mosaic', data = np.ones([300*1700,150],dtype=np.float32)*50, args = args)
         DnSQueue.put(an_action)
     
     def TestButton3Func(self):

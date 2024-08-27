@@ -56,8 +56,8 @@ class DnSThread(QThread):
                     
                 elif self.item.action in ['SingleCscan','RptCscan']:
                     self.Display_Cscan(self.item.data, self.item.raw)
-                elif self.item.action == 'SurfScan':
-                    self.Process_SurfScan(self.item.data, self.item.raw, self.item.args)
+                elif self.item.action == 'Mosaic':
+                    self.Process_Mosaic(self.item.data, self.item.raw, self.item.args)
                 elif self.item.action == 'display_mosaic':
                     self.Display_mosaic()
                 elif self.item.action == 'Clear':
@@ -79,8 +79,8 @@ class DnSThread(QThread):
                     self.SurfFilename()
                 elif self.item.action == 'WriteAgar':
                     self.WriteAgar(self.item.data, self.item.args)
-                elif self.item.action == 'Init_SurfScan':
-                    self.Init_SurfScan(self.item.data, self.item.args)
+                elif self.item.action == 'Init_Mosaic':
+                    self.Init_Mosaic(self.item.data, self.item.args)
                 elif self.item.action == 'Save_mosaic':
                     self.Save_mosaic()
                     
@@ -188,9 +188,10 @@ class DnSThread(QThread):
     def Display_Cscan(self, data, raw = False):
         Zpixels, Xpixels = self.get_FOV_size(raw)
         # get number of Y pixels
-        Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
+        Ypixels = self.ui.Ysteps.value()#*self.ui.BlineAVG.value()
         # reshape data
-        data = data.reshape([Ypixels,Xpixels,Zpixels])
+        data = data.reshape([self.ui.BlineAVG.value(),Ypixels, Xpixels,Zpixels])
+        data=np.mean(data,0)
         # trim fly-back pixels
         if self.Digitizer == 'ART8912':    
             data = data[:,self.ui.PreClock.value():self.ui.Xsteps.value()*self.ui.AlineAVG.value()+self.ui.PreClock.value(),:]
@@ -221,13 +222,21 @@ class DnSThread(QThread):
                 data = np.uint16(self.Cscan/SCALE*65535)
             self.WriteData(data, self.CscanFilename([Ypixels,Xpixels,Zpixels]))
         
-    def Init_SurfScan(self, raw = False, args = []):
+    def Init_Mosaic(self, raw = False, args = []):
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
-        Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
+        Ypixels = self.ui.Ysteps.value()#*self.ui.BlineAVG.value()
         
         surfX = args[1][0]
         surfY = np.int32(args[1][1]/args[1][0])
+        # adjust scale ###################
         scale = self.ui.scale.value()
+        # while Xpixels%scale or Ypixels%scale:
+        #     scale -= 1
+        # message = '\nslice '+str(self.sliceNum)+' scale is '+str(scale)+'\n'
+        # print(message)
+        # self.log.write(message)
+        # self.ui.scale.setValue(scale)
+        ###############
         self.surf = np.zeros([ surfX*(Ypixels//scale),surfY*(Xpixels//scale)],dtype = np.float32)
 
         pixmap = ImagePlot(self.surf, self.ui.Surfmin.value(), self.ui.Surfmax.value())
@@ -239,6 +248,9 @@ class DnSThread(QThread):
         # load surface profile for high res imaging
         if os.path.isfile(self.ui.Surf_DIR.text()):
             self.surfCurve = np.uint16(np.fromfile(self.ui.Surf_DIR.text(), dtype=np.uint16))
+            if self.surfCurve.shape != Xpixels:
+                self.surfCurve = np.zeros([Xpixels],dtype = np.uint16)
+                print('surface data not match FOV setting, using all zeros')
         else:
             print('surface data not found, using all zeros')
             self.surfCurve = np.zeros([Xpixels],dtype = np.uint16)
@@ -270,7 +282,7 @@ class DnSThread(QThread):
             self.first_tile = True
             #######################################
         
-            self.zmax_scale = 3
+            self.zmax_scale = self.ui.scale.value()
             ############## adjust scale
             while Xpixels%self.zmax_scale or Ypixels%self.zmax_scale:
                 self.zmax_scale -= 1
@@ -285,12 +297,13 @@ class DnSThread(QThread):
             self.ui.MUS_mosaic.setPixmap(pixmap)
 
             
-    def Process_SurfScan(self, data, raw = False, args = []):
+    def Process_Mosaic(self, data, raw = False, args = []):
         Zpixels, Xpixels = self.get_FOV_size(raw)
         # get number of Y pixels
-        Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
+        Ypixels = self.ui.Ysteps.value()#*self.ui.BlineAVG.value()
         # reshape into Ypixels x Xpixels x Zpixels
-        data = data.reshape([Ypixels,Xpixels,Zpixels])
+        data = data.reshape([self.ui.Ysteps.value(),self.ui.BlineAVG.value(), Xpixels,Zpixels])
+        data=np.mean(data,1)
         # trim fly-back pixels
         if self.Digitizer == 'ART8912':    
             data = data[:,self.ui.PreClock.value():self.ui.Xsteps.value()*self.ui.AlineAVG.value()+self.ui.PreClock.value(),:]
@@ -338,7 +351,7 @@ class DnSThread(QThread):
                 # print('calculate surface', time.time()-start0)
                 
                 kernel = np.ones([1,1,5])/5 # kernel size hard coded to be 5 in z dimension
-                zmax = np.argmax(ndimage.convolve(data_ds,kernel,mode = 'reflect'),2)
+                zmax = self.ui.DepthRange.value()-np.argmax(ndimage.convolve(data_ds,kernel,mode = 'reflect'),2)
                 # for odd strips, need to flip data in Y dimension and also the sequence
                 if np.mod(fileY,2)==1:
                     AIP = np.flip(AIP,0)
@@ -363,7 +376,7 @@ class DnSThread(QThread):
                     self.writeTiff(self.ui.DIR.toPlainText()+'/fitting/vol'+str(self.sliceNum)+'/MAX.tif', zmax, mode)
                     
                 self.surfZMAX[Ypixels//self.zmax_scale*fileX:Ypixels//self.zmax_scale*(fileX+1),\
-                          Xpixels//self.zmax_scale*(surfY-fileY-1):Xpixels//self.zmax_scale*(surfY-fileY)] = zmax
+                          Xpixels//self.zmax_scale*(fileY):Xpixels//self.zmax_scale*(fileY+1)] = zmax
             ##########################################################################
             else:
                 # for fast pre-scan imaging
@@ -399,7 +412,7 @@ class DnSThread(QThread):
             # squeeze AIP into surface image
             scale = self.ui.scale.value()
             self.surf[Ypixels//scale*fileX:Ypixels//scale*(fileX+1),\
-                      Xpixels//scale*(surfY-fileY-1):Xpixels//scale*(surfY-fileY)] = AIP[::scale,::scale]
+                      Xpixels//scale*(fileY):Xpixels//scale*(fileY+1)] = AIP[::scale,::scale]
                 
             
             
@@ -470,7 +483,7 @@ class DnSThread(QThread):
             self.ui.XZplane.clear()
             # update iamge on the waveformLabel
             self.ui.XZplane.setPixmap(pixmap)
-        elif self.ui.ACQMode.currentText() in ['SurfScan','SurfScan+Slice', 'SingleCscan']:
+        elif self.ui.ACQMode.currentText() in ['Mosaic','Mosaic+Cut', 'SingleCscan']:
             data = self.Cscan
             
             plane = np.transpose(data[0,:,:]).copy()# has to be first index, otherwise the memory space is not continuous

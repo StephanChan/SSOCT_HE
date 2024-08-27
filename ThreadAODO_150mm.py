@@ -40,8 +40,7 @@ global YDISABLE
 YDISABLE = pow(2,2) # port 2 line 2
 global ZDISABLE
 ZDISABLE = pow(2,4) # port 2 line 4
-global X0DISABLE
-X0DISABLE = pow(2,6) # port 2 line 6
+
 
 # stage forwared backward digital value
 global XFORWARD
@@ -50,8 +49,6 @@ global YFORWARD
 YFORWARD = pow(2,3) # port 2 line 3
 global ZFORWARD
 ZFORWARD = 0 # port 2 line 5, but reverse
-global X0FORWARD
-X0FORWARD = pow(2,7) # port 2 line 7
 
 global XBACKWARD
 XBACKWARD = 0
@@ -60,8 +57,6 @@ YBACKWARD = 0
 global ZBACKWARD
 ZBACKWARD = pow(2,5) # port 2 line 5
 # backward = 0
-global X0BACKWARD
-X0BACKWARD = 0
 
 # stage channel digital value
 global XCH
@@ -70,8 +65,6 @@ global YCH
 YCH = pow(2,1) # port 0 line 1
 global ZCH
 ZCH = pow(2,2) # port 0 line2
-global X0CH
-X0CH = pow(2,3) # port 0 line 3
 
 class AODOThread(QThread):
     def __init__(self):
@@ -89,7 +82,7 @@ class AODOThread(QThread):
         while self.item.action != 'exit':
             try:
                 if self.item.action == 'Xmove2':
-                    self.XMove(axis = 'X')
+                    self.DirectMove(axis = 'X')
                 elif self.item.action == 'Ymove2':
                     self.DirectMove(axis = 'Y')
                 elif self.item.action == 'Zmove2':
@@ -171,7 +164,7 @@ class AODOThread(QThread):
         if not (SIM or self.SIM):
             settingtask = ni.Task('setting')
             settingtask.do_channels.add_do_chan(lines='AODO/port2/line0:7')
-            tmp = np.uint32(YDISABLE + XDISABLE + ZDISABLE + X0DISABLE)
+            tmp = np.uint32(YDISABLE + XDISABLE + ZDISABLE)
             settingtask.write(tmp, auto_start = True)
             settingtask.stop()
             settingtask.close()
@@ -223,7 +216,7 @@ class AODOThread(QThread):
             
             #################################################################################
             # only use DO in Cscan acquisition or if digitizer is Alazar board
-            if self.ui.ACQMode.currentText() in ['SingleCscan','SurfScan','SurfScan+Slice'] or self.Digitizer == 'ATS9351':
+            if self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut'] or self.Digitizer == 'ATS9351':
                 # before move stage, configure direction and enable stage using port 2 first
                 # direction = 0 means backward
                 # direction = 1 means forward
@@ -261,7 +254,7 @@ class AODOThread(QThread):
     def StartTask(self):
         if not (SIM or self.SIM):
             self.AOtask.start()
-            if self.ui.ACQMode.currentText() in ['SingleCscan','SurfScan','SurfScan+Slice'] or self.Digitizer == 'ATS9351':
+            if self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut'] or self.Digitizer == 'ATS9351':
                 self.DOtask.start()
         self.StagebackQueue.put(0)
             
@@ -273,23 +266,24 @@ class AODOThread(QThread):
             self.AOtask.stop()
             # self.AOtask.close()
             # print(self.ui.ACQMode.currentText())
-            if self.ui.ACQMode.currentText() in ['SingleCscan','SurfScan','SurfScan+Slice'] or self.Digitizer == 'ATS9351':
+            if self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut'] or self.Digitizer == 'ATS9351':
                 self.DOtask.stop()
                 # self.DOtask.close()
                 # settingtask.write(XDISABLE+ YDISABLE+ ZDISABLE, auto_start = True)
                 # update GUI Y stage position
-        Ystep = self.ui.YStepSize.value()*self.ui.Ysteps.value()/1000.0
-        currentpos = self.ui.Ycurrent.value()+Ystep if direction == 1 else self.ui.Ycurrent.value()-Ystep
-        self.ui.Ycurrent.setValue(currentpos)
-        self.ui.YPosition.setValue(currentpos)
+        if self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut']:
+            Ystep = self.ui.YStepSize.value()*self.ui.Ysteps.value()/1000.0
+            currentpos = self.ui.Ycurrent.value()+Ystep if direction == 1 else self.ui.Ycurrent.value()-Ystep
+            self.ui.Ycurrent.setValue(currentpos)
+            self.ui.YPosition.setValue(currentpos)
 
     
     def CloseTask(self):
         if not (SIM or self.SIM):
             self.AOtask.close()
-            if self.ui.ACQMode.currentText() in ['SingleCscan','SurfScan','SurfScan+Slice'] or self.Digitizer == 'ATS9351':
+            if self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut'] or self.Digitizer == 'ATS9351':
                 self.DOtask.close()
-            message = 'cscan X :'+str(round(self.Xpos,2))+' Y :'+str(round(self.Ypos,2))+' Z :'+str(round(self.Zpos,3))
+            message = 'cscan X :'+str(round(self.ui.Xcurrent.value(),2))+' Y :'+str(round(self.ui.Ycurrent.value(),2))+' Z :'+str(round(self.ui.Zcurrent.value(),3))
             print(message)
             self.log.write(message)
         self.StagebackQueue.put(0)
@@ -396,7 +390,7 @@ class AODOThread(QThread):
             line = XCH
             speed = self.ui.XSpeed.value()
             pos = self.ui.XPosition.value()
-            if pos>self.ui.X1max.value()+self.ui.X0max.value()+1e-5 or pos<self.ui.X1min.value() + self.ui.X0min.value()-1e-5:
+            if pos>self.ui.Xmax.value()or pos<self.ui.Xmin.value():
                 message = 'X target postion invalid, abort...'
                 # self.ui.PrintOut.append(message)
                 self.log.write(message)
@@ -408,25 +402,6 @@ class AODOThread(QThread):
                 sign = 1
             else:
                 direction = XBACKWARD
-                sign = -1
-            enable = 0#YDISABLE + ZDISABLE
-            
-        elif axis == 'X0':
-            line = X0CH
-            speed = self.ui.XSpeed.value()
-            pos = self.ui.XPosition.value()
-            if pos>self.ui.X0max.value() + self.ui.X1min.value()+1e-5 or pos<self.ui.X0min.value()-1e-5:
-                message = 'X0 target postion invalid, abort...'
-                # self.ui.PrintOut.append(message)
-                self.log.write(message)
-                print(message)
-                return message
-            distance = self.ui.XPosition.value()-self.ui.Xcurrent.value()
-            if distance > 0:
-                direction = X0FORWARD
-                sign = 1
-            else:
-                direction = X0BACKWARD
                 sign = -1
             enable = 0#YDISABLE + ZDISABLE
         elif axis == 'Y':
@@ -505,9 +480,6 @@ class AODOThread(QThread):
         if axis == 'X':
             self.ui.Xcurrent.setValue(self.ui.Xcurrent.value()+distance)
             # self.ui.XPosition.setValue(self.Xpos)
-        elif axis == 'X0':
-            self.ui.Xcurrent.setValue(self.ui.Xcurrent.value()+distance)
-            # self.ui.XPosition.setValue(self.Xpos)
         elif axis == 'Y':
             self.ui.Ycurrent.setValue(self.ui.Ycurrent.value()+distance)
             # self.ui.YPosition.setValue(self.Ypos)
@@ -526,7 +498,8 @@ class AODOThread(QThread):
         if axis == 'X':
             distance = self.ui.Xstagestepsize.value() if Direction == 'UP' else -self.ui.Xstagestepsize.value() 
             self.ui.XPosition.setValue(self.ui.Xcurrent.value()+distance)
-            self.XMove()
+            self.Move(axis)
+            self.StagebackQueue.put(0)
         elif axis == 'Y':
             distance = self.ui.Ystagestepsize.value() if Direction == 'UP' else -self.ui.Ystagestepsize.value() 
             self.ui.YPosition.setValue(self.ui.Ycurrent.value()+distance)
@@ -538,42 +511,3 @@ class AODOThread(QThread):
             self.Move(axis)
             self.StagebackQueue.put(0)
             
-    def XMove(self, axis = 'X'):
-        # enable low enables, enable high disables
-        current_pos = self.ui.Xcurrent.value()
-        target_pos = self.ui.XPosition.value()
-        
-        if target_pos>self.ui.X1max.value()+self.ui.X0max.value()+1e-5 or target_pos<self.ui.X1min.value()+self.ui.X0min.value()-1e-5:
-            message = 'X target postion invalid, abort...'
-            # self.ui.PrintOut.append(message)
-            self.log.write(message)
-            print(message)
-            self.StagebackQueue.put(0)
-            return message
-        
-        # determine which stage to move
-        if current_pos <= self.ui.X0max.value(): # this means X1 stage is at min position
-            if target_pos <= self.ui.X0max.value(): # this means only X0 stage will move
-                # TODO: move X0 distance
-                self.Move('X0')
-            else: # this means X0 stage will move to max and X1 stage will move afterwards
-                # TODO: move X0 to midpoint 
-                self.ui.XPosition.setValue(self.ui.X0max.value()+self.ui.X1min.value())
-                self.Move('X0')
-                # self.Xpos = self.ui.X0max.value()
-                # TODO: move X1 abs(distance) - (self.ui.X0max.value() - current_pos)
-                self.ui.XPosition.setValue(target_pos)
-                self.Move('X')
-        else: # this means X0 stage is at max position
-            if target_pos <= self.ui.X0max.value(): # this means X1 stage will move to min and X0 stage will move afterwards
-                # TODO: move X1 to midpoint
-                self.ui.XPosition.setValue(self.ui.X0max.value()+self.ui.X1min.value())
-                self.Move('X')
-                # self.Xpos = self.ui.X0max.value()
-                # TODO: move X0 abs(distance) - (current_pos - self.ui.X0max.value())
-                self.ui.XPosition.setValue(target_pos)
-                self.Move('X0')
-            else: # this means only X1 stage will move
-                # TODO: move X1 distance
-                self.Move('X')
-        self.StagebackQueue.put(0)

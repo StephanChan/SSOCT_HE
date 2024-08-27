@@ -1,1 +1,1 @@
-pyuic5 -x D:\SSOCT_HE\software\GUI.ui -o D:\SSOCT_HE\software\GUI.py
+pyuic5 -x D:\SSOCT_HE\SSOCT_HE-master\SSOCT_HE-master\GUI.ui -o D:\SSOCT_HE\SSOCT_HE-master\SSOCT_HE-master\GUI.py

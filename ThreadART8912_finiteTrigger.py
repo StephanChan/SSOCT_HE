@@ -163,7 +163,7 @@ class ART8912_finiteTrigger(QThread):
         self.AlinesPerBline = self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2+self.ui.PostClock.value()
         if self.ui.ACQMode.currentText() in ['SingleBline', 'SingleAline','RptBline', 'RptAline']:
             self.triggerCount = self.ui.BlineAVG.value() * self.AlinesPerBline
-        elif self.ui.ACQMode.currentText() in ['SingleCscan', 'SurfScan','SurfScan+Slice']:
+        elif self.ui.ACQMode.currentText() in ['SingleCscan', 'Mosaic','Mosaic+Cut']:
             self.triggerCount = self.ui.BlineAVG.value() * self.ui.Ysteps.value() * self.AlinesPerBline
             
         triggerSensitivity = self.ui.TrigDura.value()               # 触发灵敏度 单位：ns
@@ -262,7 +262,7 @@ class ART8912_finiteTrigger(QThread):
         self.AlinesPerBline = self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2+self.ui.PostClock.value()
         if self.ui.ACQMode.currentText() in ['SingleBline', 'SingleAline','RptBline', 'RptAline']:
             self.triggerCount = self.ui.BlineAVG.value() * self.AlinesPerBline
-        elif self.ui.ACQMode.currentText() in ['SingleCscan', 'SurfScan','SurfScan+Slice']:
+        elif self.ui.ACQMode.currentText() in ['SingleCscan', 'Mosaic','Mosaic+Cut']:
             self.triggerCount = self.ui.BlineAVG.value() * self.ui.Ysteps.value() * self.AlinesPerBline
         # all samples in all Alines, include galvo fly-backs
         readLength = self.ui.PostSamples_2.value()  * 1 * self.triggerCount # 数据读取长度

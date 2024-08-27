@@ -202,7 +202,7 @@ def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, A
         return np.uint32(CscanDO), CscanAO, status
     
     
-    elif mode in ['SingleCscan','SurfScan','SurfScan+Slice']:
+    elif mode in ['SingleCscan','Mosaic','Mosaic+Cut']:
             # # RptCscan is for acquiring Cscan at the same location repeatitively
             # # generate AO waveform for Galvo control for one Bline
             # AOwaveform, status = GenGalvoWave(XStepSize, XSteps, AVG, bias, obj, preclocks, postclocks)

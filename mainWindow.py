@@ -106,8 +106,8 @@ class MainWindow(QMainWindow):
         self.connectActions()
         
     def setStageMinMax(self):
-        self.ui.XPosition.setMinimum(self.ui.X0min.value()+self.ui.X1min.value())
-        self.ui.XPosition.setMaximum(self.ui.X0max.value()+self.ui.X1max.value())
+        self.ui.XPosition.setMinimum(self.ui.Xmin.value())
+        self.ui.XPosition.setMaximum(self.ui.Xmax.value())
         
         self.ui.YPosition.setMinimum(self.ui.Ymin.value())
         self.ui.YPosition.setMaximum(self.ui.Ymax.value())
@@ -218,10 +218,9 @@ class MainWindow(QMainWindow):
         self.ui.LoadDispersion.clicked.connect(self.chooseCompenstaion)
         self.ui.LoadBG.clicked.connect(self.chooseBackground)
         self.ui.ConfigButton.clicked.connect(self.LoadConfig)
-        self.ui.X0min.valueChanged.connect(self.setStageMinMax)
-        self.ui.X0max.valueChanged.connect(self.setStageMinMax)
-        self.ui.X1min.valueChanged.connect(self.setStageMinMax)
-        self.ui.X1max.valueChanged.connect(self.setStageMinMax)
+
+        self.ui.Xmax.valueChanged.connect(self.setStageMinMax)
+        self.ui.Xmin.valueChanged.connect(self.setStageMinMax)
         self.ui.Ymin.valueChanged.connect(self.setStageMinMax)
         self.ui.Ymax.valueChanged.connect(self.setStageMinMax)
         self.ui.Zmin.valueChanged.connect(self.setStageMinMax)

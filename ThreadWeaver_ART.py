@@ -58,7 +58,7 @@ class WeaverThread(QThread):
                     self.ui.PauseButton.setChecked(False)
                     self.ui.PauseButton.setText('Pause')
                     
-                elif self.item.action == 'SurfScan':
+                elif self.item.action == 'Mosaic':
                     # make directories
                     if not os.path.exists(self.ui.DIR.toPlainText()+'/aip'):
                         os.mkdir(self.ui.DIR.toPlainText()+'/aip')
@@ -67,24 +67,24 @@ class WeaverThread(QThread):
                     if not os.path.exists(self.ui.DIR.toPlainText()+'/fitting'):
                         os.mkdir(self.ui.DIR.toPlainText()+'/fitting')
                     # do fast pre-scan to identify tissue area
-                    interrupt = self.SurfPreScan(self.ui.XStartHeight.value())
-                    if not (interrupt == 'Stop' or np.abs(self.ui.ZIncrease.value()) > 0.1):
+                    interrupt = self.PreMosaic()
+                    if not (interrupt == 'Stop' ):#or np.abs(self.ui.ZIncrease.value()) > 0.1):
                         # if not (stopped by user or focusing gives larger than threshold z movement)
-                        if np.abs(self.ui.ZIncrease.value()) > 0.04:
-                            # if focusing gives larger than threshold2 z movement, redo pre-scan
-                            print('redo surfPreScan')
-                            delta_z = self.ui.ZIncrease.value()
-                            interrupt = self.SurfPreScan(self.ui.XStartHeight.value()+ delta_z)
-                            if not (interrupt == 'Stop' or np.abs(self.ui.ZIncrease.value()) > 0.1):
-                                # surfscan will move z to XstartHeight.value()+delta_z+ZIncrease.value()
-                                interrupt, status = self.SurfScan(self.ui.XStartHeight.value()+delta_z)
-                            else:
-                                status = "action aborted by user... or focusing gives large movement:"+ str(self.ui.ZIncrease.value())
-                        else:
-                            # surfscan will move z to XstartHeight.value()+ZIncrease.value()
-                            interrupt, status = self.SurfScan(self.ui.XStartHeight.value())
+                        # if np.abs(self.ui.ZIncrease.value()) > 0.04:
+                        #     # if focusing gives larger than threshold2 z movement, redo pre-scan
+                        #     print('redo PreMosaic')
+                        #     delta_z = self.ui.ZIncrease.value()
+                            # interrupt = self.PreMosaic(self.ui.XStartHeight.value()+ delta_z)
+                            # if not (interrupt == 'Stop' or np.abs(self.ui.ZIncrease.value()) > 0.1):
+                            #     # Mosaic will move z to XstartHeight.value()+delta_z+ZIncrease.value()
+                            #     interrupt, status = self.Mosaic(self.ui.XStartHeight.value()+delta_z)
+                            # else:
+                                # status = "action aborted by user... or focusing gives large movement:"+ str(self.ui.ZIncrease.value())
+                        # else:
+                            # Mosaic will move z to XstartHeight.value()+ZIncrease.value()
+                            interrupt, status = self.Mosaic()
                     else:
-                        status = "action aborted by user... or or focusing gives large movement:"+ str(self.ui.ZIncrease.value())
+                        status = "action aborted by user..."#" or or focusing gives large movement:"+ str(self.ui.ZIncrease.value())
                     # reset RUN button
                     self.ui.RunButton.setChecked(False)
                     self.ui.RunButton.setText('Go')
@@ -94,7 +94,7 @@ class WeaverThread(QThread):
                     # self.ui.PrintOut.append(status)
                     self.log.write(status)
                     
-                elif self.item.action == 'SurfScan+Slice':
+                elif self.item.action == 'Mosaic+Cut':
                     # make directories
                     if not os.path.exists(self.ui.DIR.toPlainText()+'/aip'):
                         os.mkdir(self.ui.DIR.toPlainText()+'/aip')
@@ -119,8 +119,8 @@ class WeaverThread(QThread):
                     self.ui.RunButton.setText('Go')
                     self.ui.PauseButton.setChecked(False)
                     self.ui.PauseButton.setText('Pause')
-                elif self.item.action == 'SingleSlice':
-                    message = self.SingleSlice(self.ui.SliceZStart.value())
+                elif self.item.action == 'SingleCut':
+                    message = self.SingleCut(self.ui.SliceZStart.value())
                     self.ui.statusbar.showMessage(message)
                     # self.ui.PrintOut.append(message)
                     self.log.write(message)
@@ -128,12 +128,12 @@ class WeaverThread(QThread):
                     self.ui.RunButton.setText('Go')
                     self.ui.PauseButton.setChecked(False)
                     self.ui.PauseButton.setText('Pause')
-                elif self.item.action == 'RptSlice':
+                elif self.item.action == 'RptCut':
                     self.ui.SMPthickness.setEnabled(False)
                     self.ui.SliceZDepth.setEnabled(False)
                     self.ui.ImageZDepth.setEnabled(False)
                     self.ui.SMPthickness.setEnabled(False)
-                    message = self.RptSlice(self.ui.SliceZStart.value(), np.uint16(self.ui.SMPthickness.value()*1000/self.ui.SliceZDepth.value()))
+                    message = self.RptCut(self.ui.SliceZStart.value(), np.uint16(self.ui.SMPthickness.value()*1000/self.ui.SliceZDepth.value()))
                     self.ui.statusbar.showMessage(message)
                     # self.ui.PrintOut.append(message)
                     self.log.write(message)
@@ -210,7 +210,7 @@ class WeaverThread(QThread):
         for ii in range(self.memoryCount):
              if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline','SingleBline', 'SingleAline']:
                  self.Memory[ii]=np.zeros([self.ui.BlineAVG.value()*sumLength], dtype = np.uint16)
-             elif self.ui.ACQMode.currentText() in ['SingleCscan','SurfScan','SurfScan+Slice']:
+             elif self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut']:
                  self.Memory[ii]=np.zeros([self.ui.BlineAVG.value()*self.ui.Ysteps.value()*sumLength], dtype = np.uint16)
         ###########################################################################################
         
@@ -317,7 +317,7 @@ class WeaverThread(QThread):
         self.DnSQueue.put(an_action)
         return mode + ' successfully finished...'
   
-    def SurfScan(self, initHeight):
+    def Mosaic(self):
         # slice number increase, tile number restart from 1
         an_action = DnSAction('restart_tilenum') # data in Memory[memoryLoc]
         self.DnSQueue.put(an_action)
@@ -332,31 +332,31 @@ class WeaverThread(QThread):
         self.DnSQueue.put(an_action)
         # generate Mosaic pattern, a Mosaic pattern consists of a list of MOSAIC object, 
         # each MOSAIC object defines a square of scanning area, which is defined by the X stage position, and Y stage start and stop position
-        self.Mosaic, status = GenMosaic_XGalvo(self.ui.XStart.value(),\
+        self.Mosaic_pattern, status = GenMosaic_XGalvo(self.ui.XStart.value(),\
                                         self.ui.XStop.value(),\
                                         self.ui.YStart.value(),\
                                         self.ui.YStop.value(),\
                                         self.ui.Xsteps.value()*self.ui.XStepSize.value()/1000,\
                                         self.ui.Overlap.value())
         # get total number of strips, i.e.，xstage positions
-        total_stripes = len(self.Mosaic)
+        total_stripes = len(self.Mosaic_pattern)
         # calculate the number of Cscans per stripe, i.e., Y stage positions
         Ystep = self.ui.YStepSize.value()*self.ui.Ysteps.value()
         CscansPerStripe = np.int16((self.ui.YStop.value()-self.ui.YStart.value())*1000/Ystep)
-        # save the surfPreScan tile identification to disk
+        # save the PreMosaic tile identification to disk
         an_action = DnSAction('WriteAgar', data = self.tile_flag, args = [ CscansPerStripe, total_stripes])
         self.DnSQueue.put(an_action)
         
         if CscansPerStripe <=0:
             return 'invalid Mosaic positions, abort aquisition...'
         # calculate the total number of tiles per slice, tiles is same concept as cscans
-        self.totalTiles = CscansPerStripe*len(self.Mosaic)
+        self.totalTiles = CscansPerStripe*len(self.Mosaic_pattern)
         if self.totalTiles <=0:
             return 'invalid Mosaic positions, abort aquisition...'
         
         # init sample surface plot window
         args = [[0, 0], [CscansPerStripe, self.totalTiles]]
-        an_action = DnSAction('Init_SurfScan', data = None, args = args) # data in Memory[memoryLoc]
+        an_action = DnSAction('Init_Mosaic', data = None, args = args) # data in Memory[memoryLoc]
         self.DnSQueue.put(an_action)
         
         # init local variables
@@ -366,35 +366,35 @@ class WeaverThread(QThread):
         agarTiles = 0
         
         # stage move to start XYZ position
-        self.ui.XPosition.setValue(self.Mosaic[0].x)
+        self.ui.XPosition.setValue(self.Mosaic_pattern[0].x)
         an_action = AODOAction('Xmove2')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
-        self.ui.YPosition.setValue(self.Mosaic[0].ystop)
+        self.ui.YPosition.setValue(self.Mosaic_pattern[0].ystop)
         an_action = AODOAction('Ymove2')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
         # adjust Z stage to put sample at focus
-        self.ui.ZPosition.setValue(initHeight + self.ui.ZIncrease.value())
-        an_action = AODOAction('Zmove2')
-        self.AODOQueue.put(an_action)
-        self.StagebackQueue.get()
-        ############################################################# Iterate through strips for one surfscan
-        while np.any(self.Mosaic) and interrupt != 'Stop': 
+        # self.ui.ZPosition.setValue(initHeight + self.ui.ZIncrease.value())
+        # an_action = AODOAction('Zmove2')
+        # self.AODOQueue.put(an_action)
+        # self.StagebackQueue.get()
+        ############################################################# Iterate through strips for one Mosaic
+        while np.any(self.Mosaic_pattern) and interrupt != 'Stop': 
             cscans = 0
             # stage move to X position of this stripe
-            self.ui.XPosition.setValue(self.Mosaic[0].x)
+            self.ui.XPosition.setValue(self.Mosaic_pattern[0].x)
             an_action = AODOAction('Xmove2')
             self.AODOQueue.put(an_action)
             self.StagebackQueue.get()
             
-            # adjust Z stage height according to the sample cutting slope 
-            Ztilt = (self.ui.XStopHeight.value()-self.ui.XStartHeight.value())/total_stripes
-            # print(Ztilt, self.ui.ZPosition.value(), self.ui.ZPosition.value()+Ztilt)
-            self.ui.ZPosition.setValue(self.ui.ZPosition.value()+Ztilt)
-            an_action = AODOAction('Zmove2')
-            self.AODOQueue.put(an_action)
-            self.StagebackQueue.get()
+            # # adjust Z stage height according to the sample cutting slope 
+            # Ztilt = (self.ui.XStopHeight.value()-self.ui.XStartHeight.value())/total_stripes
+            # # print(Ztilt, self.ui.ZPosition.value(), self.ui.ZPosition.value()+Ztilt)
+            # self.ui.ZPosition.setValue(self.ui.ZPosition.value()+Ztilt)
+            # an_action = AODOAction('Zmove2')
+            # self.AODOQueue.put(an_action)
+            # self.StagebackQueue.get()
             #######################################################################
             # update scan direction and agarTiles at the start of each new strip
             scan_direction = np.uint32(np.mod(scan_direction+1,2))
@@ -453,12 +453,12 @@ class WeaverThread(QThread):
                         # directly do display and save
                         args = [[cscans, stripes], [CscansPerStripe, self.totalTiles]]
                         data = self.Memory[memoryLoc].copy()
-                        an_action = DnSAction('SurfScan', data, raw = True, args=args) 
+                        an_action = DnSAction('Mosaic', data, raw = True, args=args) 
                         self.DnSQueue.put(an_action)
                     else:
                         # need to do FFT before display and save
                         args = [[cscans, stripes], [CscansPerStripe, self.totalTiles]]
-                        an_action = GPUAction(self.ui.FFTDevice.currentText(), 'SurfScan', memoryLoc, args=args)
+                        an_action = GPUAction(self.ui.FFTDevice.currentText(), 'Mosaic', memoryLoc, args=args)
                         self.GPUQueue.put(an_action)
                     # increment files imaged
                     cscans +=1
@@ -473,7 +473,7 @@ class WeaverThread(QThread):
                 interrupt = self.check_interrupt()
             
             # finishing this stripe, delete one MOSAIC object from the mosaic pattern
-            self.Mosaic = np.delete(self.Mosaic, 0)
+            self.Mosaic_pattern = np.delete(self.Mosaic_pattern, 0)
             stripes = stripes + 1
         # wait 6 seconds for FFT of last tile to finish
         time.sleep(6)
@@ -481,7 +481,7 @@ class WeaverThread(QThread):
         self.DnSQueue.put(an_action)  
         an_action = DnSAction('Save_mosaic') 
         self.DnSQueue.put(an_action)
-        return interrupt, 'SurfScan successfully finished...'
+        return interrupt, 'Mosaic successfully finished...'
     
     def check_interrupt(self):
         interrupt = None
@@ -503,7 +503,7 @@ class WeaverThread(QThread):
             return interrupt
         return interrupt
         
-    def SurfPreScan(self,initHeight):
+    def PreMosaic(self):
         self.Yds = 30 # accellaration scale for fast pre-scan
         # clear display windows
         an_action = DnSAction('Clear')
@@ -520,7 +520,7 @@ class WeaverThread(QThread):
         save = self.ui.Save.isChecked()
         FFTDevice = self.ui.FFTDevice.currentText()
         scale = self.ui.scale.value()
-        Zpos = initHeight 
+        # Zpos = initHeight 
         ############
         while Ysteps%self.Yds:
             self.Yds -= 1
@@ -556,30 +556,30 @@ class WeaverThread(QThread):
         self.DQueue.put(an_action)
         # generate Mosaic pattern, a Mosaic pattern consists of a list of MOSAIC object, 
         # each MOSAIC object defines a stripe of scanning area, which is defined by the X stage position, and Y stage start and stop position
-        self.Mosaic, status = GenMosaic_XGalvo(self.ui.XStart.value(),\
+        self.Mosaic_pattern, status = GenMosaic_XGalvo(self.ui.XStart.value(),\
                                         self.ui.XStop.value(),\
                                         self.ui.YStart.value(),\
                                         self.ui.YStop.value(),\
                                         self.ui.Xsteps.value()*self.ui.XStepSize.value()/1000,\
                                         self.ui.Overlap.value())
-        total_stripes = len(self.Mosaic)
+        total_stripes = len(self.Mosaic_pattern)
         # calculate the number of Cscans per stripe
         Ystep = self.ui.YStepSize.value()*self.ui.Ysteps.value()
         CscansPerStripe = np.int16((self.ui.YStop.value()-self.ui.YStart.value())*1000/Ystep)
         if CscansPerStripe <= 0:
             return 'invalid Mosaic positions, abort aquisition...'
         # calculate the total number of tiles per slice
-        self.totalTiles = CscansPerStripe*len(self.Mosaic)
+        self.totalTiles = CscansPerStripe*len(self.Mosaic_pattern)
         if self.totalTiles <= 0:
             return 'invalid Mosaic positions, abort aquisition...'
 
         # init sample surface window
         args = [[0, 0], [CscansPerStripe, self.totalTiles]]
-        an_action = DnSAction('Init_SurfScan', data = None, args = args) 
+        an_action = DnSAction('Init_Mosaic', data = None, args = args) 
         self.DnSQueue.put(an_action)
         # init tile profiling array
         # tile_flag: whether this tile is tissue or agar
-        self.tile_flag = np.zeros((len(self.Mosaic),CscansPerStripe),dtype = np.uint8)
+        self.tile_flag = np.zeros((len(self.Mosaic_pattern),CscansPerStripe),dtype = np.uint8)
         # tmp_cscan: average of all tissue tiles
         self.tmp_cscan = np.zeros([self.ui.Ysteps.value()*self.ui.BlineAVG.value() * \
                                    (self.ui.Xsteps.value()*self.ui.AlineAVG.value()+ self.ui.PreClock.value()*2 + self.ui.PostClock.value()),\
@@ -589,35 +589,35 @@ class WeaverThread(QThread):
         scan_direction = 1 # init scan direction to be backward
         
         # stage move to start tile position
-        self.ui.XPosition.setValue(self.Mosaic[0].x)
-        self.ui.YPosition.setValue(self.Mosaic[0].ystop)
-        self.ui.ZPosition.setValue(Zpos)
+        self.ui.XPosition.setValue(self.Mosaic_pattern[0].x)
+        self.ui.YPosition.setValue(self.Mosaic_pattern[0].ystop)
+        # self.ui.ZPosition.setValue(Zpos)
         an_action = AODOAction('Xmove2')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
         an_action = AODOAction('Ymove2')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
-        an_action = AODOAction('Zmove2')
-        self.AODOQueue.put(an_action)
-        self.StagebackQueue.get()
+        # an_action = AODOAction('Zmove2')
+        # self.AODOQueue.put(an_action)
+        # self.StagebackQueue.get()
         
-        ############################################################# Iterate through strips for one surfscan
-        while np.any(self.Mosaic) and interrupt != 'Stop': 
+        ############################################################# Iterate through strips for one Mosaic
+        while np.any(self.Mosaic_pattern) and interrupt != 'Stop': 
             cscans = 0
             # stage move to start of this stripe
-            self.ui.XPosition.setValue(self.Mosaic[0].x)
+            self.ui.XPosition.setValue(self.Mosaic_pattern[0].x)
             an_action = AODOAction('Xmove2')
             self.AODOQueue.put(an_action)
             self.StagebackQueue.get()
             
-            # Auto adjust focus according to surface height in X min and X max
-            Ztilt = (self.ui.XStopHeight.value()-self.ui.XStartHeight.value())/total_stripes
-            # print(Ztilt, self.ui.ZPosition.value(), self.ui.ZPosition.value()+Ztilt)
-            self.ui.ZPosition.setValue(self.ui.ZPosition.value()+Ztilt)
-            an_action = AODOAction('Zmove2')
-            self.AODOQueue.put(an_action)
-            self.StagebackQueue.get()
+            # # Auto adjust focus according to surface height in X min and X max
+            # Ztilt = (self.ui.XStopHeight.value()-self.ui.XStartHeight.value())/total_stripes
+            # # print(Ztilt, self.ui.ZPosition.value(), self.ui.ZPosition.value()+Ztilt)
+            # self.ui.ZPosition.setValue(self.ui.ZPosition.value()+Ztilt)
+            # an_action = AODOAction('Zmove2')
+            # self.AODOQueue.put(an_action)
+            # self.StagebackQueue.get()
             
             scan_direction = np.uint32(np.mod(scan_direction+1,2))
             # configure AODO
@@ -644,7 +644,7 @@ class WeaverThread(QThread):
                 ####################################### display data 
                 # need to do FFT before display and save
                 args = [[cscans, stripes], [CscansPerStripe, self.totalTiles]]
-                an_action = GPUAction(self.ui.FFTDevice.currentText(), 'SurfScan', memoryLoc, args=args)
+                an_action = GPUAction(self.ui.FFTDevice.currentText(), 'Mosaic', memoryLoc, args=args)
                 self.GPUQueue.put(an_action)
                 # get cscan data
                 while self.GPU2weaverQueue.qsize()>1:
@@ -667,7 +667,7 @@ class WeaverThread(QThread):
             self.AODOQueue.put(an_action)
             self.StagebackQueue.get() # wait for AODO CloseTask
             # finishing this stripe, delete one MOSAIC object from the mosaic pattern
-            self.Mosaic = np.delete(self.Mosaic, 0)
+            self.Mosaic_pattern = np.delete(self.Mosaic_pattern, 0)
             stripes = stripes + 1
             
         # find slice surface
@@ -786,7 +786,7 @@ class WeaverThread(QThread):
                 return message
             ########################################################
             # cut one slice
-            message = self.SingleSlice(self.ui.SliceZStart.value()+ii*self.ui.SliceZDepth.value()/1000.0)
+            message = self.SingleCut(self.ui.SliceZStart.value()+ii*self.ui.SliceZDepth.value()/1000.0)
             print(message)
             if message != 'Slice success':
                 return message
@@ -803,16 +803,16 @@ class WeaverThread(QThread):
                 message = 'user stopped acquisition...'
                 return message
             ########################################################
-            # move to defined zero
-            self.ui.ZPosition.setValue(self.ui.definedZero.value())
-            an_action = AODOAction('Zmove2')
-            self.AODOQueue.put(an_action)
-            self.StagebackQueue.get()
-            ##################################################
-            interrupt = self.check_interrupt()
-            if interrupt == 'Stop':
-                message = 'user stopped acquisition...'
-                return message
+            # # move to defined zero
+            # self.ui.ZPosition.setValue(self.ui.definedZero.value())
+            # an_action = AODOAction('Zmove2')
+            # self.AODOQueue.put(an_action)
+            # self.StagebackQueue.get()
+            # ##################################################
+            # interrupt = self.check_interrupt()
+            # if interrupt == 'Stop':
+            #     message = 'user stopped acquisition...'
+            #     return message
             ########################################################
             # move to X Y Z
             self.ui.XPosition.setValue(self.ui.XStart.value())
@@ -835,60 +835,60 @@ class WeaverThread(QThread):
                 message = 'user stopped acquisition...'
                 return message
             ########################################################
-            self.ui.ZPosition.setValue(self.ui.XStartHeight.value()+ii*self.ui.ImageZDepth.value()/1000.0)
-            an_action = AODOAction('Zmove2')
-            self.AODOQueue.put(an_action)
-            self.StagebackQueue.get()
-            message = '\nIMAGE HEIGHT:'+str(self.ui.XStartHeight.value()+ii*self.ui.ImageZDepth.value()/1000.0)+'\n'
-            print(message)
-            self.log.write(message)
-            ##################################################
-            interrupt = self.check_interrupt()
-            if interrupt == 'Stop':
-                message = 'user stopped acquisition...'
-                return message
+            # self.ui.ZPosition.setValue(self.ui.XStartHeight.value()+ii*self.ui.ImageZDepth.value()/1000.0)
+            # an_action = AODOAction('Zmove2')
+            # self.AODOQueue.put(an_action)
+            # self.StagebackQueue.get()
+            # message = '\nIMAGE HEIGHT:'+str(self.ui.XStartHeight.value()+ii*self.ui.ImageZDepth.value()/1000.0)+'\n'
+            # print(message)
+            # self.log.write(message)
+            # ##################################################
+            # interrupt = self.check_interrupt()
+            # if interrupt == 'Stop':
+            #     message = 'user stopped acquisition...'
+            #     return message
             ########################################################
             # do surf
             if ii%self.ui.backReget.value() == 0:
-                interrupt = self.SurfPreScan(self.ui.XStartHeight.value()+ii*self.ui.ImageZDepth.value()/1000.0)
+                interrupt = self.PreMosaic()#self.ui.XStartHeight.value()+ii*self.ui.ImageZDepth.value()/1000.0)
                 if interrupt == 'Stop':
-                    return 'SurfPreScan stopped by user...'
-                if np.abs(self.ui.ZIncrease.value()) > 0.1:
-                    message= 'SurfPreScan autofocus error...' + str(self.ui.ZIncrease.value())
-                    print(message)
-                    self.log.write(message)
-                    return message
-                # if focus adjustment is larger than 40 micron, redo surfPreScan
-                elif np.abs(self.ui.ZIncrease.value()) > 0.04:
-                    message= 'SurfPreScan focus adjust ...' + str(self.ui.ZIncrease.value())
-                    print(message)
-                    self.log.write(message)
+                    return 'PreMosaic stopped by user...'
+                # if np.abs(self.ui.ZIncrease.value()) > 0.1:
+                #     message= 'PreMosaic autofocus error...' + str(self.ui.ZIncrease.value())
+                #     print(message)
+                #     self.log.write(message)
+                #     return message
+                # # if focus adjustment is larger than 40 micron, redo PreMosaic
+                # elif np.abs(self.ui.ZIncrease.value()) > 0.04:
+                #     message= 'PreMosaic focus adjust ...' + str(self.ui.ZIncrease.value())
+                #     print(message)
+                #     self.log.write(message)
 
-                    delta_z = self.ui.ZIncrease.value()
-                    interrupt = self.SurfPreScan(self.ui.XStartHeight.value()+ii*self.ui.ImageZDepth.value()/1000.0 + delta_z)
-                    if interrupt == 'Stop':
-                        return 'SurfPreScan stopped by user...'
-                    if np.abs(self.ui.ZIncrease.value()) > 0.1:
-                        message= 'SurfPreScan autofocus error...' + str(self.ui.ZIncrease.value())
-                        print(message)
-                        self.log.write(message)
-                        return message
-                else:
-                    delta_z = 0
-            else:
-                delta_z = 0
-            interrupt, status = self.SurfScan(self.ui.XStartHeight.value()+ii*self.ui.ImageZDepth.value()/1000.0 + delta_z)
+                #     delta_z = self.ui.ZIncrease.value()
+                #     interrupt = self.PreMosaic(self.ui.XStartHeight.value()+ii*self.ui.ImageZDepth.value()/1000.0 + delta_z)
+                #     if interrupt == 'Stop':
+                #         return 'PreMosaic stopped by user...'
+                #     if np.abs(self.ui.ZIncrease.value()) > 0.1:
+                #         message= 'PreMosaic autofocus error...' + str(self.ui.ZIncrease.value())
+                #         print(message)
+                #         self.log.write(message)
+                #         return message
+                # else:
+                #     delta_z = 0
+            # else:
+            #     delta_z = 0
+            interrupt, status = self.Mosaic()#self.ui.XStartHeight.value()+ii*self.ui.ImageZDepth.value()/1000.0 + delta_z)
             if interrupt == 'Stop':
                 return 'user stopped acquisition...'
         # LAST CUT 
-        message = self.SingleSlice(self.ui.SliceZStart.value()+(ii+1)*self.ui.SliceZDepth.value()/1000.0)
+        message = self.SingleCut(self.ui.SliceZStart.value()+(ii+1)*self.ui.SliceZDepth.value()/1000.0)
         if message != 'Slice success':
             return message
-        return 'Mosaic+slice successful...'
+        return 'Mosaic+Cut successful...'
     
     def MultiCutPerImage(self):
         # cut first time
-        message = self.SingleSlice(self.ui.SliceZStart.value())
+        message = self.SingleCut(self.ui.SliceZStart.value())
         print(message)
         if message != 'Slice success':
             return message
@@ -948,10 +948,10 @@ class WeaverThread(QThread):
             ########################################################
             # do surf
             if ii%self.ui.backReget.value() == 0:
-                interrupt = self.SurfPreScan()
+                interrupt = self.PreMosaic()
                 if interrupt == 'Stop':
-                    return 'SurfPreScan stopped by user...'
-            interrupt, status = self.SurfScan()
+                    return 'PreMosaic stopped by user...'
+            interrupt, status = self.Mosaic()
             if interrupt == 'Stop':
                 return 'user stopped acquisition...'
             
@@ -962,29 +962,29 @@ class WeaverThread(QThread):
                 return message
             ########################################################
             # cut slices
-            message = self.RptSlice(self.ui.SliceZStart.value()+ii*self.ui.ImageZDepth.value()/1000.0+self.ui.SliceZDepth.value()/1000.0, \
+            message = self.RptCut(self.ui.SliceZStart.value()+ii*self.ui.ImageZDepth.value()/1000.0+self.ui.SliceZDepth.value()/1000.0, \
                                     np.uint16(self.ui.ImageZDepth.value()//self.ui.SliceZDepth.value()))
             print(message)
             if message != 'Slice success':
                 return message
         # LAST CUT 
-        message = self.SingleSlice(self.ui.SliceZStart.value()+(ii+1)*self.ui.SliceZDepth.value()/1000.0)
+        message = self.SingleCut(self.ui.SliceZStart.value()+(ii+1)*self.ui.SliceZDepth.value()/1000.0)
         if message != 'Slice success':
             return message
-        return 'Mosaic+slice successful...'
+        return 'Mosaic+Cut successful...'
         
-    def SingleSlice(self, zpos):
-        # move to defined zero
-        self.ui.ZPosition.setValue(self.ui.definedZero.value())
-        an_action = AODOAction('Zmove2')
-        self.AODOQueue.put(an_action)
-        self.StagebackQueue.get()
-        ##################################################
-        interrupt = self.check_interrupt()
-        if interrupt == 'Stop':
-            message = 'user stopped acquisition...'
-            return message
-        ########################################################
+    def SingleCut(self, zpos):
+        # # move to defined zero
+        # self.ui.ZPosition.setValue(self.ui.definedZero.value())
+        # an_action = AODOAction('Zmove2')
+        # self.AODOQueue.put(an_action)
+        # self.StagebackQueue.get()
+        # ##################################################
+        # interrupt = self.check_interrupt()
+        # if interrupt == 'Stop':
+        #     message = 'user stopped acquisition...'
+        #     return message
+        # ########################################################
         # self.ui.Gotozero.setChecked(True)
         # message = self.Gotozero()
         # if message != 'gotozero success...':
@@ -1064,17 +1064,17 @@ class WeaverThread(QThread):
         self.StagebackQueue.get()
         return 'Slice success'
         
-    def RptSlice(self, start_height, cuts):
-        # move to defined zero
-        self.ui.ZPosition.setValue(self.ui.definedZero.value())
-        an_action = AODOAction('Zmove2')
-        self.AODOQueue.put(an_action)
-        self.StagebackQueue.get()
-        ##################################################
-        interrupt = self.check_interrupt()
-        if interrupt == 'Stop':
-            message = 'user stopped acquisition...'
-            return message
+    def RptCut(self, start_height, cuts):
+        # # move to defined zero
+        # self.ui.ZPosition.setValue(self.ui.definedZero.value())
+        # an_action = AODOAction('Zmove2')
+        # self.AODOQueue.put(an_action)
+        # self.StagebackQueue.get()
+        # ##################################################
+        # interrupt = self.check_interrupt()
+        # if interrupt == 'Stop':
+        #     message = 'user stopped acquisition...'
+        #     return message
         ########################################################
         # go to start X
         self.ui.XPosition.setValue(self.ui.SliceX.value())
