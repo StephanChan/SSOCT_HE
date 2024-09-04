@@ -140,7 +140,7 @@ class ART8912_finiteTrigger(QThread):
         #配置水平参数
         if self.ui.ClockFreq_2.currentText() == '250MHz':
             minSampleRate = 250000000.0  
-        elif self.ui.ClockFreq.currentText() == '125MHz':
+        else :#self.ui.ClockFreq.currentText() == '125MHz':
             minSampleRate = 125000000.0  
                                     # 采样率
         minRecordLength = self.ui.PostSamples_2.value()           # 最小采样长度

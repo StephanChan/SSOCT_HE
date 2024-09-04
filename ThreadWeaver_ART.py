@@ -30,7 +30,7 @@ class WeaverThread(QThread):
         self.exit_message = 'ACQ thread successfully exited'
         
     def run(self):
-        self.InitMemory()
+        # self.InitMemory()
         self.QueueOut()
         
     def QueueOut(self):
@@ -104,7 +104,7 @@ class WeaverThread(QThread):
                         os.mkdir(self.ui.DIR.toPlainText()+'/fitting')
                     self.ui.SMPthickness.setEnabled(False)
                     self.ui.SliceZDepth.setEnabled(False)
-                    self.ui.ImageZDepth.setEnabled(False)
+                    # self.ui.ImageZDepth.setEnabled(False)
                     self.ui.SMPthickness.setEnabled(False)
                     message = self.SurfSlice()
                     self.ui.statusbar.showMessage(message)
@@ -112,7 +112,7 @@ class WeaverThread(QThread):
                     self.log.write(message)
                     self.ui.SMPthickness.setEnabled(True)
                     self.ui.SliceZDepth.setEnabled(True)
-                    self.ui.ImageZDepth.setEnabled(True)
+                    # self.ui.ImageZDepth.setEnabled(True)
                     self.ui.SMPthickness.setEnabled(True)
                     # reset RUN button
                     self.ui.RunButton.setChecked(False)
@@ -131,7 +131,7 @@ class WeaverThread(QThread):
                 elif self.item.action == 'RptCut':
                     self.ui.SMPthickness.setEnabled(False)
                     self.ui.SliceZDepth.setEnabled(False)
-                    self.ui.ImageZDepth.setEnabled(False)
+                    # self.ui.ImageZDepth.setEnabled(False)
                     self.ui.SMPthickness.setEnabled(False)
                     message = self.RptCut(self.ui.SliceZStart.value(), np.uint16(self.ui.SMPthickness.value()*1000/self.ui.SliceZDepth.value()))
                     self.ui.statusbar.showMessage(message)
@@ -144,7 +144,7 @@ class WeaverThread(QThread):
                     self.ui.PauseButton.setText('Pause')
                     self.ui.SMPthickness.setEnabled(True)
                     self.ui.SliceZDepth.setEnabled(True)
-                    self.ui.ImageZDepth.setEnabled(True)
+                    # self.ui.ImageZDepth.setEnabled(True)
                     self.ui.SMPthickness.setEnabled(True)
                     # self.ui.statusbar.showMessage(status)
                 elif self.item.action == 'Gotozero':
@@ -408,9 +408,9 @@ class WeaverThread(QThread):
                     ###################################### 
                     # next tile is tissue, move to start of Y position
                     ydistance = self.ui.YPosition.value()+Ystep/1000.0 * agarTiles * (-1)**(scan_direction+1)
-                    message = 'agarTiles:'+str(agarTiles)+' ypos:'+str(round(ydistance,3))
-                    self.log.write(message)
-                    print(message)
+                    # message = 'agarTiles:'+str(agarTiles)+' ypos:'+str(round(ydistance,3))
+                    # self.log.write(message)
+                    # print(message)
                     self.ui.YPosition.setValue(ydistance)
                     an_action = AODOAction('Ymove2')
                     self.AODOQueue.put(an_action)
@@ -544,9 +544,12 @@ class WeaverThread(QThread):
         print(message)
         self.log.write(message)
         self.InitMemory()
-        # load surface profile
+        # load surface profile for high res imaging
         if os.path.isfile(self.ui.Surf_DIR.text()):
             self.surfCurve = np.uint16(np.fromfile(self.ui.Surf_DIR.text(), dtype=np.uint16))
+            if self.surfCurve.shape[0] != Xsteps:
+                self.surfCurve = np.zeros([Xsteps],dtype = np.uint16)
+                print('surface data not match FOV setting, using all zeros')
         else:
             print('surface data not found, using all zeros')
             self.surfCurve = np.zeros([Xsteps],dtype = np.uint16)
@@ -577,6 +580,7 @@ class WeaverThread(QThread):
         args = [[0, 0], [CscansPerStripe, self.totalTiles]]
         an_action = DnSAction('Init_Mosaic', data = None, args = args) 
         self.DnSQueue.put(an_action)
+        
         # init tile profiling array
         # tile_flag: whether this tile is tissue or agar
         self.tile_flag = np.zeros((len(self.Mosaic_pattern),CscansPerStripe),dtype = np.uint8)
@@ -739,37 +743,37 @@ class WeaverThread(QThread):
         
     def SurfSlice(self):
         # determine if one image per cut
-        if self.ui.ImageZDepth.value() - self.ui.SliceZDepth.value() >1: # unit: um
-            message = ' imaging deeper than cutting, cut multiple times per image...'
-            self.ui.statusbar.showMessage(message)
-            # self.ui.PrintOut.append(message)
-            self.log.write(message)
-            message = self.MultiCutPerImage()
-            self.ui.statusbar.showMessage(message)
-            # self.ui.PrintOut.append(message)
-            self.log.write(message)
+        # if self.ui.ImageZDepth.value() - self.ui.SliceZDepth.value() >1: # unit: um
+        #     message = ' imaging deeper than cutting, cut multiple times per image...'
+        #     self.ui.statusbar.showMessage(message)
+        #     # self.ui.PrintOut.append(message)
+        #     self.log.write(message)
+        #     message = self.MultiCutPerImage()
+        #     self.ui.statusbar.showMessage(message)
+        #     # self.ui.PrintOut.append(message)
+        #     self.log.write(message)
             
             
-        elif self.ui.SliceZDepth.value() - self.ui.ImageZDepth.value() >1:
-            message = ' slicing deeper than imaging, image multiple times per slice...'
-            self.ui.statusbar.showMessage(message)
-            # self.ui.PrintOut.append(message)
-            self.log.write(message)
+        # elif self.ui.SliceZDepth.value() - self.ui.ImageZDepth.value() >1:
+        #     message = ' slicing deeper than imaging, image multiple times per slice...'
+        #     self.ui.statusbar.showMessage(message)
+        #     # self.ui.PrintOut.append(message)
+        #     self.log.write(message)
             
-            message = ' this mode has not been configured, abort...'
-            self.ui.statusbar.showMessage(message)
-            # self.ui.PrintOut.append(message)
-            self.log.write(message)
+        #     message = ' this mode has not been configured, abort...'
+        #     self.ui.statusbar.showMessage(message)
+        #     # self.ui.PrintOut.append(message)
+        #     self.log.write(message)
             
-        else:
-            message = ' slicing and imaging depth same, one image per cut...'
-            self.ui.statusbar.showMessage(message)
-            # self.ui.PrintOut.append(message)
-            self.log.write(message)
-            message = self.OneImagePerCut()
-            self.ui.statusbar.showMessage(message)
-            # self.ui.PrintOut.append(message)
-            self.log.write(message)
+        # else:
+        message = ' slicing and imaging depth same, one image per cut...'
+        self.ui.statusbar.showMessage(message)
+        # self.ui.PrintOut.append(message)
+        self.log.write(message)
+        message = self.OneImagePerCut()
+        self.ui.statusbar.showMessage(message)
+        # self.ui.PrintOut.append(message)
+        self.log.write(message)
             
         self.ui.RunButton.setChecked(False)
         self.ui.RunButton.setText('Go')
@@ -794,7 +798,7 @@ class WeaverThread(QThread):
             print(message)
             self.log.write(message)
             # remeasure background
-            if ii%self.ui.backReget.value() == 0:
+            if self.ui.auto_background.isChecked():
                 self.get_background()
                 # time.sleep(1)
             ##################################################
@@ -990,12 +994,13 @@ class WeaverThread(QThread):
         # if message != 'gotozero success...':
         #     return message
         # self.ui.statusbar.showMessage(message)
-        # go to start X
         
-        self.ui.XPosition.setValue(self.ui.SliceX.value())
-        an_action = AODOAction('Xmove2')
+        # go to start Y
+        self.ui.YPosition.setValue(self.ui.SliceY.value())
+        an_action = AODOAction('Ymove2')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
+        
         
         ##################################################
         interrupt = self.check_interrupt()
@@ -1003,9 +1008,10 @@ class WeaverThread(QThread):
             message = 'user stopped acquisition...'
             return message
         
-        # go to start Y
-        self.ui.YPosition.setValue(self.ui.SliceY.value())
-        an_action = AODOAction('Ymove2')
+        # go to start X
+       
+        self.ui.XPosition.setValue(self.ui.SliceX.value())
+        an_action = AODOAction('Xmove2')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
         
@@ -1665,5 +1671,16 @@ class WeaverThread(QThread):
         self.ui.ACQMode.setCurrentText(mode)
         self.ui.FFTDevice.setCurrentText(device)
         self.ui.DSing.setChecked(False)
+        
+        # load surface profile for high res imaging
+        if os.path.isfile(self.ui.Surf_DIR.text()):
+            self.surfCurve = np.uint16(np.fromfile(self.ui.Surf_DIR.text(), dtype=np.uint16))
+            if self.surfCurve.shape[0] != Xpixels:
+                self.surfCurve = np.zeros([Xpixels],dtype = np.uint16)
+                print('surface data not match FOV setting, using all zeros')
+                self.surfCurve = np.zeros([Xpixels],dtype = np.uint16)
+        else:
+            print('surface data not found, using all zeros')
+            self.surfCurve = np.zeros([Xpixels],dtype = np.uint16)
         return 'surface measruement success...'
     

@@ -269,14 +269,14 @@ class GUI(MainWindow):
         
         # Mosaic is for imaging the sample surface
         
-        # Mosaic + Slice is for serial sectioning imaging
+        # Mosaic + Cut is for serial sectioning imaging
         
-        # Slice is for cut one slice only
+        # Cut is for cut one slice only
         
         if self.ui.ACQMode.currentText() in ['RptAline','RptBline','RptCscan','Mosaic','Mosaic+Cut','RptCut']:
             if self.ui.RunButton.isChecked():
                 self.ui.RunButton.setText('Stop')
-                # for Mosaic and SurfSlice, popup a dialog to double check stage position
+                # for surfScan and SurfSlice, popup a dialog to double check stage position
                 if self.ui.ACQMode.currentText() in ['Mosaic','Mosaic+Cut','RptCut']:
                     dlg = StageDialog( self.ui.XPosition.value(), self.ui.YPosition.value(), self.ui.ZPosition.value())
                     dlg.setWindowTitle("double-check stage position")
@@ -301,16 +301,11 @@ class GUI(MainWindow):
                 self.Stop_task()
                 
                 # self.CenterGalvo()
-        elif self.ui.ACQMode.currentText() in ['SingleAline','SingleBline','SingleCscan','SingleSlice']:
-            self.ui.RunButton.setText('Stop')
-            an_action = WeaverAction(self.ui.ACQMode.currentText())
-            WeaverQueue.put(an_action)
-            # time.sleep(0.5)
-            # self.ui.RunButton.setChecked(False)
-            # self.ui.RunButton.setText('Go')
-            # self.CenterGalvo()
-        else:
-            self.Slice()
+        elif self.ui.ACQMode.currentText() in ['SingleAline','SingleBline','SingleCscan','SingleCut']:
+            if self.ui.RunButton.isChecked():
+                self.ui.RunButton.setText('Stop')
+                an_action = WeaverAction(self.ui.ACQMode.currentText())
+                WeaverQueue.put(an_action)
         
     def InitStages(self):
         an_action = AODOAction('Init')

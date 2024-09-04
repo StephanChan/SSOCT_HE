@@ -248,7 +248,7 @@ class DnSThread(QThread):
         # load surface profile for high res imaging
         if os.path.isfile(self.ui.Surf_DIR.text()):
             self.surfCurve = np.uint16(np.fromfile(self.ui.Surf_DIR.text(), dtype=np.uint16))
-            if self.surfCurve.shape != Xpixels:
+            if self.surfCurve.shape[0] != Xpixels:
                 self.surfCurve = np.zeros([Xpixels],dtype = np.uint16)
                 print('surface data not match FOV setting, using all zeros')
         else:
@@ -281,7 +281,7 @@ class DnSThread(QThread):
             # plt.figure()
             self.first_tile = True
             #######################################
-        
+
             self.zmax_scale = self.ui.scale.value()
             ############## adjust scale
             while Xpixels%self.zmax_scale or Ypixels%self.zmax_scale:
@@ -290,11 +290,12 @@ class DnSThread(QThread):
             print(message)
             self.log.write(message)
             self.surfZMAX = np.zeros([ surfX*(Ypixels//self.zmax_scale),surfY*(Xpixels//self.zmax_scale)],dtype = np.float32)
-            pixmap = ImagePlot(self.surfZMAX, self.ui.XYZmin.value(), self.ui.XYZmax.value())
-            # clear content on the waveformLabel
-            self.ui.MUS_mosaic.clear()
-            # update iamge on the waveformLabel
-            self.ui.MUS_mosaic.setPixmap(pixmap)
+            if self.ui.MUS.isChecked():
+                pixmap = ImagePlot(self.surfZMAX, self.ui.XYZmin.value(), self.ui.XYZmax.value())
+                # clear content on the waveformLabel
+                self.ui.MUS_mosaic.clear()
+                # update iamge on the waveformLabel
+                self.ui.MUS_mosaic.setPixmap(pixmap)
 
             
     def Process_Mosaic(self, data, raw = False, args = []):
@@ -329,34 +330,36 @@ class DnSThread(QThread):
                     data_flatten[:,xx,0:data.shape[2]-self.surfCurve[xx]] = data[:,xx,self.surfCurve[xx]:]
             # print('flatten surface take', time.time()-start0)
             tmp = self.ui.SaveZstart.value()
-            start_pixel =  tmp if tmp>-0.5 else self.ui.SurfSet.value()+7 ################# focus set to start from 7 pixels below surface
+            start_pixel =  np.uint16(tmp if tmp>-0.5 else self.ui.SurfHeight.value()+4) ################# focus set to start from 7 pixels below surface
             thickness = self.ui.SaveZrange.value()
-            
             if not self.ui.DSing.isChecked():
                 # calculate data_focus and data_ds
                 data_focus = data_flatten[:,:,start_pixel:start_pixel + thickness]
                 data_ds = data_flatten.reshape([Ypixels//self.zmax_scale, self.zmax_scale, Xpixels//self.zmax_scale, self.zmax_scale, Zpixels]).mean(-2).mean(1) #################### zmax set to use 3x3 downsampling
                 data_ds2 = data_flatten.reshape([Ypixels//10, 10, Xpixels//10, 10, Zpixels]).mean(-2).mean(1) #################### surfProfile set to use 10x10 downsampling
                 ########################################
-                # calculate AIP, surface, and zmax
+                # calculate AIP
                 AIP = np.mean(data_focus,2)
                 # shading correction
                 AIP = (AIP-self.darkField)/self.flatField
-                
+                # calculate surface
                 # start0 = time.time()
                 surfProfile = np.zeros([data_ds2.shape[0], data_ds2.shape[1]])
                 for yy in range(data_ds2.shape[0]):
                     for xx in range(data_ds2.shape[1]):
                         surfProfile[yy,xx] = findchangept(data_ds2[yy,xx,:],2)
                 # print('calculate surface', time.time()-start0)
-                
-                kernel = np.ones([1,1,5])/5 # kernel size hard coded to be 5 in z dimension
-                zmax = self.ui.DepthRange.value()-np.argmax(ndimage.convolve(data_ds,kernel,mode = 'reflect'),2)
+                # calculate  zmax
+                if self.ui.MUS.isChecked():
+                    kernel = np.ones([1,1,5])/5 # kernel size hard coded to be 5 in z dimension
+                    zmax = self.ui.DepthRange.value()-np.argmax(ndimage.convolve(data_ds,kernel,mode = 'reflect'),2)
+                ###############################################################
                 # for odd strips, need to flip data in Y dimension and also the sequence
                 if np.mod(fileY,2)==1:
                     AIP = np.flip(AIP,0)
                     surfProfile = np.flip(surfProfile,0)
-                    zmax = np.flip(zmax,0)
+                    if self.ui.MUS.isChecked():
+                        zmax = np.flip(zmax,0)
                     data_ds = np.flip(data_ds,0)
                     data_focus = np.flip(data_focus,0)
                 self.Cscan = data_ds
@@ -373,10 +376,9 @@ class DnSThread(QThread):
                 if self.ui.Save.isChecked():
                     self.writeTiff(self.ui.DIR.toPlainText()+'/surf/vol'+str(self.sliceNum)+'/SURF.tif', surfProfile, mode)
                 if self.ui.Save.isChecked():
-                    self.writeTiff(self.ui.DIR.toPlainText()+'/fitting/vol'+str(self.sliceNum)+'/MAX.tif', zmax, mode)
-                    
-                self.surfZMAX[Ypixels//self.zmax_scale*fileX:Ypixels//self.zmax_scale*(fileX+1),\
-                          Xpixels//self.zmax_scale*(fileY):Xpixels//self.zmax_scale*(fileY+1)] = zmax
+                    if self.ui.MUS.isChecked():
+                        self.writeTiff(self.ui.DIR.toPlainText()+'/fitting/vol'+str(self.sliceNum)+'/MAX.tif', zmax, mode)
+                
             ##########################################################################
             else:
                 # for fast pre-scan imaging
@@ -398,7 +400,7 @@ class DnSThread(QThread):
             ############################## #######
             # display AIP
             scale = self.ui.scale.value()
-            pixmap = ImagePlot(AIP[:,::scale], self.ui.XYmin.value(), self.ui.XYmax.value())
+            pixmap = ImagePlot(AIP, self.ui.XYmin.value(), self.ui.XYmax.value())
             # clear content on the waveformLabel
             self.ui.XYplane.clear()
             # update iamge on the waveformLabel
@@ -414,7 +416,9 @@ class DnSThread(QThread):
             self.surf[Ypixels//scale*fileX:Ypixels//scale*(fileX+1),\
                       Xpixels//scale*(fileY):Xpixels//scale*(fileY+1)] = AIP[::scale,::scale]
                 
-            
+            if self.ui.MUS.isChecked() and not self.ui.DSing.isChecked(): 
+                self.surfZMAX[Ypixels//self.zmax_scale*fileX:Ypixels//self.zmax_scale*(fileX+1),\
+                          Xpixels//self.zmax_scale*(fileY):Xpixels//self.zmax_scale*(fileY+1)] = zmax
             
         else:
             #######################################
@@ -444,11 +448,12 @@ class DnSThread(QThread):
         self.ui.SampleMosaic.setPixmap(pixmap)
         
         if not self.ui.DSing.isChecked():
-            pixmap = ImagePlot(self.surfZMAX, self.ui.XYZmin.value(), self.ui.XYZmax.value())
-            # clear content on the waveformLabel
-            self.ui.MUS_mosaic.clear()
-            # update iamge on the waveformLabel
-            self.ui.MUS_mosaic.setPixmap(pixmap)
+            if self.ui.MUS.isChecked():
+                pixmap = ImagePlot(self.surfZMAX, self.ui.XYZmin.value(), self.ui.XYZmax.value())
+                # clear content on the waveformLabel
+                self.ui.MUS_mosaic.clear()
+                # update iamge on the waveformLabel
+                self.ui.MUS_mosaic.setPixmap(pixmap)
 
         
     def Save_mosaic(self):
@@ -457,9 +462,10 @@ class DnSThread(QThread):
             tif.write_image(self.surf)
             tif.close()
             if not self.ui.DSing.isChecked():
-                tif = TIFF.open(self.ui.DIR.toPlainText()+'/fitting/slice'+str(self.sliceNum)+'coase.tif', mode='w')
-                tif.write_image(self.surfZMAX)
-                tif.close()
+                if self.ui.MUS.isChecked():
+                    tif = TIFF.open(self.ui.DIR.toPlainText()+'/fitting/slice'+str(self.sliceNum)+'coase.tif', mode='w')
+                    tif.write_image(self.surfZMAX)
+                    tif.close()
             
         
     def Update_contrast_XY(self):
@@ -494,7 +500,7 @@ class DnSThread(QThread):
             self.ui.XZplane.setPixmap(pixmap)
             
             tmp = self.ui.SaveZstart.value()
-            start_pixel =  tmp if tmp>-0.5 else self.ui.SurfSet.value()+7
+            start_pixel =  np.uint16(tmp if tmp>-0.5 else self.ui.SurfHeight.value()+4)
             thickness = self.ui.SaveZrange.value()
             plane = np.mean(data[:,:,start_pixel:start_pixel + thickness],2)# has to be first index, otherwise the memory space is not continuous
             pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
