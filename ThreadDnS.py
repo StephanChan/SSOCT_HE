@@ -98,7 +98,7 @@ class DnSThread(QThread):
                 # self.ui.PrintOut.append(message)
                 self.log.write(message)
                 print(traceback.format_exc())
-            num+=1
+            # num+=1
             # print(num, 'th display\n')
             self.item = self.queue.get()
             
@@ -127,10 +127,12 @@ class DnSThread(QThread):
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         if self.Digitizer == 'ART8912':
             Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
-        return Zpixels, Xpixels
+            
+        Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
+        return Zpixels, Xpixels, Ypixels
             
     def Display_aline(self, data, raw = False):
-        Zpixels, Xpixels = self.get_FOV_size(raw)
+        Zpixels, Xpixels, Ypixels = self.get_FOV_size(raw)
         # get number of Y pixels
         Yrpt = self.ui.BlineAVG.value()
         # reshape data to [Ypixels*Xpixels, Zpixels]
@@ -139,8 +141,8 @@ class DnSThread(QThread):
             Zpixels = self.ui.PostSamples_2.value()-self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
             data = data[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]
 
-        self.Aline = data
         Ascan = np.float32(np.mean(data,0))
+        self.Aline = Ascan
         # float32 data type
         pixmap = LinePlot(Ascan, [], self.ui.XYmin.value()*30, self.ui.XYmax.value()*30)
         # clear content on the waveformLabel
@@ -157,7 +159,7 @@ class DnSThread(QThread):
             
     
     def Display_bline(self, data, raw = False):
-        Zpixels, Xpixels = self.get_FOV_size(raw)
+        Zpixels, Xpixels, Ypixels = self.get_FOV_size(raw)
         # get number of Y pixels
         Yrpt = self.ui.BlineAVG.value()
         # reshape data
@@ -166,9 +168,22 @@ class DnSThread(QThread):
         if self.Digitizer == 'ART8912':    
             data = data[:,self.ui.PreClock.value():self.ui.Xsteps.value()*self.ui.AlineAVG.value()+self.ui.PreClock.value(),:]
             Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
+        # Bline averaging
+        if self.ui.BlineAVG.value() > 1:
+            # reshape into Ypixels x Xpixels x Zpixels
+            data = data.reshape([Yrpt, Xpixels,Zpixels])
+            data=np.mean(data,0)
+            Ypixels = self.ui.Ysteps.value()
+        else:
+            data = data[0]
+        # Aline averaging if needed
+        if self.ui.AlineAVG.value() > 1:
+            data = data.reshape([self.ui.Xsteps.value(), self.ui.AlineAVG.value(), Zpixels])
+            data = np.mean(data,1)
+            Xpixels = self.ui.Xsteps.value()
             
         self.Bline = data
-        Bscan = np.float32(np.mean(data,0))
+        Bscan = data
         Bscan = np.transpose(Bscan).copy()
 
         pixmap = ImagePlot(Bscan, self.ui.XYmin.value(), self.ui.XYmax.value())
@@ -186,16 +201,24 @@ class DnSThread(QThread):
         
         
     def Display_Cscan(self, data, raw = False):
-        Zpixels, Xpixels = self.get_FOV_size(raw)
-        # get number of Y pixels
-        Ypixels = self.ui.Ysteps.value()#*self.ui.BlineAVG.value()
+        Zpixels, Xpixels, Ypixels = self.get_FOV_size(raw)
         # reshape data
-        data = data.reshape([self.ui.BlineAVG.value(),Ypixels, Xpixels,Zpixels])
-        data=np.mean(data,0)
+        data = data.reshape([Ypixels, Xpixels, Zpixels])
         # trim fly-back pixels
         if self.Digitizer == 'ART8912':    
             data = data[:,self.ui.PreClock.value():self.ui.Xsteps.value()*self.ui.AlineAVG.value()+self.ui.PreClock.value(),:]
             Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
+        # Bline averaging
+        if self.ui.BlineAVG.value() > 1:
+            # reshape into Ypixels x Xpixels x Zpixels
+            data = data.reshape([self.ui.Ysteps.value(),self.ui.BlineAVG.value(), Xpixels,Zpixels])
+            data=np.mean(data,1)
+            Ypixels = self.ui.Ysteps.value()
+        # Aline averaging if needed
+        if self.ui.AlineAVG.value() > 1:
+            data = data.reshape([Ypixels,self.ui.Xsteps.value(), self.ui.AlineAVG.value(), Zpixels])
+            data = np.mean(data,2)
+            Xpixels = self.ui.Xsteps.value()
             
         self.Cscan = data
         plane = np.transpose(data[0,:,:]).copy()# has to be first index, otherwise the memory space is not continuous
@@ -223,19 +246,14 @@ class DnSThread(QThread):
             self.WriteData(data, self.CscanFilename([Ypixels,Xpixels,Zpixels]))
         
     def Init_Mosaic(self, raw = False, args = []):
-        Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
+        Xpixels = self.ui.Xsteps.value()#*self.ui.AlineAVG.value()
         Ypixels = self.ui.Ysteps.value()#*self.ui.BlineAVG.value()
         
         surfX = args[1][0]
         surfY = np.int32(args[1][1]/args[1][0])
         # adjust scale ###################
         scale = self.ui.scale.value()
-        # while Xpixels%scale or Ypixels%scale:
-        #     scale -= 1
-        # message = '\nslice '+str(self.sliceNum)+' scale is '+str(scale)+'\n'
-        # print(message)
-        # self.log.write(message)
-        # self.ui.scale.setValue(scale)
+
         ###############
         self.surf = np.zeros([ surfX*(Ypixels//scale),surfY*(Xpixels//scale)],dtype = np.float32)
 
@@ -276,14 +294,10 @@ class DnSThread(QThread):
                 print('flat data not found, using all ones')
                 self.flatField = np.ones([Ypixels, Xpixels],dtype = np.float32)
             
-            # plt.figure()
-            # plt.imshow(self.flatField)
-            # plt.figure()
             self.first_tile = True
             #######################################
-
             self.zmax_scale = self.ui.scale.value()
-            ############## adjust scale
+            # ############## adjust scale
             while Xpixels%self.zmax_scale or Ypixels%self.zmax_scale:
                 self.zmax_scale -= 1
             message = '\nslice '+str(self.sliceNum)+' zmax scale is '+str(self.zmax_scale)+'\n'
@@ -299,17 +313,24 @@ class DnSThread(QThread):
 
             
     def Process_Mosaic(self, data, raw = False, args = []):
-        Zpixels, Xpixels = self.get_FOV_size(raw)
-        # get number of Y pixels
-        Ypixels = self.ui.Ysteps.value()#*self.ui.BlineAVG.value()
-        # reshape into Ypixels x Xpixels x Zpixels
-        data = data.reshape([self.ui.Ysteps.value(),self.ui.BlineAVG.value(), Xpixels,Zpixels])
-        data=np.mean(data,1)
+        Zpixels, Xpixels, Ypixels = self.get_FOV_size(raw)
+        # reshape data
+        data = data.reshape([Ypixels, Xpixels, Zpixels])
         # trim fly-back pixels
         if self.Digitizer == 'ART8912':    
             data = data[:,self.ui.PreClock.value():self.ui.Xsteps.value()*self.ui.AlineAVG.value()+self.ui.PreClock.value(),:]
             Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
-        
+        # Bline averaging
+        if self.ui.BlineAVG.value() > 1:
+            # reshape into Ypixels x Xpixels x Zpixels
+            data = data.reshape([self.ui.Ysteps.value(),self.ui.BlineAVG.value(), Xpixels,Zpixels])
+            data=np.mean(data,1)
+            Ypixels = self.ui.Ysteps.value()
+        # Aline averaging if needed
+        if self.ui.AlineAVG.value() > 1:
+            data = data.reshape([Ypixels,self.ui.Xsteps.value(), self.ui.AlineAVG.value(), Zpixels])
+            data = np.mean(data,2)
+            Xpixels = self.ui.Xsteps.value()
         ########################################
         # for odd strips, need to flip data in Y dimension and also the sequence
         surfX = args[1][0]
@@ -470,7 +491,7 @@ class DnSThread(QThread):
         
     def Update_contrast_XY(self):
         if self.ui.ACQMode.currentText() in ['SingleAline', 'RptAline']:
-            data = np.float32(np.mean(self.Aline,0))
+            data = self.Aline
             # if self.ui.LOG.currentText() == '10log10':
             #     data=10*np.log10(data+0.000001)
             pixmap = LinePlot(data, [], self.ui.XYmin.value()*30, self.ui.XYmax.value()*30)
@@ -479,7 +500,7 @@ class DnSThread(QThread):
             # update iamge on the waveformLabel
             self.ui.XZplane.setPixmap(pixmap)
         elif self.ui.ACQMode.currentText() in ['SingleBline', 'RptBline']:
-            data = np.float32(np.mean(self.Bline,0))
+            data = self.Bline
             data = np.transpose(data).copy()
             # data = np.flip(data, 1).copy()
             # if self.ui.LOG.currentText() == '10log10':

@@ -51,11 +51,11 @@ def GenGalvoWave(StepSize = 1, Steps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma
     # total number of steps is the product of steps and aline average number
     # use different angle to mm ratio for different objective
     if obj == 'OptoSigma5X':
-        angle2mmratio = 2.094/1.5
+        angle2mmratio = 2.094/1.19
     elif obj == 'OptoSigma10X':
-        angle2mmratio = 2.094/1.5/2
+        angle2mmratio = 2.094/2/1.19
     elif obj == 'OptoSigma20X':
-        angle2mmratio = 2.094/1.9/2.5
+        angle2mmratio = 2.094/1.19/4
         
     else:
         status = 'objective not calibrated, abort generating Galvo waveform'
@@ -246,7 +246,7 @@ def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, A
         for ii in range(YSteps*BVG):
             CscanDO[ii*len(DOwaveform):(ii+1)*len(DOwaveform)] = DOwaveform
             
-        stagewaveform = GenStageWave_ramp(YSteps * YStepSize/1000, (XSteps + 2 * preclocks + postclocks)* YSteps * BVG)
+        stagewaveform = GenStageWave_ramp(YSteps * YStepSize/1000, (XSteps*AVG + 2 * preclocks + postclocks)* YSteps * BVG)
         # append preclocks and postclocks
         stagewaveform = pow(2,CSCAN_AXIS)*stagewaveform
         # print('distance per Cscan: ',np.sum(stagewaveform)/STEPS*DISTANCE*1000/pow(2,CSCAN_AXIS),'um')
