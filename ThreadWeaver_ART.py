@@ -1081,6 +1081,18 @@ class WeaverThread(QThread):
         # if interrupt == 'Stop':
         #     message = 'user stopped acquisition...'
         #     return message
+        
+        # go to start Y
+        self.ui.YPosition.setValue(self.ui.SliceY.value())
+        an_action = AODOAction('Ymove2')
+        self.AODOQueue.put(an_action)
+        self.StagebackQueue.get()
+        ##################################################
+        interrupt = self.check_interrupt()
+        if interrupt == 'Stop':
+            message = 'user stopped acquisition...'
+            return message
+        # ########################################################
         ########################################################
         # go to start X
         self.ui.XPosition.setValue(self.ui.SliceX.value())
@@ -1093,28 +1105,18 @@ class WeaverThread(QThread):
             message = 'user stopped acquisition...'
             return message
         ########################################################
-        # go to start Y
-        self.ui.YPosition.setValue(self.ui.SliceY.value())
-        an_action = AODOAction('Ymove2')
-        self.AODOQueue.put(an_action)
-        self.StagebackQueue.get()
-        ##################################################
-        interrupt = self.check_interrupt()
-        if interrupt == 'Stop':
-            message = 'user stopped acquisition...'
-            return message
-        ########################################################
-        # go to start Z
-        self.ui.ZPosition.setValue(start_height)
-        an_action = AODOAction('Zmove2')
-        self.AODOQueue.put(an_action)
-        self.StagebackQueue.get()
-        ##################################################
-        interrupt = self.check_interrupt()
-        if interrupt == 'Stop':
-            message = 'user stopped acquisition...'
-            return message
-        ########################################################
+        
+        # # go to start Z
+        # self.ui.ZPosition.setValue(start_height)
+        # an_action = AODOAction('Zmove2')
+        # self.AODOQueue.put(an_action)
+        # self.StagebackQueue.get()
+        # ##################################################
+        # interrupt = self.check_interrupt()
+        # if interrupt == 'Stop':
+        #     message = 'user stopped acquisition...'
+        #     return message
+        # ########################################################
         # slicing
         # start vibratome
         self.ui.VibEnabled.setText('Stop Vibratome')
@@ -1123,6 +1125,12 @@ class WeaverThread(QThread):
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
         for ii in range(cuts):
+            # Z stage move up
+            self.ui.ZPosition.setValue(start_height+self.ui.SliceZDepth.value()/1000.0*ii)
+            an_action = AODOAction('Zmove2')
+            self.AODOQueue.put(an_action)
+            self.StagebackQueue.get()
+            # Move Y stage slowly to cut
             if self.ui.SliceDir.isChecked():
                 sign = 1
             else:
@@ -1145,7 +1153,7 @@ class WeaverThread(QThread):
                 self.AODOQueue.put(an_action)
                 self.StagebackQueue.get()
                 return message
-            
+            # move Y stage back to position
             self.ui.YPosition.setValue(self.ui.SliceY.value())
             an_action = AODOAction('Ymove2')
             self.AODOQueue.put(an_action)
@@ -1162,10 +1170,7 @@ class WeaverThread(QThread):
                 self.StagebackQueue.get()
                 return message
             
-            self.ui.ZPosition.setValue(self.ui.ZPosition.value()+self.ui.SliceZDepth.value()/1000.0)
-            an_action = AODOAction('Zmove2')
-            self.AODOQueue.put(an_action)
-            self.StagebackQueue.get()
+
 
         # stop vibratome
         self.ui.VibEnabled.setText('Start Vibratome')
@@ -1173,6 +1178,7 @@ class WeaverThread(QThread):
         an_action = AODOAction('stopVibratome')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get()
+        self.ui.SliceZStart.setValue(self.ui.ZPosition.value())
         return 'Slice success'
         
     def Gotozero(self):

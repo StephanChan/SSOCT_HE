@@ -394,9 +394,7 @@ class DnSThread(QThread):
                     
                 if self.ui.Save.isChecked():
                     self.writeTiff(self.ui.DIR.toPlainText()+'/aip/vol'+str(self.sliceNum)+'/AIP.tif', AIP, mode)
-                if self.ui.Save.isChecked():
                     self.writeTiff(self.ui.DIR.toPlainText()+'/surf/vol'+str(self.sliceNum)+'/SURF.tif', surfProfile, mode)
-                if self.ui.Save.isChecked():
                     if self.ui.MUS.isChecked():
                         self.writeTiff(self.ui.DIR.toPlainText()+'/fitting/vol'+str(self.sliceNum)+'/MAX.tif', zmax, mode)
                 

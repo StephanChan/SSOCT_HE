@@ -9,8 +9,12 @@ Created on Tue Dec 12 16:51:20 2023
 global STEPS
 STEPS = 25000
 # 2mm per revolve
-global DISTANCE
-DISTANCE = 2
+global XDISTANCE
+XDISTANCE = 2
+global YDISTANCE
+YDISTANCE = 2
+global ZDISTANCE
+ZDISTANCE = 1
 
 global Galvo_bias
 Galvo_bias = 3
@@ -329,7 +333,7 @@ class AODOThread(QThread):
                 AOtask.wait_until_done(timeout = 1)
                 AOtask.stop()
 
-    def stagewave_ramp(self, distance):
+    def stagewave_ramp(self, distance, DISTANCE):
         # generate stage movement that ramps up and down speed so that motor won't miss signal at beginning and end
         # how to do that: motor is driving by low->high digital transition
         # ramping up: make the interval between two highs with long time at the beginning, then gradually goes down.vice versa for ramping down
@@ -388,6 +392,7 @@ class AODOThread(QThread):
         # enable low enables, enable high disables
         if axis == 'X':
             line = XCH
+            DISTANCE = XDISTANCE
             speed = self.ui.XSpeed.value()
             pos = self.ui.XPosition.value()
             if pos>self.ui.Xmax.value()or pos<self.ui.Xmin.value():
@@ -406,6 +411,7 @@ class AODOThread(QThread):
             enable = 0#YDISABLE + ZDISABLE
         elif axis == 'Y':
             line = YCH
+            DISTANCE = YDISTANCE
             speed = self.ui.YSpeed.value()
             pos = self.ui.YPosition.value()
             if pos>self.ui.Ymax.value() or pos<self.ui.Ymin.value():
@@ -424,6 +430,7 @@ class AODOThread(QThread):
             enable = 0#XDISABLE + ZDISABLE
         elif axis == 'Z':
             line = ZCH
+            DISTANCE = ZDISTANCE
             speed = self.ui.ZSpeed.value()
             pos = self.ui.ZPosition.value()
             if pos>self.ui.Zmax.value() or pos<self.ui.Zmin.value():
@@ -456,7 +463,7 @@ class AODOThread(QThread):
                 stageEnabletask.stop()
                 time.sleep(0.1)
                 # configure DO task 
-                DOwaveform = self.stagewave_ramp(distance)
+                DOwaveform = self.stagewave_ramp(distance, DISTANCE)
                 DOwaveform = np.uint32(DOwaveform * line)
                 message = axis+' moving: '+str(round(np.sum(DOwaveform)/line/25000*DISTANCE*sign,3))+'mm'+' target pos: '+str(pos)
                 print(message)
