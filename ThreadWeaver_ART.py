@@ -347,6 +347,7 @@ class WeaverThread(QThread):
         # calculate the number of Cscans per stripe, i.e., Y stage positions
         Ystep = self.ui.YStepSize.value()*self.ui.Ysteps.value()
         CscansPerStripe = np.int16((self.ui.YStop.value()-self.ui.YStart.value())*1000/Ystep)
+        self.totalTiles = CscansPerStripe * total_stripes
         # save the PreMosaic tile identification to disk
         an_action = DnSAction('WriteAgar', data = self.tile_flag, args = [ CscansPerStripe, total_stripes])
         self.DnSQueue.put(an_action)
@@ -579,7 +580,7 @@ class WeaverThread(QThread):
         # calculate the number of Cscans per stripe
         Ystep = self.ui.YStepSize.value()*self.ui.Ysteps.value()
         CscansPerStripe = np.int16((self.ui.YStop.value()-self.ui.YStart.value())*1000/Ystep)
-
+        self.totalTiles = CscansPerStripe * total_stripes
         # init sample surface window
         args = [[0, 0], [CscansPerStripe, self.totalTiles]]
         an_action = DnSAction('Init_Mosaic', data = None, args = args) 
