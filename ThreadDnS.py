@@ -489,61 +489,76 @@ class DnSThread(QThread):
         
     def Update_contrast_XY(self):
         if self.ui.ACQMode.currentText() in ['SingleAline', 'RptAline']:
-            data = self.Aline
-            # if self.ui.LOG.currentText() == '10log10':
-            #     data=10*np.log10(data+0.000001)
-            pixmap = LinePlot(data, [], self.ui.XYmin.value()*30, self.ui.XYmax.value()*30)
-            # clear content on the waveformLabel
-            self.ui.XZplane.clear()
-            # update iamge on the waveformLabel
-            self.ui.XZplane.setPixmap(pixmap)
+            try:
+                data = self.Aline
+                # if self.ui.LOG.currentText() == '10log10':
+                #     data=10*np.log10(data+0.000001)
+                pixmap = LinePlot(data, [], self.ui.XYmin.value()*30, self.ui.XYmax.value()*30)
+                # clear content on the waveformLabel
+                self.ui.XZplane.clear()
+                # update iamge on the waveformLabel
+                self.ui.XZplane.setPixmap(pixmap)
+            except:
+                pass
         elif self.ui.ACQMode.currentText() in ['SingleBline', 'RptBline']:
-            data = self.Bline
-            data = np.transpose(data).copy()
-            # data = np.flip(data, 1).copy()
-            # if self.ui.LOG.currentText() == '10log10':
-            #     data=np.float32(10*np.log10(data+0.000001))
-            pixmap = ImagePlot(data, self.ui.XYmin.value(), self.ui.XYmax.value())
-            # clear content on the waveformLabel
-            self.ui.XZplane.clear()
-            # update iamge on the waveformLabel
-            self.ui.XZplane.setPixmap(pixmap)
+            try:
+                data = self.Bline
+                data = np.transpose(data).copy()
+                # data = np.flip(data, 1).copy()
+                # if self.ui.LOG.currentText() == '10log10':
+                #     data=np.float32(10*np.log10(data+0.000001))
+                pixmap = ImagePlot(data, self.ui.XYmin.value(), self.ui.XYmax.value())
+                # clear content on the waveformLabel
+                self.ui.XZplane.clear()
+                # update iamge on the waveformLabel
+                self.ui.XZplane.setPixmap(pixmap)
+            except:
+                pass
         elif self.ui.ACQMode.currentText() in ['Mosaic','Mosaic+Cut', 'SingleCscan']:
-            data = self.Cscan
-            
-            plane = np.transpose(data[0,:,:]).copy()# has to be first index, otherwise the memory space is not continuous
-            pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
-            # clear content on the waveformLabel
-            self.ui.XZplane.clear()
-            # update image on the waveformLabel
-            self.ui.XZplane.setPixmap(pixmap)
-            
-            tmp = self.ui.SaveZstart.value()
-            start_pixel =  np.uint16(tmp if tmp>-0.5 else self.ui.SurfHeight.value()+4)
-            thickness = self.ui.SaveZrange.value()
-            plane = np.mean(data[:,:,start_pixel:start_pixel + thickness],2)# has to be first index, otherwise the memory space is not continuous
-            pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
-            # clear content on the waveformLabel
-            self.ui.XYplane.clear()
-            # update image on the waveformLabel
-            self.ui.XYplane.setPixmap(pixmap)
+            try:
+                data = self.Cscan
+                
+                plane = np.transpose(data[0,:,:]).copy()# has to be first index, otherwise the memory space is not continuous
+                pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
+                # clear content on the waveformLabel
+                self.ui.XZplane.clear()
+                # update image on the waveformLabel
+                self.ui.XZplane.setPixmap(pixmap)
+                
+                tmp = self.ui.SaveZstart.value()
+                start_pixel =  np.uint16(tmp if tmp>-0.5 else self.ui.SurfHeight.value()+4)
+                thickness = self.ui.SaveZrange.value()
+                plane = np.mean(data[:,:,start_pixel:start_pixel + thickness],2)# has to be first index, otherwise the memory space is not continuous
+                pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
+                # clear content on the waveformLabel
+                self.ui.XYplane.clear()
+                # update image on the waveformLabel
+                self.ui.XYplane.setPixmap(pixmap)
+            except:
+                pass
             
     def Update_contrast_Surf(self):
-        # print(self.surf.shape)
-        pixmap = ImagePlot(self.surf, self.ui.Surfmin.value(), self.ui.Surfmax.value())
-        # clear content on the waveformLabel
-        self.ui.SampleMosaic.clear()
-        # update iamge on the waveformLabel
-        self.ui.SampleMosaic.setPixmap(pixmap)
+        try:
+            # print(self.surf.shape)
+            pixmap = ImagePlot(self.surf, self.ui.Surfmin.value(), self.ui.Surfmax.value())
+            # clear content on the waveformLabel
+            self.ui.SampleMosaic.clear()
+            # update iamge on the waveformLabel
+            self.ui.SampleMosaic.setPixmap(pixmap)
+        except:
+            pass
             
     def Update_contrast_XYZ(self):
-        # if self.use_maya:
-        #     self.ui.mayavi_widget.visualization.update_contrast(self.ui.XYZmin.value(), self.ui.XYZmax.value())
-        pixmap = ImagePlot(self.surfZMAX, self.ui.XYZmin.value(), self.ui.XYZmax.value())
-        # clear content on the waveformLabel
-        self.ui.MUS_mosaic.clear()
-        # update iamge on the waveformLabel
-        self.ui.MUS_mosaic.setPixmap(pixmap)
+        try:
+            # if self.use_maya:
+            #     self.ui.mayavi_widget.visualization.update_contrast(self.ui.XYZmin.value(), self.ui.XYZmax.value())
+            pixmap = ImagePlot(self.surfZMAX, self.ui.XYZmin.value(), self.ui.XYZmax.value())
+            # clear content on the waveformLabel
+            self.ui.MUS_mosaic.clear()
+            # update iamge on the waveformLabel
+            self.ui.MUS_mosaic.setPixmap(pixmap)
+        except:
+            pass
     
     def restart_tilenum(self):
         self.tileNum = 1

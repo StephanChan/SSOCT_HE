@@ -93,7 +93,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.LoadSettings()
+        self.LoadSettings("config.ini")
         self.setStageMinMax()
         if self.ui.SliceDir.isChecked():
             self.ui.SliceDir.setText('Forward')
@@ -127,8 +127,8 @@ class MainWindow(QMainWindow):
             self.ui.verticalLayout_5.replaceWidget(self.ui.MUS_mosaic, self.ui.mayavi_widget)
             self.ui.verticalLayout_5.removeWidget(self.ui.MUS_mosaic)
         
-    def LoadSettings(self):
-        settings = qc.QSettings("config.ini", qc.QSettings.IniFormat)
+    def LoadSettings(self, config_filepath):
+        settings = qc.QSettings(config_filepath, qc.QSettings.IniFormat)
         for ii in dir(self.ui):
             if ii == 'ACQMode':
                 pass
@@ -284,10 +284,9 @@ class MainWindow(QMainWindow):
         if fileName_choose == "":
            print("\n取消选择")
            return
-        settings = qc.QSettings(fileName_choose, qc.QSettings.IniFormat)
         
         try:
-            self.load_settings(settings)
+            self.LoadSettings(fileName_choose)
         except Exception as error:
             print('settings reload failed, using default settings')
             print(traceback.format_exc())
