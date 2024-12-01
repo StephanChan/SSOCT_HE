@@ -47,7 +47,7 @@ Memory = list(range(memoryCount))
 
 ####################### select which digitizer to use, ART or Alazar
 global Digitizer
-Digitizer = 'ART
+Digitizer = 'ART'
 
 # simulation switch
 global SIM
@@ -71,6 +71,7 @@ GPU2weaverQueue = Queue(maxsize = 0)
 # wrap digitzer thread with queues and Memory
 if Digitizer == 'Alazar':
     # if using Alazar digitizer, Galvo board triggers digitizer using AUXIO port of the digitizer
+    # you can probably set the AUXIO to be OUT_trigger to trigger the Galvo board instead, but current code is assuming the first scenario
     # ATS9351 outputs 16bit data range
     AMPLIFICATION = 1*5
     from ThreadATS9351_finiteTrigger import ATS9351
