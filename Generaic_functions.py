@@ -9,14 +9,17 @@ Created on Mon Dec 11 19:41:46 2023
 # Generating Galvo X direction waveforms based on step size, Xsteps, Aline averages and objective
 # StepSize in unit of um
 # bias in unit of mm
+
+# 25000 steps per rotation
 global STEPS
 STEPS = 25000
-# 2mm per revolve
+# 2mm per rotation
 global DISTANCE
 DISTANCE = 2
-# scan direction suring Cscan is Y axis
+# scan axis for Cscan is Y axis
 global CSCAN_AXIS
-CSCAN_AXIS = 1 
+CSCAN_AXIS = pow(2, 1)
+# if using Alazar digitizer, DO board outputs an enable trigger to the AUXIO of digitizer for synchronization
 global ATSenable
 ATSenable = 3
 import numpy as np
@@ -138,17 +141,17 @@ def GenStageWave_ramp(distance, AlineTriggers):
 
     # ramping down waveform generation
     ramp_down_waveform = np.zeros(np.sum(ramp_down_interval))
-    if any(ramp_down_waveform):
-        ramp_down_waveform[0] = 1
     time_lapse = -1
     for interval in ramp_down_interval:
         time_lapse = time_lapse + interval
         ramp_down_waveform[time_lapse] = 1
+    if any(ramp_down_waveform):
+        ramp_down_waveform[0] = 1
         
     # normal speed waveform
     steps_left = steps - ramping_steps
     clocks_left = np.int32(AlineTriggers-len(ramp_down_waveform)-len(ramp_up_waveform))
-    stride = np.int16(clocks_left/steps_left)
+    stride = round(clocks_left/steps_left)
     if stride < 2:
         stride = 2
     clocks_left = np.int32(steps_left * stride)
@@ -161,10 +164,18 @@ def GenStageWave_ramp(distance, AlineTriggers):
     DOwaveform = np.append(DOwaveform,ramp_down_waveform)
     if len(DOwaveform) < AlineTriggers:
         DOwaveform = np.append(DOwaveform,np.zeros(AlineTriggers-len(DOwaveform),dtype = np.int16))
+    elif len(DOwaveform) > AlineTriggers:
+        DOwaveform = DOwaveform[0:AlineTriggers]
     return DOwaveform
 
 def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma5X',\
             preclocks = 50, postclocks = 200, YStepSize = 1, YSteps = 200, BVG = 1):
+    # AVG: Aline average
+    # BVG: Bline average
+    # bias: Galvo bias voltage
+    # preclocks: #Aline triggers for Galvo ramping up
+    # postclocks: #Aline triggers for Galvo fly-back
+    
     # DO clock is swept source A-line trigger at 100kHz
     # DO configure: port0 line 0 for X stage, port0 line 1 for Y stage, port 0 line 2 for Z stage, port 0 line 3 for Digitizer enable
     if mode == 'RptAline' or mode == 'SingleAline':
@@ -203,33 +214,6 @@ def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, A
     
     
     elif mode in ['SingleCscan','Mosaic','Mosaic+Cut']:
-            # # RptCscan is for acquiring Cscan at the same location repeatitively
-            # # generate AO waveform for Galvo control for one Bline
-            # AOwaveform, status = GenGalvoWave(XStepSize, XSteps, AVG, bias, obj, preclocks, postclocks)
-            # # total number of Alines
-            # one_cycle_samples = XSteps * AVG
-            # # generate trigger waveforms
-            # DOwaveform = np.append(np.zeros(preclocks), pow(2,3)*np.zeros(one_cycle_samples))
-            # DOwaveform = np.append(DOwaveform, np.zeros(preclocks+postclocks))
-            # # calculate stage speed for Cscan
-            # stageSpeed=YStepSize/1000.0/(one_cycle_samples/Aline_frq) # unit: mm/s
-            # # generate stage control waveforms for one step
-            # print(one_cycle_samples, Aline_frq, stageSpeed)
-            # stagewaveform = GenStageWave(one_cycle_samples, Aline_frq, stageSpeed)
-            # # append preclocks and postclocks
-            # stagewaveform = np.append(np.zeros(preclocks), pow(2,CSCAN_AXIS)*stagewaveform)
-            # stagewaveform = np.append(stagewaveform, np.zeros(preclocks+postclocks))
-            # print('distance per Bline: ',np.sum(stagewaveform)/STEPS*DISTANCE*1000/pow(2,CSCAN_AXIS),'um')
-            # # add stagewaveform with trigger enable waveform for DOwaveform
-            # DOwaveform = DOwaveform + stagewaveform
-            # # repeat the waveform for whole Cscan
-            # CscanAO = np.zeros(YSteps*BVG*len(AOwaveform))
-            # CscanDO = np.zeros(YSteps*BVG*len(DOwaveform))
-            # for ii in range(YSteps*BVG):
-            #     CscanAO[ii*len(AOwaveform):(ii+1)*len(AOwaveform)] = AOwaveform
-            #     CscanDO[ii*len(AOwaveform):(ii+1)*len(AOwaveform)] = DOwaveform
-            # status = 'waveform updated'
-            # return np.uint32(CscanDO), CscanAO, status
         # RptCscan is for acquiring Cscan at the same location repeatitively
         # generate AO waveform for Galvo control for one Bline
         AOwaveform, status = GenGalvoWave(XStepSize, XSteps, AVG, bias, obj, preclocks, postclocks)
@@ -248,7 +232,7 @@ def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, A
             
         stagewaveform = GenStageWave_ramp(YSteps * YStepSize/1000, (XSteps*AVG + 2 * preclocks + postclocks)* YSteps * BVG)
         # append preclocks and postclocks
-        stagewaveform = pow(2,CSCAN_AXIS)*stagewaveform
+        stagewaveform = CSCAN_AXIS*stagewaveform
         # print('distance per Cscan: ',np.sum(stagewaveform)/STEPS*DISTANCE*1000/pow(2,CSCAN_AXIS),'um')
         # add stagewaveform with trigger enable waveform for DOwaveform
         if len(stagewaveform) > len(CscanDO):
@@ -355,7 +339,7 @@ def LinePlot(AOwaveform, DOwaveform = None, m=2, M=4):
     if np.any(DOwaveform):
         plt.plot(range(len(DOwaveform)),(DOwaveform>>3)*np.max(AOwaveform),linewidth=2)
     # plt.ylim(np.min(AOwaveform)-0.2,np.max(AOwaveform)+0.2)
-    plt.ylim([m,M])
+    # plt.ylim([m,M])
     plt.xticks(fontsize=15)
     plt.yticks(fontsize=15)
     plt.rcParams['savefig.dpi']=150

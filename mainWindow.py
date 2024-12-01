@@ -16,6 +16,9 @@ from Actions import *
 from Generaic_functions import *
 import traceback
 
+# if using mayavi for 3D display
+Display_3D = False
+
 try:
     from traits.api import HasTraits, Instance, on_trait_change
     from traitsui.api import View, Item
@@ -116,7 +119,7 @@ class MainWindow(QMainWindow):
         self.ui.ZPosition.setMaximum(self.ui.Zmax.value())
         
     def addMaya(self):
-        if maya_installed:
+        if (maya_installed and Display_3D):
             self.ui.mayavi_widget = MayaviQWidget()
             self.ui.mayavi_widget.setMinimumSize(qc.QSize(100, 100))
             self.ui.mayavi_widget.setMaximumSize(qc.QSize(1000, 1000))
@@ -232,34 +235,34 @@ class MainWindow(QMainWindow):
 
     def chooseSurfaceFile(self):
         fileName_choose, filetype = QFileDialog.getOpenFileName(self,  
-                                   "选取文件",  
+                                   "select surface file",  
                                    os.getcwd(), # 起始路径 
                                    "All Files (*);;Text Files (*.txt)")   # 设置文件扩展名过滤,用双分号间隔
 
         if fileName_choose == "":
-           print("\n取消选择")
+           print("\n use default")
            return
         self.ui.Surf_DIR.setText(fileName_choose)
         
     def chooseDarkFieldFile(self):
         fileName_choose, filetype = QFileDialog.getOpenFileName(self,  
-                                   "选取文件",  
+                                   "select dark field file",  
                                    os.getcwd(), # 起始路径 
                                    "All Files (*);;Text Files (*.txt)")   # 设置文件扩展名过滤,用双分号间隔
 
         if fileName_choose == "":
-           print("\n取消选择")
+           print("\n use default")
            return
         self.ui.DarkField_DIR.setText(fileName_choose)
     
     def chooseFlatFieldFile(self):
         fileName_choose, filetype = QFileDialog.getOpenFileName(self,  
-                                   "选取文件",  
+                                   "select flat field file",  
                                    os.getcwd(), # 起始路径 
                                    "All Files (*);;Text Files (*.txt)")   # 设置文件扩展名过滤,用双分号间隔
 
         if fileName_choose == "":
-           print("\n取消选择")
+           print("\n use default")
            return
         self.ui.FlatField_DIR.setText(fileName_choose)
 
@@ -267,22 +270,22 @@ class MainWindow(QMainWindow):
         if self.ui.Save.isChecked():
             
              dir_choose = QFileDialog.getExistingDirectory(self,  
-                                         "选取文件夹",  
+                                         "select saving directory",  
                                          os.getcwd()) # 起始路径
         
              if dir_choose == "":
-                 print("\n取消选择")
+                 print("\n use default")
                  return
              self.ui.DIR.setText(dir_choose)
              
     def LoadConfig(self):
         fileName_choose, filetype = QFileDialog.getOpenFileName(self,  
-                                   "选取文件",  
+                                   "select config file",  
                                    os.getcwd(), # 起始路径 
                                    "All Files (*);;Text Files (*.txt)")   # 设置文件扩展名过滤,用双分号间隔
 
         if fileName_choose == "":
-           print("\n取消选择")
+           print("\n use default")
            return
         
         try:
@@ -293,12 +296,12 @@ class MainWindow(QMainWindow):
         
     def chooseCompenstaion(self):
          fileName_choose, filetype = QFileDialog.getOpenFileName(self,  
-                                    "选取文件",  
+                                    "select dispersion file",  
                                     os.getcwd(), # 起始路径 
                                     "All Files (*);;Text Files (*.txt)")   # 设置文件扩展名过滤,用双分号间隔
 
          if fileName_choose == "":
-            print("\n取消选择")
+            print("\n use default")
             return
 
          self.ui.Disp_DIR.setText(fileName_choose)
@@ -306,12 +309,12 @@ class MainWindow(QMainWindow):
         
     def chooseBackground(self):
         fileName_choose, filetype = QFileDialog.getOpenFileName(self,  
-                                   "选取文件",  
+                                   "select background file",  
                                    os.getcwd(), # 起始路径 
                                    "All Files (*);;Text Files (*.txt)")   # 设置文件扩展名过滤,用双分号间隔
 
         if fileName_choose == "":
-           print("\n取消选择")
+           print("\n use default")
            return
 
         self.ui.BG_DIR.setText(fileName_choose)
@@ -337,9 +340,8 @@ class MainWindow(QMainWindow):
         #print(self.Xwaveform)
         # current_message = self.ui.statusbar.currentMessage()
         # self.ui.statusbar.showMessage(current_message+status)
-        print(status)
         if len(AOwaveform) > 0:
-            pixmap = LinePlot(AOwaveform, DOwaveform)
+            pixmap = LinePlot(AOwaveform, DOwaveform, np.min([AOwaveform, DOwaveform]),np.max([AOwaveform, DOwaveform]))
             # clear content on the waveformLabel
             self.ui.XwaveformLabel.clear()
             # update iamge on the waveformLabel
@@ -376,10 +378,16 @@ class MainWindow(QMainWindow):
         if self.Mosaic is not None:
             mosaic=np.zeros([2,len(self.Mosaic)*2])
             for ii, element in enumerate(self.Mosaic):
-                mosaic[0,ii*2] = element.x
-                mosaic[1,ii*2] = element.ystart
-                mosaic[0,ii*2+1] = element.x
-                mosaic[1,ii*2+1] = element.ystop
+                if ii%2 == 0:
+                    mosaic[0,ii*2] = element.x
+                    mosaic[1,ii*2] = element.ystart
+                    mosaic[0,ii*2+1] = element.x
+                    mosaic[1,ii*2+1] = element.ystop
+                else:
+                    mosaic[0,ii*2] = element.x
+                    mosaic[1,ii*2] = element.ystop
+                    mosaic[0,ii*2+1] = element.x
+                    mosaic[1,ii*2+1] = element.ystart
                 
             pixmap = ScatterPlot(mosaic)
             # clear content on the waveformLabel

@@ -116,16 +116,16 @@ class DnSThread(QThread):
         if not raw:
             Zpixels = self.ui.DepthRange.value()
         else:
-            if self.Digitizer == 'ATS9351':
+            if self.Digitizer == 'Alazar':
                 Zpixels = self.ui.PreSamples.value()+self.ui.PostSamples.value()
                 # data = np.float32(data/pow(2,16))
-            elif self.Digitizer == 'ART8912':
+            elif self.Digitizer == 'ART':
                 Zpixels = self.ui.PostSamples_2.value()#-self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
                 # data = data[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]
                 # data = np.float32(data/pow(2,12))
         # get number of X pixels
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
-        if self.Digitizer == 'ART8912':
+        if self.Digitizer == 'ART':
             Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
             
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
@@ -137,7 +137,7 @@ class DnSThread(QThread):
         Yrpt = self.ui.BlineAVG.value()
         # reshape data to [Ypixels*Xpixels, Zpixels]
         data = data.reshape([Yrpt*Xpixels,Zpixels])
-        if raw and self.Digitizer == 'ART8912':
+        if raw and self.Digitizer == 'ART':
             Zpixels = self.ui.PostSamples_2.value()-self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
             data = data[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]
 
@@ -165,7 +165,7 @@ class DnSThread(QThread):
         # reshape data
         data = data.reshape([Yrpt,Xpixels,Zpixels])
         # trim fly-back pixels
-        if self.Digitizer == 'ART8912':    
+        if self.Digitizer == 'ART':    
             data = data[:,self.ui.PreClock.value():self.ui.Xsteps.value()*self.ui.AlineAVG.value()+self.ui.PreClock.value(),:]
             Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         # Bline averaging
@@ -205,7 +205,7 @@ class DnSThread(QThread):
         # reshape data
         data = data.reshape([Ypixels, Xpixels, Zpixels])
         # trim fly-back pixels
-        if self.Digitizer == 'ART8912':    
+        if self.Digitizer == 'ART':    
             data = data[:,self.ui.PreClock.value():self.ui.Xsteps.value()*self.ui.AlineAVG.value()+self.ui.PreClock.value(),:]
             Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         # Bline averaging
@@ -317,7 +317,7 @@ class DnSThread(QThread):
         # reshape data
         data = data.reshape([Ypixels, Xpixels, Zpixels])
         # trim fly-back pixels
-        if self.Digitizer == 'ART8912':    
+        if self.Digitizer == 'ART':    
             data = data[:,self.ui.PreClock.value():self.ui.Xsteps.value()*self.ui.AlineAVG.value()+self.ui.PreClock.value(),:]
             Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         # Bline averaging

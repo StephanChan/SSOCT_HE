@@ -66,9 +66,6 @@ class ART8912_finiteTrigger(QThread):
                         self.StartAcquire()
                     else:
                         self.simData()
-                elif self.item.action == 'atomBoard':
-                    if not (SIM or self.SIM):
-                        self.atomBoard()
                 elif self.item.action == 'UninitBoard':
                     if not (SIM or self.SIM):
                         self.UninitBoard()
@@ -244,19 +241,12 @@ class ART8912_finiteTrigger(QThread):
             
     def UninitBoard(self):
         #释放设备
-        error_code = Functions.ArtScope_Close(self.taskHandle)
-        print('closed digitizer')
+        try:
+            error_code = Functions.ArtScope_Close(self.taskHandle)
+            print('closed digitizer')
+        except:
+            pass
         
-    def atomBoard(self):
-        # print('start')
-        self.InitBoard()
-        # print('Init')
-        self.ConfigureBoard()
-        # print('config')
-        self.StartAcquire()
-        # print('start')
-        self.UninitBoard()
-        # print('uninit')
         
     def simData(self):
         self.AlinesPerBline = self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2+self.ui.PostClock.value()

@@ -76,19 +76,22 @@ class GPUThread(QThread):
 
     def cudaFFT(self, mode, memoryLoc, args):
         # get samples per Aline
-        if self.Digitizer == 'ATS9351':
+        if self.Digitizer == 'Alazar':
             samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
-        elif self.Digitizer == 'ART8912':
+        elif self.Digitizer == 'ART':
             samples = self.ui.PostSamples_2.value()# - self.ui.DelaySamples.value()
         # get depth pixels after FFT
         Pixel_start = self.ui.DepthStart.value()
         Pixel_range = self.ui.DepthRange.value()
         if not (SIM or self.SIM):
             self.data_CPU = np.float32(self.Memory[memoryLoc].copy())
-            Alines =len(self.data_CPU)//samples
+            if self.Digitizer == 'Alazar':
+                Alines =self.data_CPU.shape[0]*self.data_CPU.shape[1]//samples
+            elif self.Digitizer == 'ART':
+                Alines =len(self.data_CPU)//samples
             self.data_CPU=self.data_CPU.reshape([Alines, samples])
             # subtract background and remove first 100 samples
-            if self.Digitizer == 'ART8912':
+            if self.Digitizer == 'ART':
                 self.data_CPU = self.data_CPU[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]-self.background
                 samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
             fftAxis = 1
@@ -141,9 +144,9 @@ class GPUThread(QThread):
             
     def cudaFFT_avg(self, mode, memoryLoc, args):
         # get samples per Aline
-        if self.Digitizer == 'ATS9351':
+        if self.Digitizer == 'Alazar':
             samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
-        elif self.Digitizer == 'ART8912':
+        elif self.Digitizer == 'ART':
             samples = self.ui.PostSamples_2.value()# - self.ui.DelaySamples.value()
         # get depth pixels after FFT
         Pixel_start = self.ui.DepthStart.value()
@@ -154,7 +157,7 @@ class GPUThread(QThread):
             self.data_CPU=self.data_CPU.reshape([self.ui.BlineAVG.value(),  Xpixels, samples])
             self.data_CPU = np.mean(self.data_CPU,0)
             # subtract background and remove first 100 samples
-            if self.Digitizer == 'ART8912':
+            if self.Digitizer == 'ART':
                 self.data_CPU = self.data_CPU[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]-self.background
                 samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
             fftAxis = 1
@@ -207,19 +210,22 @@ class GPUThread(QThread):
             
     def cpuFFT(self, mode, memoryLoc, args):
         # get samples per Aline
-        if self.Digitizer == 'ATS9351':
+        if self.Digitizer == 'Alazar':
             samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
-        elif self.Digitizer == 'ART8912':
+        elif self.Digitizer == 'ART':
             samples = self.ui.PostSamples_2.value()# - self.ui.DelaySamples.value()
         # get depth pixels after FFT
         Pixel_start = self.ui.DepthStart.value()
         Pixel_range = self.ui.DepthRange.value()
         if not (SIM or self.SIM):
             self.data_CPU = np.float32(self.Memory[memoryLoc].copy())
-            Alines =len(self.data_CPU)//samples
+            if self.Digitizer == 'Alazar':
+                Alines =self.data_CPU.shape[0]*self.data_CPU.shape[1]//samples
+            elif self.Digitizer == 'ART':
+                Alines =len(self.data_CPU)//samples
             self.data_CPU=self.data_CPU.reshape([Alines, samples])
             # subtract background and remove first 100 samples
-            if self.Digitizer == 'ART8912':
+            if self.Digitizer == 'ART':
                 self.data_CPU = self.data_CPU[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]-self.background
                 samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
             fftAxis = 1
@@ -239,6 +245,11 @@ class GPUThread(QThread):
             # data_CPU = data_CPU.reshape([shape[0],Pixel_range * np.uint32(Alines/shape[0])])
             an_action = DnSAction(mode, self.data_CPU, args) # data in Memory[memoryLoc]
             self.DnSQueue.put(an_action)
+            if self.ui.Gotozero.isChecked() and self.ui.ACQMode.currentText() == 'SingleAline':
+                self.GPU2weaverQueue.put(self.data_CPU)
+            if self.ui.DSing.isChecked():
+                self.GPU2weaverQueue.put(self.data_CPU)
+                # print('GPU data to weaver')
         else:
             self.AlinesPerBline = self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2+self.ui.PostClock.value()
             if self.ui.ACQMode.currentText() in ['SingleBline', 'SingleAline','RptBline', 'RptAline']:
@@ -258,9 +269,9 @@ class GPUThread(QThread):
             # print('GPU finish')
             
     def update_Dispersion(self):
-        if self.Digitizer == 'ATS9351':
+        if self.Digitizer == 'Alazar':
             samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
-        elif self.Digitizer == 'ART8912':
+        elif self.Digitizer == 'ART':
             samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
         # print('GPU dispersion samples: ',samples)
             
@@ -298,9 +309,9 @@ class GPUThread(QThread):
         self.dispersion = self.dispersion.reshape([1,len(self.dispersion)])
         
     def update_background(self):
-        if self.Digitizer == 'ATS9351':
+        if self.Digitizer == 'Alazar':
             samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
-        elif self.Digitizer == 'ART8912':
+        elif self.Digitizer == 'ART':
             samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
         background_path = self.ui.BG_DIR.text()
 
@@ -334,9 +345,9 @@ class GPUThread(QThread):
         
     def update_FFTlength(self):
         self.length_FFT = 2
-        if self.Digitizer == 'ATS9351':
+        if self.Digitizer == 'Alazar':
             samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
-        elif self.Digitizer == 'ART8912':
+        elif self.Digitizer == 'ART':
             samples = self.ui.PostSamples_2.value()-self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
         while self.length_FFT < samples:
             self.length_FFT *=2

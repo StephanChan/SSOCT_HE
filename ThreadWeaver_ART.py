@@ -25,7 +25,6 @@ ZPIXELSIZE = 4.4 # um, axial pixel size
 class WeaverThread(QThread):
     def __init__(self):
         super().__init__()
-        
         self.mosaic = None
         self.exit_message = 'ACQ thread successfully exited'
         
@@ -1499,9 +1498,9 @@ class WeaverThread(QThread):
         self.ui.FFTDevice.setCurrentText(device)
 
     def read_background(self):
-        if self.Digitizer == 'ATS9351':
+        if self.Digitizer == 'Alazar':
             samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
-        elif self.Digitizer == 'ART8912':
+        elif self.Digitizer == 'ART':
             samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
         background_path = self.ui.BG_DIR.text()
 
@@ -1644,14 +1643,14 @@ class WeaverThread(QThread):
         Zpixels = self.ui.DepthRange.value()
         # get number of X pixels
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
-        if self.Digitizer == 'ART8912':
+        if self.Digitizer == 'ART':
             Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
         # get number of Y pixels
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
         # reshape into Ypixels x Xpixels x Zpixels
         cscan = cscan.reshape([Ypixels,Xpixels,Zpixels])
         # trim fly-back pixels
-        if self.Digitizer == 'ART8912':    
+        if self.Digitizer == 'ART':    
             cscan = cscan[:,self.ui.PreClock.value():self.ui.Xsteps.value()*self.ui.AlineAVG.value()+self.ui.PreClock.value()]
             Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         
