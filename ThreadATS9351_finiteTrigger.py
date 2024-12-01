@@ -270,8 +270,8 @@ class ATS9351(QThread):
                                                                                                            # Acquisition is a Bline or Cscan
         self.board.startCapture() # Start the acquisition
         BlinesCompleted = 0
-        an_action = DbackAction(self.MemoryLoc)
-        self.DbackQueue.put(an_action)
+        # an_action = DbackAction(self.MemoryLoc)
+        # self.DbackQueue.put(an_action)
         # print('start board', self.buffersPerAcquisition)
         while BlinesCompleted < self.BlinesPerAcquisition:
             buffer = self.BlineBuffers[BlinesCompleted % self.BlineBufferCount]

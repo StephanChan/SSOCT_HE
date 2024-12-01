@@ -208,11 +208,18 @@ class WeaverThread(QThread):
         # usefulLength = (self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2) * self.ui.PostSamples_2.value() * nchannels
         # for ART8912, total data point per Bline is the following:
         sumLength = self.ui.PostSamples_2.value() * AlinesPerBline * nchannels
-        for ii in range(self.memoryCount):
-             if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline','SingleBline', 'SingleAline']:
-                 self.Memory[ii]=np.zeros([self.ui.BlineAVG.value()*sumLength], dtype = np.uint16)
-             elif self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut']:
-                 self.Memory[ii]=np.zeros([self.ui.BlineAVG.value()*self.ui.Ysteps.value()*sumLength], dtype = np.uint16)
+        if self.Digitizer == 'ART':
+            for ii in range(self.memoryCount):
+                 if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline','SingleBline', 'SingleAline']:
+                     self.Memory[ii]=np.zeros([self.ui.BlineAVG.value()*sumLength], dtype = np.uint16)
+                 elif self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut']:
+                     self.Memory[ii]=np.zeros([self.ui.BlineAVG.value()*self.ui.Ysteps.value()*sumLength], dtype = np.uint16)
+        elif self.Digitizer == 'Alazar':
+            for ii in range(self.memoryCount):
+                 if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline','SingleBline', 'SingleAline']:
+                     self.Memory[ii]=np.zeros([1, self.ui.BlineAVG.value()*sumLength], dtype = np.uint16)
+                 elif self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut']:
+                     self.Memory[ii]=np.zeros([self.ui.Ysteps.value(), self.ui.BlineAVG.value()*sumLength], dtype = np.uint16)
         ###########################################################################################
         
     def SingleScan(self, mode):

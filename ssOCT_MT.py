@@ -70,8 +70,6 @@ GPU2weaverQueue = Queue(maxsize = 0)
         
 # wrap digitzer thread with queues and Memory
 if Digitizer == 'Alazar':
-    # if using Alazar digitizer, Galvo board triggers digitizer using AUXIO port of the digitizer
-    # you can probably set the AUXIO to be OUT_trigger to trigger the Galvo board instead, but current code is assuming the first scenario
     # ATS9351 outputs 16bit data range
     AMPLIFICATION = 1*5
     from ThreadATS9351_finiteTrigger import ATS9351
@@ -85,31 +83,9 @@ if Digitizer == 'Alazar':
             self.queue = DQueue
             self.DbackQueue = DbackQueue
             self.log = log
-            self.SIM = SIM
-    
-    from ThreadWeaver_ATS import WeaverThread
-    class WeaverThread_2(WeaverThread):
-        def __init__(self, ui, log):
-            super().__init__()
-            global Memory
-            self.Memory = Memory
-            self.memoryCount = memoryCount
-            self.ui = ui
-            self.Digitizer = Digitizer
-            self.queue = WeaverQueue
-            self.DnSQueue = DnSQueue
-            self.AODOQueue = AODOQueue
-            self.StagebackQueue = StagebackQueue
-            self.PauseQueue = PauseQueue
-            self.DbackQueue = DbackQueue
-            self.GPUQueue = GPUQueue
-            self.DQueue = DQueue
-            self.GPU2weaverQueue = GPU2weaverQueue
-            self.log = log
-            
+            self.SIM = SIM    
             
 elif Digitizer == 'ART':
-    # if using ART digitizer, digitizer triggers Galvo board using the trigger output of the digitizer
     # ART8912 outputs 12bit data range
     AMPLIFICATION = 16*5
     from ThreadART8912_finiteTrigger import ART8912_finiteTrigger as ART8912
@@ -125,26 +101,25 @@ elif Digitizer == 'ART':
             self.log = log
             self.SIM = SIM
 
-    # since ART8912 is master, AODO is slave,we need a separate king thread to organize them
-    from ThreadWeaver_ART import WeaverThread
-    class WeaverThread_2(WeaverThread):
-        def __init__(self, ui, log):
-            super().__init__()
-            global Memory
-            self.Memory = Memory
-            self.memoryCount = memoryCount
-            self.ui = ui
-            self.Digitizer = Digitizer
-            self.queue = WeaverQueue
-            self.DnSQueue = DnSQueue
-            self.AODOQueue = AODOQueue
-            self.StagebackQueue = StagebackQueue
-            self.PauseQueue = PauseQueue
-            self.DbackQueue = DbackQueue
-            self.GPUQueue = GPUQueue
-            self.DQueue = DQueue
-            self.GPU2weaverQueue = GPU2weaverQueue
-            self.log = log
+from ThreadWeaver import WeaverThread
+class WeaverThread_2(WeaverThread):
+    def __init__(self, ui, log):
+        super().__init__()
+        global Memory
+        self.Memory = Memory
+        self.memoryCount = memoryCount
+        self.ui = ui
+        self.Digitizer = Digitizer
+        self.queue = WeaverQueue
+        self.DnSQueue = DnSQueue
+        self.AODOQueue = AODOQueue
+        self.StagebackQueue = StagebackQueue
+        self.PauseQueue = PauseQueue
+        self.DbackQueue = DbackQueue
+        self.GPUQueue = GPUQueue
+        self.DQueue = DQueue
+        self.GPU2weaverQueue = GPU2weaverQueue
+        self.log = log
 
 # wrap GPU thread with Queues and Memory
 from ThreadGPU import GPUThread
