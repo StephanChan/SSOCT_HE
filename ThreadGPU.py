@@ -85,10 +85,7 @@ class GPUThread(QThread):
         Pixel_range = self.ui.DepthRange.value()
         if not (SIM or self.SIM):
             self.data_CPU = np.float32(self.Memory[memoryLoc].copy())
-            if self.Digitizer == 'Alazar':
-                Alines =self.data_CPU.shape[0]*self.data_CPU.shape[1]//samples
-            elif self.Digitizer == 'ART':
-                Alines =len(self.data_CPU)//samples
+            Alines =self.data_CPU.shape[0]*self.data_CPU.shape[1]//samples
             self.data_CPU=self.data_CPU.reshape([Alines, samples])
             # subtract background and remove first 100 samples
             if self.Digitizer == 'ART':
@@ -142,71 +139,71 @@ class GPUThread(QThread):
                 # print('GPU data to weaver')
             # print('GPU finish')
             
-    def cudaFFT_avg(self, mode, memoryLoc, args):
-        # get samples per Aline
-        if self.Digitizer == 'Alazar':
-            samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
-        elif self.Digitizer == 'ART':
-            samples = self.ui.PostSamples_2.value()# - self.ui.DelaySamples.value()
-        # get depth pixels after FFT
-        Pixel_start = self.ui.DepthStart.value()
-        Pixel_range = self.ui.DepthRange.value()
-        if not (SIM or self.SIM):
-            self.data_CPU = np.float32(self.Memory[memoryLoc].copy())
-            Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value() + self.ui.PreClock.value()*2+self.ui.PostClock.value()
-            self.data_CPU=self.data_CPU.reshape([self.ui.BlineAVG.value(),  Xpixels, samples])
-            self.data_CPU = np.mean(self.data_CPU,0)
-            # subtract background and remove first 100 samples
-            if self.Digitizer == 'ART':
-                self.data_CPU = self.data_CPU[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]-self.background
-                samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
-            fftAxis = 1
-            # # zero-padding data before FFT
-            # if data_CPU.shape[1] != self.length_FFT:
-            #     data_padded = np.zeros([Alines, self.length_FFT], dtype = np.float32)
-            #     tmp = np.uint16((self.length_FFT-samples)/2)
-            #     data_padded[:,tmp:samples+tmp] = data_CPU
-            # else:
-            #     data_padded = data_CPU
-            # start = time.time()
-            # transfer data to GPU
-            data_GPU  = cupy.array(self.data_CPU)
-            dispersion_GPU = cupy.array(self.dispersion)
-            # window function and dispersion compensation
-            data_GPU = self.winfunc(data_GPU, dispersion_GPU)
-            # FFT
-            data_GPU = cupy.fft.fft(data_GPU, axis=fftAxis)/samples
-            # calculate absolute value and only keep depth range specified
-            data_GPU = cupy.absolute(data_GPU[:,Pixel_start:Pixel_start+Pixel_range])
-            # transfer data back to computer
-            self.data_CPU = cupy.asnumpy(data_GPU)*self.AMPLIFICATION
-            # display and save data, data type is float32
-            an_action = DnSAction(mode, data = self.data_CPU, args = args) # data in Memory[memoryLoc]
-            self.DnSQueue.put(an_action)
-            # print('send for display')
-            if self.ui.Gotozero.isChecked() and self.ui.ACQMode.currentText() == 'SingleAline':
-                self.GPU2weaverQueue.put(self.data_CPU)
-            if self.ui.DSing.isChecked():
-                self.GPU2weaverQueue.put(self.data_CPU)
-                # print('GPU data to weaver')
+    # def cudaFFT_avg(self, mode, memoryLoc, args):
+    #     # get samples per Aline
+    #     if self.Digitizer == 'Alazar':
+    #         samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
+    #     elif self.Digitizer == 'ART':
+    #         samples = self.ui.PostSamples_2.value()# - self.ui.DelaySamples.value()
+    #     # get depth pixels after FFT
+    #     Pixel_start = self.ui.DepthStart.value()
+    #     Pixel_range = self.ui.DepthRange.value()
+    #     if not (SIM or self.SIM):
+    #         self.data_CPU = np.float32(self.Memory[memoryLoc].copy())
+    #         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value() + self.ui.PreClock.value()*2+self.ui.PostClock.value()
+    #         self.data_CPU=self.data_CPU.reshape([self.ui.BlineAVG.value(),  Xpixels, samples])
+    #         self.data_CPU = np.mean(self.data_CPU,0)
+    #         # subtract background and remove first 100 samples
+    #         if self.Digitizer == 'ART':
+    #             self.data_CPU = self.data_CPU[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]-self.background
+    #             samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
+    #         fftAxis = 1
+    #         # # zero-padding data before FFT
+    #         # if data_CPU.shape[1] != self.length_FFT:
+    #         #     data_padded = np.zeros([Alines, self.length_FFT], dtype = np.float32)
+    #         #     tmp = np.uint16((self.length_FFT-samples)/2)
+    #         #     data_padded[:,tmp:samples+tmp] = data_CPU
+    #         # else:
+    #         #     data_padded = data_CPU
+    #         # start = time.time()
+    #         # transfer data to GPU
+    #         data_GPU  = cupy.array(self.data_CPU)
+    #         dispersion_GPU = cupy.array(self.dispersion)
+    #         # window function and dispersion compensation
+    #         data_GPU = self.winfunc(data_GPU, dispersion_GPU)
+    #         # FFT
+    #         data_GPU = cupy.fft.fft(data_GPU, axis=fftAxis)/samples
+    #         # calculate absolute value and only keep depth range specified
+    #         data_GPU = cupy.absolute(data_GPU[:,Pixel_start:Pixel_start+Pixel_range])
+    #         # transfer data back to computer
+    #         self.data_CPU = cupy.asnumpy(data_GPU)*self.AMPLIFICATION
+    #         # display and save data, data type is float32
+    #         an_action = DnSAction(mode, data = self.data_CPU, args = args) # data in Memory[memoryLoc]
+    #         self.DnSQueue.put(an_action)
+    #         # print('send for display')
+    #         if self.ui.Gotozero.isChecked() and self.ui.ACQMode.currentText() == 'SingleAline':
+    #             self.GPU2weaverQueue.put(self.data_CPU)
+    #         if self.ui.DSing.isChecked():
+    #             self.GPU2weaverQueue.put(self.data_CPU)
+    #             # print('GPU data to weaver')
         
-        else:
-            self.AlinesPerBline = self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2+self.ui.PostClock.value()
-            if self.ui.ACQMode.currentText() in ['SingleBline', 'SingleAline','RptBline', 'RptAline']:
-                self.triggerCount = self.ui.BlineAVG.value() * self.AlinesPerBline
-            elif self.ui.ACQMode.currentText() in ['SingleCscan', 'Mosaic','Mosaic+Cut']:
-                self.triggerCount = self.ui.BlineAVG.value() * self.ui.Ysteps.value() * self.AlinesPerBline
-            data_CPU = 100*np.random.random([self.triggerCount, Pixel_range])
-            an_action = DnSAction(mode, data = data_CPU, args = args) # data in Memory[memoryLoc]
-            self.DnSQueue.put(an_action)
-            # print('send for display')
-            if self.ui.Gotozero.isChecked() and self.ui.ACQMode.currentText() == 'SingleAline':
-                self.GPU2weaverQueue.put(data_CPU)
-            # print(self.ui.DSing.isChecked())
-            if self.ui.DSing.isChecked():
-                self.GPU2weaverQueue.put(data_CPU)
-                # print('GPU data to weaver')
-            # print('GPU finish')
+    #     else:
+    #         self.AlinesPerBline = self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2+self.ui.PostClock.value()
+    #         if self.ui.ACQMode.currentText() in ['SingleBline', 'SingleAline','RptBline', 'RptAline']:
+    #             self.triggerCount = self.ui.BlineAVG.value() * self.AlinesPerBline
+    #         elif self.ui.ACQMode.currentText() in ['SingleCscan', 'Mosaic','Mosaic+Cut']:
+    #             self.triggerCount = self.ui.BlineAVG.value() * self.ui.Ysteps.value() * self.AlinesPerBline
+    #         data_CPU = 100*np.random.random([self.triggerCount, Pixel_range])
+    #         an_action = DnSAction(mode, data = data_CPU, args = args) # data in Memory[memoryLoc]
+    #         self.DnSQueue.put(an_action)
+    #         # print('send for display')
+    #         if self.ui.Gotozero.isChecked() and self.ui.ACQMode.currentText() == 'SingleAline':
+    #             self.GPU2weaverQueue.put(data_CPU)
+    #         # print(self.ui.DSing.isChecked())
+    #         if self.ui.DSing.isChecked():
+    #             self.GPU2weaverQueue.put(data_CPU)
+    #             # print('GPU data to weaver')
+    #         # print('GPU finish')
             
     def cpuFFT(self, mode, memoryLoc, args):
         # get samples per Aline
@@ -219,10 +216,7 @@ class GPUThread(QThread):
         Pixel_range = self.ui.DepthRange.value()
         if not (SIM or self.SIM):
             self.data_CPU = np.float32(self.Memory[memoryLoc].copy())
-            if self.Digitizer == 'Alazar':
-                Alines =self.data_CPU.shape[0]*self.data_CPU.shape[1]//samples
-            elif self.Digitizer == 'ART':
-                Alines =len(self.data_CPU)//samples
+            Alines =self.data_CPU.shape[0]*self.data_CPU.shape[1]//samples
             self.data_CPU=self.data_CPU.reshape([Alines, samples])
             # subtract background and remove first 100 samples
             if self.Digitizer == 'ART':

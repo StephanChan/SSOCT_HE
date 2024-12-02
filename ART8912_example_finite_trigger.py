@@ -78,7 +78,7 @@ class ART8912_finite_trigger():
                     # 触发方向
 
         
-        triggerCount = 1300*Bline                               # infinite触发次数
+        triggerCount = 2000*Bline                               # infinite触发次数
         triggerSensitivity = 50               # 触发灵敏度 单位：ns
         error_code = Functions.ArtScope_ConfigureTriggerDigital(self.taskHandle, triggerSource,  triggerSlope, triggerCount, triggerSensitivity)
         if error_code < 0:
@@ -107,15 +107,15 @@ class ART8912_finite_trigger():
             check_for_error(error_code)
         
         recordLength = 1024
-        AlinesPerBline = 1300
+        AlinesPerBline = 2000
         #开辟数据存储空间
-        self.sumLength =  Bline* recordLength * AlinesPerBline * self.numWfms.value
+        self.sumLength =  1* recordLength * AlinesPerBline * self.numWfms.value
         
         self.memoryCount = 2
         self.Memory = list(range(self.memoryCount))
         for ii in range(self.memoryCount):
 
-            self.Memory[ii]=np.zeros(self.sumLength, dtype = np.uint16)
+            self.Memory[ii]=np.zeros([Bline, self.sumLength], dtype = np.uint16)
                  
         self.MemoryLoc = 0
         self.wfmInfo = ArtScope_wfmInfo()                            # 返回的包含实际读取长度和原码值转电压值相关参数的结构体
@@ -156,15 +156,18 @@ class ART8912_finite_trigger():
         # wfmInfo.pAvailSampsPoints = 0
         print('time spent for presetting: ', time.time()-start)
         # 8位的卡需要调用ArtScope_FetchBinary8，同时定义数据缓冲区数据类型为无符号8位数据
-        start = time.time()
-
-        error_code = Functions.ArtScope_FetchBinary16(self.taskHandle, timeout, readLength, self.Memory[self.MemoryLoc], self.wfmInfo)
-        if error_code < 0:
-            print('fetch data failed\n')
-            Functions.ArtScope_StopAcquisition(self.taskHandle)
-            Functions.ArtScope_Close(self.taskHandle)
-            check_for_error(error_code)
-        print('time per FetchBinary16:', time.time()-start)
+        
+        Blinecount = 0
+        while Blinecount < Bline:
+            start = time.time()
+            error_code = Functions.ArtScope_FetchBinary16(self.taskHandle, timeout, readLength, self.Memory[self.MemoryLoc][Blinecount], self.wfmInfo)
+            if error_code < 0:
+                print('fetch data failed\n')
+                Functions.ArtScope_StopAcquisition(self.taskHandle)
+                Functions.ArtScope_Close(self.taskHandle)
+                check_for_error(error_code)
+            print('time per FetchBinary16:', time.time()-start)
+            Blinecount += 1
         
         # 打印数据
         # for ii in range(10):
@@ -197,7 +200,7 @@ if __name__ == "__main__":
 
     example = ART8912_finite_trigger()
     # FIXME：改变Blines的数值，采集时间不是线性变化的, 20,60,100 会慢很多， 40，80，120，200速度正常
-    Blines = 2
+    Blines = 10
     example.ConfigureBoard(Blines)
     for ii in range(2):
         start = time.time()

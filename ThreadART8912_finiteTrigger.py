@@ -159,12 +159,12 @@ class ART8912_finiteTrigger(QThread):
          # 触发次数
         self.AlinesPerBline = self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2+self.ui.PostClock.value()
         if self.ui.ACQMode.currentText() in ['SingleBline', 'SingleAline','RptBline', 'RptAline']:
-            self.triggerCount = self.ui.BlineAVG.value() * self.AlinesPerBline
+            self.BlinesPerAcq = self.ui.BlineAVG.value() 
         elif self.ui.ACQMode.currentText() in ['SingleCscan', 'Mosaic','Mosaic+Cut']:
-            self.triggerCount = self.ui.BlineAVG.value() * self.ui.Ysteps.value() * self.AlinesPerBline
+            self.BlinesPerAcq = self.ui.BlineAVG.value() * self.ui.Ysteps.value()
             
         triggerSensitivity = self.ui.TrigDura.value()               # 触发灵敏度 单位：ns
-        error_code = Functions.ArtScope_ConfigureTriggerDigital(self.taskHandle, triggerSource, triggerSlope, self.triggerCount, triggerSensitivity)
+        error_code = Functions.ArtScope_ConfigureTriggerDigital(self.taskHandle, triggerSource, triggerSlope, self.AlinesPerBline * self.BlinesPerAcq, triggerSensitivity)
         if error_code < 0:
             Functions.ArtScope_Close(self.taskHandle)
             check_for_error(error_code)
@@ -203,29 +203,23 @@ class ART8912_finiteTrigger(QThread):
         #当读取的数据长度等于此长度时，实际读取的个数是读取的长度
         #当读取的数据长度大于此长度时，实际读取的个数是实际采样长度
                  
-        readLength = self.ui.PostSamples_2.value()  * numWfms.value * self.triggerCount # 数据读取长度
+        readLength = self.ui.PostSamples_2.value()  * numWfms.value * self.AlinesPerBline # 数据读取长度
         # print('configure ART8912 success\n')
-        
-        data_packages = 1 # number data packages returned from digitizer
         timeout = self.ui.TriggerTimeout_2.value()              # 数据读取超时时间 单位：s                   
         # usefulLength = self.usefulLength
         wfmInfo = ArtScope_wfmInfo()                            # 返回的包含实际读取长度和原码值转电压值相关参数的结构体
         # wfmInfo.actualSamples = 0
         # wfmInfo.pAvailSampsPoints = 0
-
+        
         #开始采集任务
+        BlinesCount = 0
         error_code = Functions.ArtScope_StartAcquisition(self.taskHandle)
-        # message = 'D using memory loc: '+ str(self.MemoryLoc)
-        # print(message)
-        # self.ui.PrintOut.append(message)
-        # self.log.write(message)
-        # print(readLength//self.ui.PostSamples_2.value())
-        error_code = Functions.ArtScope_FetchBinary16(self.taskHandle, timeout, readLength, self.Memory[self.MemoryLoc], wfmInfo)
-
+        while BlinesCount < self.BlinesPerAcq:
+            Functions.ArtScope_FetchBinary16(self.taskHandle, timeout, readLength, self.Memory[self.MemoryLoc][BlinesCount], wfmInfo)
+            BlinesCount += 1
         an_action = DbackAction(self.MemoryLoc)
         self.DbackQueue.put(an_action)
         self.MemoryLoc = (self.MemoryLoc+1) % self.memoryCount
-
         #停止采集任务
         error_code = Functions.ArtScope_StopAcquisition(self.taskHandle)
         # if error_code < 0:
