@@ -44,8 +44,9 @@ memoryCount = 5
 global Memory
 Memory = list(range(memoryCount))
 
+####################### select which digitizer to use, ART or Alazar
 global Digitizer
-Digitizer = 'ART8912'
+Digitizer = 'ART'
 
 # simulation switch
 global SIM
@@ -67,10 +68,10 @@ GPU2weaverQueue = Queue(maxsize = 0)
 
         
 # wrap digitzer thread with queues and Memory
-if Digitizer == 'ATS9351':
+if Digitizer == 'Alazar':
     # ATS9351 outputs 16bit data range
     AMPLIFICATION = 1*5
-    from ThreadATS9351 import ATS9351
+    from ThreadATS9351_finiteTrigger import ATS9351
     class Digitizer_2(ATS9351):
         def __init__(self, ui, log):
             super().__init__()
@@ -81,30 +82,9 @@ if Digitizer == 'ATS9351':
             self.queue = DQueue
             self.DbackQueue = DbackQueue
             self.log = log
-            self.SIM = SIM
-    
-    from ThreadWeaver_ATS import WeaverThread
-    class WeaverThread_2(WeaverThread):
-        def __init__(self, ui, log):
-            super().__init__()
-            global Memory
-            self.Memory = Memory
-            self.memoryCount = memoryCount
-            self.ui = ui
-            self.Digitizer = Digitizer
-            self.queue = WeaverQueue
-            self.DnSQueue = DnSQueue
-            self.AODOQueue = AODOQueue
-            self.StagebackQueue = StagebackQueue
-            self.PauseQueue = PauseQueue
-            self.DbackQueue = DbackQueue
-            self.GPUQueue = GPUQueue
-            self.DQueue = DQueue
-            self.GPU2weaverQueue = GPU2weaverQueue
-            self.log = log
+            self.SIM = SIM    
             
-            
-elif Digitizer == 'ART8912':
+elif Digitizer == 'ART':
     # ART8912 outputs 12bit data range
     AMPLIFICATION = 16*5
     from ThreadART8912_finiteTrigger import ART8912_finiteTrigger as ART8912
@@ -120,26 +100,25 @@ elif Digitizer == 'ART8912':
             self.log = log
             self.SIM = SIM
 
-    # since ART8912 is master, AODO is slave,we need a separate king thread to organize them
-    from ThreadWeaver_ART import WeaverThread
-    class WeaverThread_2(WeaverThread):
-        def __init__(self, ui, log):
-            super().__init__()
-            global Memory
-            self.Memory = Memory
-            self.memoryCount = memoryCount
-            self.ui = ui
-            self.Digitizer = Digitizer
-            self.queue = WeaverQueue
-            self.DnSQueue = DnSQueue
-            self.AODOQueue = AODOQueue
-            self.StagebackQueue = StagebackQueue
-            self.PauseQueue = PauseQueue
-            self.DbackQueue = DbackQueue
-            self.GPUQueue = GPUQueue
-            self.DQueue = DQueue
-            self.GPU2weaverQueue = GPU2weaverQueue
-            self.log = log
+from ThreadWeaver import WeaverThread
+class WeaverThread_2(WeaverThread):
+    def __init__(self, ui, log):
+        super().__init__()
+        global Memory
+        self.Memory = Memory
+        self.memoryCount = memoryCount
+        self.ui = ui
+        self.Digitizer = Digitizer
+        self.queue = WeaverQueue
+        self.DnSQueue = DnSQueue
+        self.AODOQueue = AODOQueue
+        self.StagebackQueue = StagebackQueue
+        self.PauseQueue = PauseQueue
+        self.DbackQueue = DbackQueue
+        self.GPUQueue = GPUQueue
+        self.DQueue = DQueue
+        self.GPU2weaverQueue = GPU2weaverQueue
+        self.log = log
 
 # wrap GPU thread with Queues and Memory
 from ThreadGPU import GPUThread
@@ -259,18 +238,18 @@ class GUI(MainWindow):
         while PauseQueue.qsize()>0:
             PauseQueue.get()
         # self.ui.PrintOut.append('Pause Queue inited...')
-        # RptAline and SingleAline is for checking Aline profile, we don't need to capture each Aline, only display 30 Alines per second\
+        # RptAline and SingleAline is for checking Aline profile, we don't need to capture each Aline, only acquire and display ~30 Alines per second
         
-        # RptBline and SingleBline will collect each Bline, but FFT will be slow in this mode. To check image quality, recommend using Alazar FFT.
-        # To capture and save each Bline, recommend increasing the Bline average, or using Cscan mode but set Y stepsize to 0
-        
-        # RptCscan is for acquiring Cscan at the same location repeatitively
+        # RptBline and SingleBline is for checking Bline profile, we don't need to capture each Bline, only acquire and display ~30 Blines per second.
+        # To capture and save each Bline, recommend using the Bline average parameter, or using Cscan mode but set Y stepsize to 0
         
         # Mosaic is for imaging the sample surface
         
         # Mosaic + Cut is for serial sectioning imaging
         
-        # Cut is for cut one slice only
+        # SingleCut is for cut one slice only
+        
+        # RptCut is for cut several slices as per defined in Vibratome panel
         
         if self.ui.ACQMode.currentText() in ['RptAline','RptBline','RptCscan','Mosaic','Mosaic+Cut','RptCut']:
             if self.ui.RunButton.isChecked():
@@ -426,13 +405,13 @@ class GUI(MainWindow):
         
     def Update_contrast_XY(self):
         # if not self.ui.RunButton.isChecked():
-            an_action = DnSAction('UpdateContrastXY')
-            DnSQueue.put(an_action)
+        an_action = DnSAction('UpdateContrastXY')
+        DnSQueue.put(an_action)
 
     def Update_contrast_XYZ(self):
         # if not self.ui.RunButton.isChecked():
-            an_action = DnSAction('UpdateContrastXYZ')
-            DnSQueue.put(an_action)
+        an_action = DnSAction('UpdateContrastXYZ')
+        DnSQueue.put(an_action)
             
     def Update_contrast_Surf(self):
         an_action = DnSAction('UpdateContrastSurf')

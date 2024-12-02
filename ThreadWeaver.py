@@ -25,7 +25,6 @@ ZPIXELSIZE = 4.4 # um, axial pixel size
 class WeaverThread(QThread):
     def __init__(self):
         super().__init__()
-        
         self.mosaic = None
         self.exit_message = 'ACQ thread successfully exited'
         
@@ -67,8 +66,9 @@ class WeaverThread(QThread):
                     if not os.path.exists(self.ui.DIR.toPlainText()+'/fitting'):
                         os.mkdir(self.ui.DIR.toPlainText()+'/fitting')
                     # do fast pre-scan to identify tissue area
-                    interrupt = self.PreMosaic()
-                    if not (interrupt == 'Stop' ):#or np.abs(self.ui.ZIncrease.value()) > 0.1):
+                    interrupt, status= self.PreMosaic()
+                    if interrupt == 'Stop' :#or np.abs(self.ui.ZIncrease.value()) > 0.1):
+                        status = "action aborted by user..."#" or or focusing gives large movement:"+ str(self.ui.ZIncrease.value())
                         # if not (stopped by user or focusing gives larger than threshold z movement)
                         # if np.abs(self.ui.ZIncrease.value()) > 0.04:
                         #     # if focusing gives larger than threshold2 z movement, redo pre-scan
@@ -82,9 +82,10 @@ class WeaverThread(QThread):
                                 # status = "action aborted by user... or focusing gives large movement:"+ str(self.ui.ZIncrease.value())
                         # else:
                             # Mosaic will move z to XstartHeight.value()+ZIncrease.value()
-                            interrupt, status = self.Mosaic()
+                    elif interrupt == 'Error':
+                        pass
                     else:
-                        status = "action aborted by user..."#" or or focusing gives large movement:"+ str(self.ui.ZIncrease.value())
+                        interrupt, status = self.Mosaic()
                     # reset RUN button
                     self.ui.RunButton.setChecked(False)
                     self.ui.RunButton.setText('Go')
@@ -207,11 +208,18 @@ class WeaverThread(QThread):
         # usefulLength = (self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2) * self.ui.PostSamples_2.value() * nchannels
         # for ART8912, total data point per Bline is the following:
         sumLength = self.ui.PostSamples_2.value() * AlinesPerBline * nchannels
-        for ii in range(self.memoryCount):
-             if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline','SingleBline', 'SingleAline']:
-                 self.Memory[ii]=np.zeros([self.ui.BlineAVG.value()*sumLength], dtype = np.uint16)
-             elif self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut']:
-                 self.Memory[ii]=np.zeros([self.ui.BlineAVG.value()*self.ui.Ysteps.value()*sumLength], dtype = np.uint16)
+        if self.Digitizer == 'ART':
+            for ii in range(self.memoryCount):
+                 if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline','SingleBline', 'SingleAline']:
+                     self.Memory[ii]=np.zeros([self.ui.BlineAVG.value()*sumLength], dtype = np.uint16)
+                 elif self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut']:
+                     self.Memory[ii]=np.zeros([self.ui.BlineAVG.value()*self.ui.Ysteps.value()*sumLength], dtype = np.uint16)
+        elif self.Digitizer == 'Alazar':
+            for ii in range(self.memoryCount):
+                 if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline','SingleBline', 'SingleAline']:
+                     self.Memory[ii]=np.zeros([1, self.ui.BlineAVG.value()*sumLength], dtype = np.uint16)
+                 elif self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut']:
+                     self.Memory[ii]=np.zeros([self.ui.Ysteps.value(), self.ui.BlineAVG.value()*sumLength], dtype = np.uint16)
         ###########################################################################################
         
     def SingleScan(self, mode):
@@ -338,21 +346,17 @@ class WeaverThread(QThread):
                                         self.ui.YStop.value(),\
                                         self.ui.Xsteps.value()*self.ui.XStepSize.value()/1000,\
                                         self.ui.Overlap.value())
+        if status != "Mosaic Generation success...":
+            return 'Error', status
         # get total number of strips, i.e.，xstage positions
         total_stripes = len(self.Mosaic_pattern)
         # calculate the number of Cscans per stripe, i.e., Y stage positions
         Ystep = self.ui.YStepSize.value()*self.ui.Ysteps.value()
         CscansPerStripe = np.int16((self.ui.YStop.value()-self.ui.YStart.value())*1000/Ystep)
+        self.totalTiles = CscansPerStripe * total_stripes
         # save the PreMosaic tile identification to disk
         an_action = DnSAction('WriteAgar', data = self.tile_flag, args = [ CscansPerStripe, total_stripes])
         self.DnSQueue.put(an_action)
-        
-        if CscansPerStripe <=0:
-            return 'invalid Mosaic positions, abort aquisition...'
-        # calculate the total number of tiles per slice, tiles is same concept as cscans
-        self.totalTiles = CscansPerStripe*len(self.Mosaic_pattern)
-        if self.totalTiles <=0:
-            return 'invalid Mosaic positions, abort aquisition...'
         
         # init sample surface plot window
         args = [[0, 0], [CscansPerStripe, self.totalTiles]]
@@ -565,17 +569,24 @@ class WeaverThread(QThread):
                                         self.ui.YStop.value(),\
                                         self.ui.Xsteps.value()*self.ui.XStepSize.value()/1000,\
                                         self.ui.Overlap.value())
+        if status != "Mosaic Generation success...":
+            self.ui.DSing.setChecked(False)
+            # reset FOV
+            self.ui.Xsteps.setValue(Xsteps)
+            self.ui.Ysteps.setValue(Ysteps)
+            self.ui.XStepSize.setValue(XStepSize)
+            self.ui.YStepSize.setValue(YStepSize)
+            self.ui.AlineAVG.setValue(AlineAVG)
+            self.ui.BlineAVG.setValue(BlineAVG)
+            self.ui.Save.setChecked(save)
+            self.ui.FFTDevice.setCurrentText(FFTDevice)
+            self.ui.scale.setValue(scale)
+            return 'Error', status
         total_stripes = len(self.Mosaic_pattern)
         # calculate the number of Cscans per stripe
         Ystep = self.ui.YStepSize.value()*self.ui.Ysteps.value()
         CscansPerStripe = np.int16((self.ui.YStop.value()-self.ui.YStart.value())*1000/Ystep)
-        if CscansPerStripe <= 0:
-            return 'invalid Mosaic positions, abort aquisition...'
-        # calculate the total number of tiles per slice
-        self.totalTiles = CscansPerStripe*len(self.Mosaic_pattern)
-        if self.totalTiles <= 0:
-            return 'invalid Mosaic positions, abort aquisition...'
-
+        self.totalTiles = CscansPerStripe * total_stripes
         # init sample surface window
         args = [[0, 0], [CscansPerStripe, self.totalTiles]]
         an_action = DnSAction('Init_Mosaic', data = None, args = args) 
@@ -691,7 +702,7 @@ class WeaverThread(QThread):
         self.ui.FFTDevice.setCurrentText(FFTDevice)
         self.ui.scale.setValue(scale)
         
-        return interrupt
+        return interrupt, status
     
     def identify_agar(self, cscan, stripes, cscans):
         value = np.mean(cscan,1)
@@ -783,12 +794,6 @@ class WeaverThread(QThread):
     
     def OneImagePerCut(self):
         for ii in range(np.uint16(self.ui.SMPthickness.value()*1000//self.ui.ImageZDepth.value())):
-            ##################################################
-            interrupt = self.check_interrupt()
-            if interrupt == 'Stop':
-                message = 'user stopped acquisition...'
-                return message
-            ########################################################
             # cut one slice
             message = self.SingleCut(self.ui.SliceZStart.value()+ii*self.ui.SliceZDepth.value()/1000.0)
             print(message)
@@ -854,9 +859,11 @@ class WeaverThread(QThread):
             ########################################################
             # do surf
             if ii%self.ui.backReget.value() == 0:
-                interrupt = self.PreMosaic()#self.ui.XStartHeight.value()+ii*self.ui.ImageZDepth.value()/1000.0)
+                interrupt, status = self.PreMosaic()#self.ui.XStartHeight.value()+ii*self.ui.ImageZDepth.value()/1000.0)
                 if interrupt == 'Stop':
                     return 'PreMosaic stopped by user...'
+                elif interrupt == 'Error':
+                    return status
                 # if np.abs(self.ui.ZIncrease.value()) > 0.1:
                 #     message= 'PreMosaic autofocus error...' + str(self.ui.ZIncrease.value())
                 #     print(message)
@@ -881,9 +888,12 @@ class WeaverThread(QThread):
                 #     delta_z = 0
             # else:
             #     delta_z = 0
-            interrupt, status = self.Mosaic()#self.ui.XStartHeight.value()+ii*self.ui.ImageZDepth.value()/1000.0 + delta_z)
+            if interrupt != 'Stop' and interrupt != 'Error':
+                interrupt, status = self.Mosaic()#self.ui.XStartHeight.value()+ii*self.ui.ImageZDepth.value()/1000.0 + delta_z)
             if interrupt == 'Stop':
                 return 'user stopped acquisition...'
+            elif interrupt == 'Error':
+                return status
         # LAST CUT 
         message = self.SingleCut(self.ui.SliceZStart.value()+(ii+1)*self.ui.SliceZDepth.value()/1000.0)
         if message != 'Slice success':
@@ -1495,9 +1505,9 @@ class WeaverThread(QThread):
         self.ui.FFTDevice.setCurrentText(device)
 
     def read_background(self):
-        if self.Digitizer == 'ATS9351':
+        if self.Digitizer == 'Alazar':
             samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
-        elif self.Digitizer == 'ART8912':
+        elif self.Digitizer == 'ART':
             samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
         background_path = self.ui.BG_DIR.text()
 
@@ -1654,14 +1664,14 @@ class WeaverThread(QThread):
         Zpixels = self.ui.DepthRange.value()
         # get number of X pixels
         Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
-        if self.Digitizer == 'ART8912':
+        if self.Digitizer == 'ART':
             Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
         # get number of Y pixels
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
         # reshape into Ypixels x Xpixels x Zpixels
         cscan = cscan.reshape([Ypixels,Xpixels,Zpixels])
         # trim fly-back pixels
-        if self.Digitizer == 'ART8912':    
+        if self.Digitizer == 'ART':    
             cscan = cscan[:,self.ui.PreClock.value():self.ui.Xsteps.value()*self.ui.AlineAVG.value()+self.ui.PreClock.value()]
             Xpixels = self.ui.Xsteps.value()*self.ui.AlineAVG.value()
         

@@ -17,9 +17,6 @@ Memory = list(range(2))
 from matplotlib import pyplot as plt
 # sys.path.append(os.path.join(os.path.dirname(__file__), '../..', 'Library'))
 import atsapi as ats
-global CONTINUOUS
-
-CONTINUOUS = 0x7FFFFFFF
 
 class ATS9350():
     def __init__(self):
@@ -142,9 +139,6 @@ class ATS9350():
         self.memoryCount = 2
         global Memory
         for ii in range(self.memoryCount):
-            if self.buffersPerAcquisition == CONTINUOUS:
-                Memory[ii]=np.zeros([1,self.samplesPerBuffer], dtype = np.uint16)
-            else:
                 Memory[ii]=np.zeros([self.buffersPerAcquisition,self.samplesPerBuffer], dtype = np.uint16)
            
         # print(Memory[0].shape)
@@ -156,7 +150,7 @@ class ATS9350():
             self.sample_type = ctypes.c_uint16
             
         # TODO: Select number of DMA buffers to allocate
-        self.bufferCount = 40
+        self.bufferCount = 4
         
         self.buffers = []
         for i in range(self.bufferCount):
@@ -186,7 +180,6 @@ class ATS9350():
         self.board.startCapture() # Start the acquisition
         # print("Capturing %d buffers. Press <enter> to abort" %
               # self.buffersPerAcquisition)
-        NACQ = self.buffersPerAcquisition if self.buffersPerAcquisition != CONTINUOUS else 1
 
 
         buffersCompleted = 0
@@ -196,7 +189,7 @@ class ATS9350():
                
             # Wait for the buffer at the head of the list of available
             # buffers to be filled by the board.
-            buffer = self.buffers[buffersCompleted % len(self.buffers)]
+            buffer = self.buffers[buffersCompleted % self.bufferCount]
             # print('board waiting...\n')
             try:
                 self.board.waitAsyncBufferComplete(buffer.addr, timeout_ms=5000) 
@@ -204,30 +197,23 @@ class ATS9350():
                 # TODO: if timeout, break this inner while loop
                 print(error)
                 break
-            
 
-            
             # bytesTransferred += buffer.size_bytes
 
             #TODO: select which way to do FFT
             # 1. run GPU FFT for each buffer, one buffer can take 100ms to acquire
             # --inplausible, processing takes longer time, need at least 200k Alines to be twice speed of acquisition
-            # 2. copy each buffer to a memory location, queue in memory location to a thread, then perform FFT on one memory for a time
-            # -- copy is fast, queue in is negligible, queue out is slow, only twice faster than acquisition
-            # 3. queue in buffer to a different thread, when memory location is filled up, run GPU FFT
-            # -- slow, not surprising
-            
-            Memory[self.MemoryLoc][buffersCompleted % NACQ][:] = buffer.buffer
-            # plt.plot(buffer.buffer[0:1024])
-            # print(buffer.buffer.shape)
+            # 2. copy each buffer to a global memory, queue in memory address, when memory is filled up, perform FFT on a separate thread
+            # -- doable, copy is fast, queue in/out memory address is fast, reading global memory is slow, but still twice faster than acquisition
+            # 3. copy each buffer to a local memory, queue in local memory, queue out local memory on a separate thread and perform FFT
+            # -- queue in/out is very slow, not surprising
+            Memory[self.MemoryLoc][buffersCompleted][:] = buffer.buffer
             buffersCompleted += 1
             print(buffersCompleted)
             # Add the buffer to the end of the list of available buffers.
             self.board.postAsyncBuffer(buffer.addr, buffer.size_bytes)
-        
-            if buffersCompleted % NACQ == 0:
-                time.sleep(0.001)
-                self.MemoryLoc = (self.MemoryLoc+1) % 2
+
+        self.MemoryLoc = (self.MemoryLoc+1) % 2
             
         self.board.abortAsyncRead()
 

@@ -2666,12 +2666,12 @@
                   <widget class="QComboBox" name="ClockSource">
                    <item>
                     <property name="text">
-                     <string>Internal Clock</string>
+                     <string>External Clock</string>
                     </property>
                    </item>
                    <item>
                     <property name="text">
-                     <string>External Clock</string>
+                     <string>Internal Clock</string>
                     </property>
                    </item>
                   </widget>
@@ -2714,7 +2714,7 @@
                  </size>
                 </property>
                 <property name="currentIndex">
-                 <number>1</number>
+                 <number>0</number>
                 </property>
                 <widget class="QWidget" name="A">
                  <attribute name="title">
@@ -2725,12 +2725,12 @@
                    <widget class="QComboBox" name="Aenable">
                     <item>
                      <property name="text">
-                      <string>Disable</string>
+                      <string>Enable</string>
                      </property>
                     </item>
                     <item>
                      <property name="text">
-                      <string>Enable</string>
+                      <string>Disable</string>
                      </property>
                     </item>
                    </widget>
@@ -2738,7 +2738,7 @@
                   <item>
                    <widget class="QComboBox" name="ACoupling">
                     <property name="enabled">
-                     <bool>false</bool>
+                     <bool>true</bool>
                     </property>
                     <item>
                      <property name="text">
@@ -2779,7 +2779,7 @@
                   <item>
                    <widget class="QComboBox" name="ABWlimit">
                     <property name="enabled">
-                     <bool>false</bool>
+                     <bool>true</bool>
                     </property>
                     <item>
                      <property name="text">
@@ -2817,7 +2817,7 @@
                   <item>
                    <widget class="QComboBox" name="BCoupling">
                     <property name="enabled">
-                     <bool>false</bool>
+                     <bool>true</bool>
                     </property>
                     <item>
                      <property name="text">
@@ -2843,7 +2843,7 @@
                   <item>
                    <widget class="QComboBox" name="BBWlimit">
                     <property name="enabled">
-                     <bool>false</bool>
+                     <bool>true</bool>
                     </property>
                     <item>
                      <property name="text">
@@ -2882,7 +2882,7 @@
                     </size>
                    </property>
                    <property name="currentIndex">
-                    <number>1</number>
+                    <number>0</number>
                    </property>
                    <widget class="QWidget" name="JEngine">
                     <attribute name="title">
@@ -2892,7 +2892,7 @@
                      <item>
                       <widget class="QComboBox" name="JEnable">
                        <property name="enabled">
-                        <bool>false</bool>
+                        <bool>true</bool>
                        </property>
                        <item>
                         <property name="text">
@@ -2940,7 +2940,7 @@
                      <item>
                       <widget class="QComboBox" name="Kenable">
                        <property name="enabled">
-                        <bool>false</bool>
+                        <bool>true</bool>
                        </property>
                        <item>
                         <property name="text">
@@ -3045,7 +3045,7 @@
                     <number>10000</number>
                    </property>
                    <property name="value">
-                    <number>2560</number>
+                    <number>1440</number>
                    </property>
                   </widget>
                  </item>
@@ -3076,13 +3076,16 @@
                  <item row="3" column="2" colspan="2">
                   <widget class="QDoubleSpinBox" name="TriggerTimeout">
                    <property name="enabled">
-                    <bool>false</bool>
+                    <bool>true</bool>
                    </property>
                    <property name="decimals">
                     <number>6</number>
                    </property>
                    <property name="maximum">
                     <double>1000000.000000000000000</double>
+                   </property>
+                   <property name="value">
+                    <double>1.000000000000000</double>
                    </property>
                   </widget>
                  </item>
@@ -3112,12 +3115,12 @@
                   <widget class="QComboBox" name="AUXIO">
                    <item>
                     <property name="text">
-                     <string>IN_TRIGGER_ENABLE</string>
+                     <string>OUT_TRIGGER</string>
                     </property>
                    </item>
                    <item>
                     <property name="text">
-                     <string>OUT_TRIGGER</string>
+                     <string>IN_TRIGGER_ENABLE</string>
                     </property>
                    </item>
                    <item>
@@ -3224,7 +3227,7 @@
                  </size>
                 </property>
                 <property name="currentIndex">
-                 <number>1</number>
+                 <number>0</number>
                 </property>
                 <widget class="QWidget" name="A_2">
                  <attribute name="title">
@@ -3234,7 +3237,7 @@
                   <item>
                    <widget class="QComboBox" name="Aenable_2">
                     <property name="enabled">
-                     <bool>false</bool>
+                     <bool>true</bool>
                     </property>
                     <item>
                      <property name="text">
@@ -3251,7 +3254,7 @@
                   <item>
                    <widget class="QComboBox" name="ACoupling_2">
                     <property name="enabled">
-                     <bool>false</bool>
+                     <bool>true</bool>
                     </property>
                     <item>
                      <property name="text">
@@ -3268,7 +3271,7 @@
                   <item>
                    <widget class="QComboBox" name="AInputRange_2">
                     <property name="enabled">
-                     <bool>false</bool>
+                     <bool>true</bool>
                     </property>
                     <item>
                      <property name="text">
@@ -3306,7 +3309,7 @@
                   <item>
                    <widget class="QComboBox" name="BCoupling_2">
                     <property name="enabled">
-                     <bool>false</bool>
+                     <bool>true</bool>
                     </property>
                     <item>
                      <property name="text">
@@ -3423,7 +3426,7 @@
                     <number>5000</number>
                    </property>
                    <property name="value">
-                    <number>50</number>
+                    <number>1000</number>
                    </property>
                   </widget>
                  </item>

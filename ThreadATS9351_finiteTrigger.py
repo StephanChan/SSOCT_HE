@@ -10,19 +10,25 @@ import time
 import ctypes
 import sys
 import numpy as np
-sys.path.append('c:\\alazartech\\ats-sdk\\7.2.3\\samples_python\\ats9350\\npt\\../..\\Library')
-import atsapi as ats
+global SIM
+SIM = False
+
+
+try:
+    sys.path.append('c:\\alazartech\\ats-sdk\\7.2.3\\samples_python\\ats9350\\npt\\../..\\Library')
+    import atsapi as ats
+except:
+    ats = None
+    SIM = True
 from Actions import DbackAction
 import traceback
-
-global CONTINUOUS
-
-CONTINUOUS = 0x7FFFFFFF
 
 class ATS9351(QThread):
     def __init__(self):
         super().__init__()
-        self.board = ats.Board()
+        self.MemoryLoc = 0
+        if not SIM:
+            self.board = ats.Board()
         self.exit_message = 'Digitizer thread successfully exited'
 
         
@@ -199,20 +205,14 @@ class ATS9351(QThread):
     
         # TODO: Select the number of records per DMA buffer.
         # how many X pixels in one Bline
-        if self.ui.ACQMode.currentText() in ['RptAline','SingleAline']:
-            self.recordsPerBuffer = 100
-        else:
-            self.recordsPerBuffer = self.ui.Xsteps.value() * self.ui.AlineAVG.value()
-        # print(self.recordsPerBuffer)
-        # TODO: Select the number of buffers per acquisition.
-        # how many Blines per Acquisition
-        if self.ui.ACQMode.currentText() in ['SingleAline', 'SingleBline']:
-            self.buffersPerAcquisition = self.ui.BlineAVG.value()
-        elif self.ui.ACQMode.currentText() in ['RptAline', 'RptBline']:
-            self.buffersPerAcquisition = CONTINUOUS # endless acquisition
+        self.AlinesPerBline = self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2+self.ui.PostClock.value()
+        if self.ui.ACQMode.currentText() in ['SingleBline', 'SingleAline','RptBline', 'RptAline']:
+            self.triggerPerBline = self.ui.BlineAVG.value() * self.AlinesPerBline
+            self.BlinesPerAcquisition = 1
+        elif self.ui.ACQMode.currentText() in ['SingleCscan', 'Mosaic','Mosaic+Cut']:
+            self.triggerPerBline = self.ui.BlineAVG.value() * self.AlinesPerBline
+            self.BlinesPerAcquisition = self.ui.Ysteps.value()
 
-        elif self.ui.ACQMode.currentText() in ['SingleCscan', 'SurfScan','SurfScan+Slice']:
-            self.buffersPerAcquisition = self.ui.Ysteps.value() * self.ui.BlineAVG.value()
         # print(self.buffersPerAcquisition)
         # TODO: Select the active channels.
         # self.channels = ats.CHANNEL_A | ats.CHANNEL_B
@@ -226,33 +226,17 @@ class ATS9351(QThread):
         elif self.ui.Benable.currentText() == 'Enable':
             self.channels = ats.CHANNEL_B # 2
             self.channelCount = 1
-        # for c in ats.channels:
-        #     self.channelCount += (c & self.channels == c)
-    
-        # TODO: Should data be saved to file?
-        # saveData = False
-        # dataFile = None
-        # if saveData:
-        #     dataFile = open(os.path.join(os.path.dirname(__file__),
-                                         # "data.bin"), 'wb')
     
         # Compute the number of bytes per record and per buffer
         memorySize_samples, bitsPerSample = self.board.getChannelInfo()
         bytesPerSample = (bitsPerSample.value + 7) // 8
-        self.samplesPerRecord = self.preTriggerSamples + self.postTriggerSamples
-        self.bytesPerRecord = bytesPerSample * self.samplesPerRecord
-        self.bytesPerBuffer = self.bytesPerRecord * self.recordsPerBuffer * self.channelCount
-        self.samplesPerBuffer = self.samplesPerRecord * self.recordsPerBuffer * self.channelCount
+        samplesPerAline = self.preTriggerSamples + self.postTriggerSamples                            # Record is an Aline
+        bytesPerAline = bytesPerSample * samplesPerAline                                        # 
+        bytesPerBline = bytesPerAline * self.triggerPerBline * self.channelCount               # Buffer is a Bline
+        samplesPerBline = samplesPerAline * self.triggerPerBline * self.channelCount
         # print(self.samplesPerBuffer)
         # Init Cscan memory buffers for temporary copying Blines
 
-        for ii in range(self.memoryCount):
-             if self.buffersPerAcquisition == CONTINUOUS:
-                 self.Memory[ii]=np.zeros([self.ui.BlineAVG.value(),self.samplesPerBuffer], dtype = np.uint16)
-             else:
-                 self.Memory[ii]=np.zeros([self.buffersPerAcquisition,self.samplesPerBuffer], dtype = np.uint16)
-            
-        self.MemoryLoc = 0
         # Allocate DMA buffers
     
         self.sample_type = ctypes.c_uint8
@@ -260,74 +244,58 @@ class ATS9351(QThread):
             self.sample_type = ctypes.c_uint16
             
         # TODO: Select number of DMA buffers to allocate
-        self.bufferCount = 4
+        self.BlineBufferCount = 4
         
-        self.buffers = []
-        for i in range(self.bufferCount):
-            self.buffers.append(ats.DMABuffer(self.board.handle, self.sample_type, self.bytesPerBuffer))
+        self.BlineBuffers = []
+        for i in range(self.BlineBufferCount):
+            self.BlineBuffers.append(ats.DMABuffer(self.board.handle, self.sample_type, bytesPerBline))
         # print(self.bytesPerBuffer)
         # Set the record size
         self.board.setRecordSize(self.preTriggerSamples, self.postTriggerSamples)
     
-        
-    
-    def StartAcquire(self):
-        
-        recordsPerAcquisition = self.recordsPerBuffer * self.buffersPerAcquisition \
-            if self.buffersPerAcquisition != CONTINUOUS else self.buffersPerAcquisition
+        # Post DMA buffers to board
+        for buffer in self.BlineBuffers:
+            self.board.postAsyncBuffer(buffer.addr, buffer.size_bytes)
     
         # Configure the board to make an NPT AutoDMA acquisition
         self.board.beforeAsyncRead(self.channels,
                               -self.preTriggerSamples,
-                              self.samplesPerRecord,
-                              self.recordsPerBuffer,
-                              recordsPerAcquisition,
+                              samplesPerAline,
+                              self.triggerPerBline * self.channelCount,
+                              self.triggerPerBline * self.channelCount * self.BlinesPerAcquisition,
                               ats.ADMA_EXTERNAL_STARTCAPTURE | ats.ADMA_NPT)
         
-    
-    
-        # Post DMA buffers to board
-        for buffer in self.buffers:
-            self.board.postAsyncBuffer(buffer.addr, buffer.size_bytes)
-            
+        
+    def StartAcquire(self):
+                                                                                                           # Acquisition is a Bline or Cscan
         self.board.startCapture() # Start the acquisition
-        NACQ = self.buffersPerAcquisition if self.buffersPerAcquisition != CONTINUOUS else self.ui.BlineAVG.value()
-        buffersCompleted = 0
+        BlinesCompleted = 0
+        # an_action = DbackAction(self.MemoryLoc)
+        # self.DbackQueue.put(an_action)
         # print('start board', self.buffersPerAcquisition)
-        while (buffersCompleted < self.buffersPerAcquisition):
-
-            buffer = self.buffers[buffersCompleted % len(self.buffers)]
+        while BlinesCompleted < self.BlinesPerAcquisition:
+            buffer = self.BlineBuffers[BlinesCompleted % self.BlineBufferCount]
             try:
                 self.board.waitAsyncBufferComplete(buffer.addr, timeout_ms=1000) 
             except Exception as error:
                 # TODO: if timeout, break this inner while loop
-                print('Blines collected: ', buffersCompleted, \
+                print('Blines collected: ', BlinesCompleted, \
                       'Blines configured: ', self.buffersPerAcquisition, \
                       '\n', error, '\nstopping acquisition for Digitizer\n')
                 break
             
             # bytesTransferred += buffer.size_bytes
             
-            self.Memory[self.MemoryLoc][buffersCompleted % NACQ][:] = buffer.buffer
-            buffersCompleted += 1
+            self.Memory[self.MemoryLoc][BlinesCompleted][:] = buffer.buffer
+            BlinesCompleted += 1
             # print(buffersCompleted, NACQ)
-            if buffersCompleted % NACQ ==0:
-                # print('sending data back')
-                an_action = DbackAction(self.MemoryLoc)
-                self.DbackQueue.put(an_action)
-                self.MemoryLoc = (self.MemoryLoc+1) % self.memoryCount
-
             # print(buffersCompleted)
             # Add the buffer to the end of the list of available buffers.
             self.board.postAsyncBuffer(buffer.addr, buffer.size_bytes)
             
-            # get stop commend from BONE thread
-            try:
-                self.StopDQueue.get(timeout=0.001)
-                print('\nsuccessfully caught that stop signal for Digitizer\n')
-                break
-            except:
-                pass
+        an_action = DbackAction(self.MemoryLoc)
+        self.DbackQueue.put(an_action)
+        self.MemoryLoc = (self.MemoryLoc+1) % self.memoryCount
         
         self.board.abortAsyncRead()
             

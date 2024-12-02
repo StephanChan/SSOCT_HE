@@ -5,7 +5,7 @@ Created on Tue Dec 12 16:51:20 2023
 @author: admin
 """
 ###########################################
-# 25000 steps per revolve
+# 25000 steps per rotation
 global STEPS
 STEPS = 25000
 # 2mm per rotation
@@ -209,9 +209,9 @@ class AODOThread(QThread):
                                                    active_edge= Edge.FALLING,\
                                                    sample_mode=mode,samps_per_chan=len(AOwaveform))
             # Config start mode
-            if self.Digitizer == 'ATS9351':      
+            if self.Digitizer == 'Alazar':      
                 self.AOtask.triggers.sync_type.MASTER = True
-            elif self.Digitizer == 'ART8912':
+            elif self.Digitizer == 'ART':
                 # pass
                 self.AOtask.triggers.start_trigger.cfg_dig_edge_start_trig("/AODO/PFI1")
             # write waveform and start
@@ -220,7 +220,7 @@ class AODOThread(QThread):
             
             #################################################################################
             # only use DO in Cscan acquisition or if digitizer is Alazar board
-            if self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut'] or self.Digitizer == 'ATS9351':
+            if self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut'] or self.Digitizer == 'Alazar':
                 # before move stage, configure direction and enable stage using port 2 first
                 # direction = 0 means backward
                 # direction = 1 means forward
@@ -239,9 +239,9 @@ class AODOThread(QThread):
                                                        active_edge= Edge.FALLING,\
                                                        sample_mode=mode,samps_per_chan=len(DOwaveform))
                
-                if self.Digitizer == 'ATS9351':      
+                if self.Digitizer == 'Alazar':      
                     self.DOtask.triggers.sync_type.SLAVE = True
-                elif self.Digitizer == 'ART8912':
+                elif self.Digitizer == 'ART':
                     # pass
                     self.DOtask.triggers.start_trigger.cfg_dig_edge_start_trig("/AODO/PFI1")
                 
@@ -258,7 +258,7 @@ class AODOThread(QThread):
     def StartTask(self):
         if not (SIM or self.SIM):
             self.AOtask.start()
-            if self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut'] or self.Digitizer == 'ATS9351':
+            if self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut'] or self.Digitizer == 'Alazar':
                 self.DOtask.start()
         self.StagebackQueue.put(0)
             
@@ -270,7 +270,7 @@ class AODOThread(QThread):
             self.AOtask.stop()
             # self.AOtask.close()
             # print(self.ui.ACQMode.currentText())
-            if self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut'] or self.Digitizer == 'ATS9351':
+            if self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut'] or self.Digitizer == 'Alazar':
                 self.DOtask.stop()
                 # self.DOtask.close()
                 # settingtask.write(XDISABLE+ YDISABLE+ ZDISABLE, auto_start = True)
@@ -285,7 +285,7 @@ class AODOThread(QThread):
     def CloseTask(self):
         if not (SIM or self.SIM):
             self.AOtask.close()
-            if self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut'] or self.Digitizer == 'ATS9351':
+            if self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut'] or self.Digitizer == 'Alazar':
                 self.DOtask.close()
             message = 'cscan X :'+str(round(self.ui.Xcurrent.value(),2))+' Y :'+str(round(self.ui.Ycurrent.value(),2))+' Z :'+str(round(self.ui.Zcurrent.value(),3))
             print(message)
@@ -317,7 +317,7 @@ class AODOThread(QThread):
             if self.AOtask:
                 self.AOtask.stop()
                 self.AOtask.close()
-                if self.Digitizer == 'ATS9351':   
+                if self.Digitizer == 'Alazar':   
                     self.DOtask.stop()
                     self.DOtask.close()
             else:
@@ -336,7 +336,7 @@ class AODOThread(QThread):
     def stagewave_ramp(self, distance, DISTANCE):
         # generate stage movement that ramps up and down speed so that motor won't miss signal at beginning and end
         # how to do that: motor is driving by low->high digital transition
-        # ramping up: make the interval between two highs with long time at the beginning, then gradually goes down.vice versa for ramping down
+        # ramping up: make the interval between two highs LONG at the beginning, then gradually shorten. vice versa for ramping down
         if np.abs(distance) > 0.02:
             max_interval = 100
         elif np.abs(distance) > 0.01:
@@ -361,12 +361,12 @@ class AODOThread(QThread):
 
         # ramping down waveform generation
         ramp_down_waveform = np.zeros(np.sum(ramp_down_interval))
-        if any(ramp_down_waveform):
-            ramp_down_waveform[0] = 1
         time_lapse = -1
         for interval in ramp_down_interval:
             time_lapse = time_lapse + interval
             ramp_down_waveform[time_lapse] = 1
+        if any(ramp_down_waveform):
+            ramp_down_waveform[0] = 1
             
         # normal speed waveform
         DOwaveform = np.ones([total_highs - ramping_highs, 2],dtype = np.uint32)
