@@ -1523,7 +1523,7 @@ class WeaverThread(QThread):
         ALINE = self.data.reshape([Xpixels*Yrpt,self.ui.PostSamples_2.value()])
         ALINE = ALINE[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]
         self.read_background()
-        Aline = np.float32(ALINE[0,:])-self.background
+        Aline = np.float32(ALINE[Xpixels//2,:])-self.background
 
         plt.figure()
         plt.plot(Aline)
@@ -1546,20 +1546,34 @@ class WeaverThread(QThread):
         
         plt.figure()
         plt.plot(np.abs(fR))
-        plt.title('Aline windowing the peak')
+        plt.title('Isolated peak')
         
         Aline = np.fft.ifft(fR)
 
+        plt.figure()
+        plt.plot(Aline)
+        plt.title('Clean spectrum')
+        
         hR=hilbert(np.real(Aline))
         hR_phi=np.unwrap(np.angle(hR))
+        
+        plt.figure()
+        plt.plot(np.real(hR))
+        plt.plot(np.imag(hR))
+        plt.title('Hilbert transformation')
         
         phi_delta=np.linspace(hR_phi[0],hR_phi[L-1],L)
         phi_diff=np.float32(phi_delta-hR_phi)
         ALINE = ALINE*np.exp(1j*phi_diff)
         
         plt.figure()
+        plt.plot(phi_delta)
+        plt.plot(hR_phi)
+        plt.title('Unwrapped phase')
+        
+        plt.figure()
         plt.plot(phi_diff)
-        plt.title('phase difference')
+        plt.title('Phase difference')
         # plt.figure()
         message = 'max phase difference is: '+str(np.max(np.abs(phi_diff)))+'\n'
         print(message)

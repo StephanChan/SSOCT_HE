@@ -95,6 +95,8 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)
         self.LoadSettings()
         self.setStageMinMax()
+        # init cut start to 1 mm in case people forget to change it prior to cutting
+        # self.ui.SliceZStart.setValue(1)
         if self.ui.SliceDir.isChecked():
             self.ui.SliceDir.setText('Forward')
         
@@ -158,8 +160,12 @@ class MainWindow(QMainWindow):
                 except:
                     print(ii, ' setting missing, using default...')
             elif type(self.ui.__getattribute__(ii)) == QW.QPushButton:
+                if settings.value(ii) in ['true', 'True']:
+                    status = True
+                else:
+                    status = False
                 try:
-                    self.ui.__getattribute__(ii).setChecked(settings.value(ii))
+                    self.ui.__getattribute__(ii).setChecked(status)
                 except:
                     print(ii, ' setting missing, using default...')
                 

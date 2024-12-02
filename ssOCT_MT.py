@@ -26,7 +26,6 @@ Created on Sun Dec 10 20:14:40 2023
 # GUI input triggers in-queue action to the specified queue
 
 # between threads, using Queue to pass variables, variables gets duplicated in memory when passed as arguments
-
 import sys
 import numpy as np
 from queue import Queue

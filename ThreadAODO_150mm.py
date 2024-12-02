@@ -8,7 +8,7 @@ Created on Tue Dec 12 16:51:20 2023
 # 25000 steps per revolve
 global STEPS
 STEPS = 25000
-# 2mm per revolve
+# 2mm per rotation
 global XDISTANCE
 XDISTANCE = 2
 global YDISTANCE
