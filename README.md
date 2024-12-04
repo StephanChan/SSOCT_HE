@@ -1,5 +1,5 @@
 # SSOCT_HE
-this is the control software for SSOCT_for_HE project at Sustech.
+This is the control software for a serial sectioning swept source OCT system at Sustech.
 # SOFTWARE STRUCTURE
 
 using QThread of PYQT to do multi-threading control of data acquisition, scanning, data processing, display&saving
