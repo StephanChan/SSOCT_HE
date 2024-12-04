@@ -50,7 +50,7 @@ class ART8912_finiteTrigger(QThread):
     def run(self):
         if not (SIM or self.SIM):
             self.InitBoard()
-            self.ConfigureBoard()
+            # self.ConfigureBoard()
         self.QueueOut()
         
     def QueueOut(self):

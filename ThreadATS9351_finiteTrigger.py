@@ -207,11 +207,9 @@ class ATS9351(QThread):
         # how many X pixels in one Bline
         self.AlinesPerBline = self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2+self.ui.PostClock.value()
         if self.ui.ACQMode.currentText() in ['SingleBline', 'SingleAline','RptBline', 'RptAline']:
-            self.triggerPerBline = self.ui.BlineAVG.value() * self.AlinesPerBline
-            self.BlinesPerAcquisition = 1
+            self.BlinesPerAcquisition = self.ui.BlineAVG.value()
         elif self.ui.ACQMode.currentText() in ['SingleCscan', 'Mosaic','Mosaic+Cut']:
-            self.triggerPerBline = self.ui.BlineAVG.value() * self.AlinesPerBline
-            self.BlinesPerAcquisition = self.ui.Ysteps.value()
+            self.BlinesPerAcquisition = self.ui.BlineAVG.value() * self.ui.Ysteps.value()
 
         # print(self.buffersPerAcquisition)
         # TODO: Select the active channels.
@@ -230,10 +228,10 @@ class ATS9351(QThread):
         # Compute the number of bytes per record and per buffer
         memorySize_samples, bitsPerSample = self.board.getChannelInfo()
         bytesPerSample = (bitsPerSample.value + 7) // 8
-        samplesPerAline = self.preTriggerSamples + self.postTriggerSamples                            # Record is an Aline
-        bytesPerAline = bytesPerSample * samplesPerAline                                        # 
-        bytesPerBline = bytesPerAline * self.triggerPerBline * self.channelCount               # Buffer is a Bline
-        samplesPerBline = samplesPerAline * self.triggerPerBline * self.channelCount
+        self.samplesPerAline = self.preTriggerSamples + self.postTriggerSamples                            # Record is an Aline
+        bytesPerAline = bytesPerSample * self.samplesPerAline                                        # 
+        bytesPerBline = bytesPerAline * self.AlinesPerBline * self.channelCount               # Buffer is a Bline
+        samplesPerBline = self.samplesPerAline * self.AlinesPerBline * self.channelCount
         # print(self.samplesPerBuffer)
         # Init Cscan memory buffers for temporary copying Blines
 
@@ -253,25 +251,24 @@ class ATS9351(QThread):
         # Set the record size
         self.board.setRecordSize(self.preTriggerSamples, self.postTriggerSamples)
     
-        # Post DMA buffers to board
-        for buffer in self.BlineBuffers:
-            self.board.postAsyncBuffer(buffer.addr, buffer.size_bytes)
-    
-        # Configure the board to make an NPT AutoDMA acquisition
-        self.board.beforeAsyncRead(self.channels,
-                              -self.preTriggerSamples,
-                              samplesPerAline,
-                              self.triggerPerBline * self.channelCount,
-                              self.triggerPerBline * self.channelCount * self.BlinesPerAcquisition,
-                              ats.ADMA_EXTERNAL_STARTCAPTURE | ats.ADMA_NPT)
+        
         
         
     def StartAcquire(self):
-                                                                                                           # Acquisition is a Bline or Cscan
+        # Acquisition is a Bline or Cscan
+        # Configure the board to make an NPT AutoDMA acquisition
+        self.board.beforeAsyncRead(self.channels,
+                              -self.preTriggerSamples,
+                              self.samplesPerAline,
+                              self.AlinesPerBline * self.channelCount,
+                              self.AlinesPerBline * self.channelCount * self.BlinesPerAcquisition,
+                              ats.ADMA_EXTERNAL_STARTCAPTURE | ats.ADMA_NPT)
+        # Post DMA buffers to board
+        for buffer in self.BlineBuffers:
+            self.board.postAsyncBuffer(buffer.addr, buffer.size_bytes)
+            
         self.board.startCapture() # Start the acquisition
         BlinesCompleted = 0
-        # an_action = DbackAction(self.MemoryLoc)
-        # self.DbackQueue.put(an_action)
         # print('start board', self.buffersPerAcquisition)
         while BlinesCompleted < self.BlinesPerAcquisition:
             buffer = self.BlineBuffers[BlinesCompleted % self.BlineBufferCount]
@@ -286,10 +283,8 @@ class ATS9351(QThread):
             
             # bytesTransferred += buffer.size_bytes
             
-            self.Memory[self.MemoryLoc][BlinesCompleted][:] = buffer.buffer
+            self.Memory[self.MemoryLoc][BlinesCompleted] = buffer.buffer
             BlinesCompleted += 1
-            # print(buffersCompleted, NACQ)
-            # print(buffersCompleted)
             # Add the buffer to the end of the list of available buffers.
             self.board.postAsyncBuffer(buffer.addr, buffer.size_bytes)
             

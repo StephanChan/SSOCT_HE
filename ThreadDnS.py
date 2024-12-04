@@ -17,9 +17,6 @@ import datetime
 import os
 from scipy import ndimage
 from libtiff import TIFF
-# global SIM
-# SIM = False
-# use_maya = False
 import time
 
 class DnSThread(QThread):
@@ -129,7 +126,22 @@ class DnSThread(QThread):
             Xpixels = Xpixels + self.ui.PreClock.value()*2 + self.ui.PostClock.value()
             
         Ypixels = self.ui.Ysteps.value()*self.ui.BlineAVG.value()
-        return Zpixels, Xpixels, Ypixels
+        
+        # get channel number
+        if self.Digitizer == 'ART':
+            if self.ui.Benable_2.currentText() == 'Disable':
+                self.Nchannels = 1                                    # 通道名称
+            else:
+                self.Nchannels = 2  
+        elif self.Digitizer == 'Alazar':
+            if self.ui.Aenable.currentText() == 'Enable':
+                if self.ui.Benable.currentText() == 'Enable':
+                    self.Nchannels = 2
+                else:
+                    self.Nchannels = 1
+            elif self.ui.Benable.currentText() == 'Enable':
+                self.Nchannels = 1
+        return Zpixels, Xpixels*self.Nchannels, Ypixels
             
     def Display_aline(self, data, raw = False):
         Zpixels, Xpixels, Ypixels = self.get_FOV_size(raw)
@@ -236,8 +248,8 @@ class DnSThread(QThread):
         # update image on the waveformLabel
         self.ui.XYplane.setPixmap(pixmap)
         ###################### plot 3D visulaization
-        # if self.use_maya:
-        #     self.ui.mayavi_widget.visualization.update_data(self.Cscan/500)
+        if self.use_maya:
+            self.ui.mayavi_widget.visualization.update_data(self.Cscan/500)
         if self.ui.Save.isChecked():
             if raw:
                 data = np.uint16(self.Cscan)
@@ -267,15 +279,15 @@ class DnSThread(QThread):
         if os.path.isfile(self.ui.Surf_DIR.text()):
             self.surfCurve = np.uint16(np.fromfile(self.ui.Surf_DIR.text(), dtype=np.uint16))
             if self.surfCurve.shape[0] != Xpixels:
-                self.surfCurve = np.zeros([Xpixels],dtype = np.uint16)
+                self.surfCurve = None
                 print('surface data not match FOV setting, using all zeros')
         else:
             print('surface data not found, using all zeros')
-            self.surfCurve = np.zeros([Xpixels],dtype = np.uint16)
+            self.surfCurve = None
         # plt.figure()
         # plt.plot(self.surfCurve)
         # plt.figure()
-        print('surfCurve shape:',self.surfCurve.shape)
+        
         # load darf field for shading correction
         if not self.ui.DSing.isChecked():
             if os.path.isfile(self.ui.DarkField_DIR.text()):
@@ -284,7 +296,7 @@ class DnSThread(QThread):
                 self.darkField = self.darkField.transpose()
             else:
                 print('dark field data not found, using all zeros')
-                self.darkField = np.zeros([Ypixels, Xpixels],dtype = np.float32)
+                self.darkField = None
             # load flat field for shading correction
             if os.path.isfile(self.ui.FlatField_DIR.text()):
                 self.flatField = np.float32(np.fromfile(self.ui.FlatField_DIR.text(), dtype=np.float32))
@@ -292,7 +304,7 @@ class DnSThread(QThread):
                 self.flatField = self.flatField.transpose()
             else:
                 print('flat data not found, using all ones')
-                self.flatField = np.ones([Ypixels, Xpixels],dtype = np.float32)
+                self.flatField = None
             
             self.first_tile = True
             #######################################
@@ -345,24 +357,36 @@ class DnSThread(QThread):
         if not raw:
             # start0=time.time()
             #######################################
-            # CPU do surface flatterning, this takes about 1 sec
-            data_flatten = np.zeros(data.shape, dtype = np.float32)
-            for xx in range(Xpixels):
-                    data_flatten[:,xx,0:data.shape[2]-self.surfCurve[xx]] = data[:,xx,self.surfCurve[xx]:]
+            if np.any(self.surfCurve):
+                # CPU do surface flatterning, this takes about 1 sec
+                data_flatten = np.zeros(data.shape, dtype = np.float32)
+                for xx in range(Xpixels):
+                        data_flatten[:,xx,0:data.shape[2]-self.surfCurve[xx]] = data[:,xx,self.surfCurve[xx]:]
+            else:
+                data_flatten = data
             # print('flatten surface take', time.time()-start0)
+            
             tmp = self.ui.SaveZstart.value()
-            start_pixel =  np.uint16(tmp if tmp>-0.5 else self.ui.SurfHeight.value()+4) ################# focus set to start from 7 pixels below surface
+            start_pixel =  np.uint16(tmp if tmp>-0.5 else self.ui.SurfHeight.value()+4) ################# focus set to start from 4 pixels below surface
             thickness = self.ui.SaveZrange.value()
             if not self.ui.DSing.isChecked():
                 # calculate data_focus and data_ds
                 data_focus = data_flatten[:,:,start_pixel:start_pixel + thickness]
                 data_ds = data_flatten.reshape([Ypixels//self.zmax_scale, self.zmax_scale, Xpixels//self.zmax_scale, self.zmax_scale, Zpixels]).mean(-2).mean(1) #################### zmax set to use 3x3 downsampling
                 data_ds2 = data_flatten.reshape([Ypixels//10, 10, Xpixels//10, 10, Zpixels]).mean(-2).mean(1) #################### surfProfile set to use 10x10 downsampling
+                ###############################################################
+                # for odd strips, need to flip data in Y dimension and also the sequence
+                if np.mod(fileY,2)==1:
+                    data_ds = np.flip(data_ds,0)
+                    data_focus = np.flip(data_focus,0)
+                    data_ds2 = np.flip(data_ds2,0)
+                self.Cscan = data_ds
                 ########################################
                 # calculate AIP
                 AIP = np.mean(data_focus,2)
                 # shading correction
-                AIP = (AIP-self.darkField)/self.flatField
+                if np.any(self.darkField) and np.any(self.flatField):
+                    AIP = (AIP-self.darkField)/self.flatField
                 # calculate surface
                 # start0 = time.time()
                 surfProfile = np.zeros([data_ds2.shape[0], data_ds2.shape[1]])
@@ -370,20 +394,12 @@ class DnSThread(QThread):
                     for xx in range(data_ds2.shape[1]):
                         surfProfile[yy,xx] = findchangept(data_ds2[yy,xx,:],2)
                 # print('calculate surface', time.time()-start0)
+                
                 # calculate  zmax
                 if self.ui.MUS.isChecked():
                     kernel = np.ones([1,1,5])/5 # kernel size hard coded to be 5 in z dimension
                     zmax = self.ui.DepthRange.value()-np.argmax(ndimage.convolve(data_ds,kernel,mode = 'reflect'),2)
-                ###############################################################
-                # for odd strips, need to flip data in Y dimension and also the sequence
-                if np.mod(fileY,2)==1:
-                    AIP = np.flip(AIP,0)
-                    surfProfile = np.flip(surfProfile,0)
-                    if self.ui.MUS.isChecked():
-                        zmax = np.flip(zmax,0)
-                    data_ds = np.flip(data_ds,0)
-                    data_focus = np.flip(data_focus,0)
-                self.Cscan = data_ds
+                
                 ######################################### save processed result
                 # check if this is the first tile
                 if self.first_tile:
@@ -427,8 +443,8 @@ class DnSThread(QThread):
             
             ###################### ############
             # # plot 3D visulaization
-            # if self.use_maya:
-            #     self.ui.mayavi_widget.visualization.update_data(data_ds/500)
+            if self.use_maya:
+                self.ui.mayavi_widget.visualization.update_data(data_ds/500)
             ###########################################
             # squeeze AIP into surface image
             scale = self.ui.scale.value()
