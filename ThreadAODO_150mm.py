@@ -333,7 +333,7 @@ class AODOThread(QThread):
                 AOtask.ao_channels.add_ao_voltage_chan(physical_channel=self.GalvoAO, \
                                                       min_val=- 10.0, max_val=10.0, \
                                                       units=ni.constants.VoltageUnits.VOLTS)
-                AOtask.write(self.GalvoBias, auto_start = True)
+                AOtask.write(self.ui.GalvoBias.value(), auto_start = True)
                 AOtask.wait_until_done(timeout = 1)
                 AOtask.stop()
 

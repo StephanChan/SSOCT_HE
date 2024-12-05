@@ -87,7 +87,7 @@ class DnSThread(QThread):
                     # self.ui.PrintOut.append(message)
                     self.log.write(message)
                 if time.time()-start>4:
-                    print('time for DnS:',time.time()-start)
+                    print('time for DnS:',round(time.time()-start,3))
             except Exception as error:
                 message = "\nAn error occurred:"+" skip the display and save action\n"
                 print(message)
@@ -355,7 +355,7 @@ class DnSThread(QThread):
             
         ########################################################
         if not raw:
-            # start0=time.time()
+            start0=time.time()
             #######################################
             if np.any(self.surfCurve):
                 # CPU do surface flatterning, this takes about 1 sec
@@ -364,7 +364,8 @@ class DnSThread(QThread):
                         data_flatten[:,xx,0:data.shape[2]-self.surfCurve[xx]] = data[:,xx,self.surfCurve[xx]:]
             else:
                 data_flatten = data
-            # print('flatten surface take', time.time()-start0)
+            if time.time()-start0 > 2:
+                print('flatten surface take', round(time.time()-start0,3))
             
             tmp = self.ui.SaveZstart.value()
             start_pixel =  np.uint16(tmp if tmp>-0.5 else self.ui.SurfHeight.value()+4) ################# focus set to start from 4 pixels below surface
@@ -373,14 +374,17 @@ class DnSThread(QThread):
                 # calculate data_focus and data_ds
                 data_focus = data_flatten[:,:,start_pixel:start_pixel + thickness]
                 data_ds = data_flatten.reshape([Ypixels//self.zmax_scale, self.zmax_scale, Xpixels//self.zmax_scale, self.zmax_scale, Zpixels]).mean(-2).mean(1) #################### zmax set to use 3x3 downsampling
-                data_ds2 = data_flatten.reshape([Ypixels//10, 10, Xpixels//10, 10, Zpixels]).mean(-2).mean(1) #################### surfProfile set to use 10x10 downsampling
+                data_ds2 = data_flatten.reshape([Ypixels//20, 20, Xpixels//20, 20, Zpixels]).mean(-2).mean(1) #################### surfProfile set to use 10x10 downsampling
                 ###############################################################
                 # for odd strips, need to flip data in Y dimension and also the sequence
+                start0 = time.time()
                 if np.mod(fileY,2)==1:
                     data_ds = np.flip(data_ds,0)
                     data_focus = np.flip(data_focus,0)
                     data_ds2 = np.flip(data_ds2,0)
                 self.Cscan = data_ds
+                if time.time()-start0 > 2:
+                    print('time to flip data: ', round(time.time()-start0,3))
                 ########################################
                 # calculate AIP
                 AIP = np.mean(data_focus,2)
@@ -388,12 +392,13 @@ class DnSThread(QThread):
                 if np.any(self.darkField) and np.any(self.flatField):
                     AIP = (AIP-self.darkField)/self.flatField
                 # calculate surface
-                # start0 = time.time()
+                start0 = time.time()
                 surfProfile = np.zeros([data_ds2.shape[0], data_ds2.shape[1]])
                 for yy in range(data_ds2.shape[0]):
                     for xx in range(data_ds2.shape[1]):
                         surfProfile[yy,xx] = findchangept(data_ds2[yy,xx,:],2)
-                # print('calculate surface', time.time()-start0)
+                if time.time()-start0 > 2:
+                    print('calculate surface', round(time.time()-start0,3))
                 
                 # calculate  zmax
                 if self.ui.MUS.isChecked():
