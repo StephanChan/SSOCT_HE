@@ -16,9 +16,6 @@ from Actions import *
 from Generaic_functions import *
 import traceback
 
-# if using mayavi for 3D display
-Display_3D = False
-
 try:
     from traits.api import HasTraits, Instance, on_trait_change
     from traitsui.api import View, Item
@@ -121,7 +118,7 @@ class MainWindow(QMainWindow):
         self.ui.ZPosition.setMaximum(self.ui.Zmax.value())
         
     def addMaya(self):
-        if (maya_installed and Display_3D):
+        if (maya_installed and self.use_maya):
             self.ui.mayavi_widget = MayaviQWidget()
             self.ui.mayavi_widget.setMinimumSize(qc.QSize(100, 100))
             self.ui.mayavi_widget.setMaximumSize(qc.QSize(1000, 1000))
@@ -346,8 +343,8 @@ class MainWindow(QMainWindow):
         #print(self.Xwaveform)
         # current_message = self.ui.statusbar.currentMessage()
         # self.ui.statusbar.showMessage(current_message+status)
-        if len(AOwaveform) > 0:
-            pixmap = LinePlot(AOwaveform, DOwaveform, np.min([AOwaveform, DOwaveform]),np.max([AOwaveform, DOwaveform]))
+        if np.any(AOwaveform):
+            pixmap = LinePlot(AOwaveform, DOwaveform, np.min(AOwaveform),np.max(AOwaveform))
             # clear content on the waveformLabel
             self.ui.XwaveformLabel.clear()
             # update iamge on the waveformLabel

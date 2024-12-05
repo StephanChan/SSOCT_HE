@@ -10,21 +10,7 @@ Created on Mon Dec 11 19:41:46 2023
 # StepSize in unit of um
 # bias in unit of mm
 
-# 25000 steps per rotation
-global STEPS
-STEPS = 25000
-# 2mm per rotation
-global DISTANCE
-DISTANCE = 2
-# scan axis for Cscan is Y axis
-global CSCAN_AXIS
-CSCAN_AXIS = pow(2, 1)
-# if using Alazar digitizer, DO board outputs an enable trigger to the AUXIO of digitizer for synchronization
-global ATSenable
-ATSenable = 3
 import numpy as np
-global Galvo_bias
-Galvo_bias = 3 # V
 import os
 
 class LOG():
@@ -49,7 +35,7 @@ class LOG():
         # return 0
 
 
-def GenGalvoWave(StepSize = 1, Steps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma5X', preclocks = 50, postclocks = 200):
+def GenGalvoWave(StepSize = 1, Steps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma5X', preclocks = 50, postclocks = 200, Galvo_bias = 3):
     
     # total number of steps is the product of steps and aline average number
     # use different angle to mm ratio for different objective
@@ -92,24 +78,7 @@ def GenGalvoWave(StepSize = 1, Steps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma
     status = 'waveform updated'
     return waveform, status
 
-def GenStageWave(one_cycle_samples, Aline_frq, stageSpeed):
-    # generate DO waveforms for moving stage
-    if stageSpeed > 0.00001:
-            time = one_cycle_samples/Aline_frq # time for one bline
-            distance = time*stageSpeed # mm to move
-            print(distance,'mm')
-            steps = distance / DISTANCE * STEPS # how many steps needed to reach that distance
-            stride = np.uint16(one_cycle_samples/steps)
-            print(steps, stride)
-            stagewaveform = np.zeros(one_cycle_samples)
-            for ii in range(0,one_cycle_samples,stride):
-                stagewaveform[ii] = 1
-            return stagewaveform
-    else:
-        stagewaveform = np.zeros(one_cycle_samples)
-        return stagewaveform
-
-def GenStageWave_ramp(distance, AlineTriggers):
+def GenStageWave_ramp(distance, AlineTriggers, DISTANCE, STEPS):
     # distance: stage movement per Cscan , mm/s
     # edges: Aline triggers
     # how many motor steps to reach that distance
@@ -163,13 +132,13 @@ def GenStageWave_ramp(distance, AlineTriggers):
     DOwaveform = np.append(ramp_up_waveform,stagewaveform)
     DOwaveform = np.append(DOwaveform,ramp_down_waveform)
     if len(DOwaveform) < AlineTriggers:
-        DOwaveform = np.append(DOwaveform,np.zeros(AlineTriggers-len(DOwaveform),dtype = np.int16))
+        DOwaveform = np.append(DOwaveform,np.zeros(AlineTriggers-len(DOwaveform),dtype = np.uint16))
     elif len(DOwaveform) > AlineTriggers:
         DOwaveform = DOwaveform[0:AlineTriggers]
     return DOwaveform
 
 def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma5X',\
-            preclocks = 50, postclocks = 200, YStepSize = 1, YSteps = 200, BVG = 1):
+            preclocks = 50, postclocks = 200, YStepSize = 1, YSteps = 200, BVG = 1, CSCAN_AXIS = pow(2, 1), Galvo_bias = 3, DISTANCE = 2, STEPS = 25000):
     # AVG: Aline average
     # BVG: Bline average
     # bias: Galvo bias voltage
@@ -182,67 +151,34 @@ def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, A
         # RptAline is for checking Aline profile, we don't need to capture each Aline, only display 30 Alines per second\
         # if one wants to capture each Aline, they can set X and Y step size to be 0 and capture Cscan instead
         # 33 frames per second, how many samples for each frame
-        one_cycle_samples = XSteps * AVG + 2 * preclocks + postclocks
         # trigger enbale waveform generation
-        DOwaveform = np.append(np.zeros(preclocks), pow(2,ATSenable)*np.ones(XSteps * AVG))
-        DOwaveform = np.append(DOwaveform, np.zeros(preclocks + postclocks))
-        CscanAO = np.ones(BVG*len(DOwaveform)) * Galvo_bias
-        CscanDO = np.zeros(BVG*len(DOwaveform))
-        for ii in range(BVG):
-            CscanDO[ii*len(DOwaveform):(ii+1)*len(DOwaveform)] = DOwaveform
+        CscanAO = np.ones(BVG*(preclocks + XSteps * AVG + preclocks + postclocks)) * Galvo_bias
         status = 'waveform updated'
-        return np.uint32(CscanDO), CscanAO, status
+        return None, CscanAO, status
     
     elif mode == 'RptBline' or mode == 'SingleBline':
         # RptBline is for checking Bline profile, only display 30 Blines per second
         # if one wants to capture each Bline, they can set Y stepsize to be 0 and capture Cscan instead
         # generate AO waveform for Galvo control
-        AOwaveform, status = GenGalvoWave(XStepSize, XSteps, AVG, bias, obj, preclocks, postclocks)
-        
-        # total number of Alines
-        one_cycle_samples = XSteps*AVG
-        # generate trigger waveforms
-        DOwaveform = np.append(np.zeros(preclocks), pow(2,ATSenable)*np.ones(one_cycle_samples))
-        DOwaveform = np.append(DOwaveform, np.zeros(preclocks+postclocks))
-        CscanAO = np.zeros(BVG*len(AOwaveform))
-        CscanDO = np.zeros(BVG*len(DOwaveform))
-        for ii in range(BVG):
-            CscanAO[ii*len(AOwaveform):(ii+1)*len(AOwaveform)] = AOwaveform
-            CscanDO[ii*len(AOwaveform):(ii+1)*len(AOwaveform)] = DOwaveform
+        AOwaveform, status = GenGalvoWave(XStepSize, XSteps, AVG, bias, obj, preclocks, postclocks, Galvo_bias)
+        CscanAO = np.tile(AOwaveform, BVG)
         status = 'waveform updated'
-        return np.uint32(CscanDO), CscanAO, status
+        return None, CscanAO, status
     
     
     elif mode in ['SingleCscan','Mosaic','Mosaic+Cut']:
         # RptCscan is for acquiring Cscan at the same location repeatitively
         # generate AO waveform for Galvo control for one Bline
-        AOwaveform, status = GenGalvoWave(XStepSize, XSteps, AVG, bias, obj, preclocks, postclocks)
-        CscanAO = np.zeros(YSteps*BVG*len(AOwaveform))
-        for ii in range(YSteps*BVG):
-            CscanAO[ii*len(AOwaveform):(ii+1)*len(AOwaveform)] = AOwaveform
-        # total number of Alines per Bline
-        one_cycle_samples = XSteps * AVG
-        # generate trigger waveforms
-        DOwaveform = np.append(np.zeros(preclocks), pow(2,ATSenable)*np.zeros(one_cycle_samples))
-        DOwaveform = np.append(DOwaveform, np.zeros(preclocks+postclocks))
-        
-        CscanDO = np.zeros(YSteps*BVG*len(DOwaveform))
-        for ii in range(YSteps*BVG):
-            CscanDO[ii*len(DOwaveform):(ii+1)*len(DOwaveform)] = DOwaveform
+        AOwaveform, status = GenGalvoWave(XStepSize, XSteps, AVG, bias, obj, preclocks, postclocks, Galvo_bias)
+        CscanAO = np.tile(AOwaveform, YSteps*BVG)
             
-        stagewaveform = GenStageWave_ramp(YSteps * YStepSize/1000, (XSteps*AVG + 2 * preclocks + postclocks)* YSteps * BVG)
+        stagewave = GenStageWave_ramp(YSteps * YStepSize/1000, (XSteps*AVG + 2 * preclocks + postclocks)* YSteps * BVG, DISTANCE, STEPS)
         # append preclocks and postclocks
-        stagewaveform = CSCAN_AXIS*stagewaveform
+        stagewave = CSCAN_AXIS*stagewave
         # print('distance per Cscan: ',np.sum(stagewaveform)/STEPS*DISTANCE*1000/pow(2,CSCAN_AXIS),'um')
-        # add stagewaveform with trigger enable waveform for DOwaveform
-        if len(stagewaveform) > len(CscanDO):
-            CscanDO = np.append(CscanDO, np.zeros(len(stagewaveform)-len(CscanDO), dtype = np.uint32))
-            CscanAO = np.append(CscanAO, CscanAO[-1]*np.ones(len(stagewaveform)-len(CscanAO), dtype = np.uint32))
-        CscanDO = CscanDO + stagewaveform
-        # repeat the waveform for whole Cscan
         
         status = 'waveform updated'
-        return np.uint32(CscanDO), CscanAO, status
+        return np.uint32(stagewave), CscanAO, status
     
     else:
         status = 'invalid task type! Abort action'
@@ -337,7 +273,7 @@ def LinePlot(AOwaveform, DOwaveform = None, m=2, M=4):
     # plot the new waveform
     plt.plot(range(len(AOwaveform)),AOwaveform,linewidth=2)
     if np.any(DOwaveform):
-        plt.plot(range(len(DOwaveform)),(DOwaveform>>3)*np.max(AOwaveform),linewidth=2)
+        plt.plot(range(len(DOwaveform)),DOwaveform,linewidth=2)
     # plt.ylim(np.min(AOwaveform)-0.2,np.max(AOwaveform)+0.2)
     # plt.ylim([m,M])
     plt.xticks(fontsize=15)

@@ -6,21 +6,20 @@ Created on Wed Jan 24 11:10:17 2024
 """
 
 #################################################################
-# THIS KING THREAD IS USING ART8912, WHICH IS MASTER AND the AODO board WILL BE SLAVE
 from PyQt5.QtCore import  QThread
-from PyQt5.QtWidgets import QDialog
 import time
 import numpy as np
 from Generaic_functions import *
-from Actions import DnSAction, AODOAction, GPUAction, DAction, DbackAction
+from Actions import DnSAction, AODOAction, GPUAction, DAction
 import traceback
 import os
 import matplotlib.pyplot as plt
 from scipy.signal import hilbert
 import datetime
 
+# axial pixel size, measure with a microscope glass slide
 global ZPIXELSIZE
-ZPIXELSIZE = 4.4 # um, axial pixel size
+ZPIXELSIZE = 4.4 # unit: um
 
 class WeaverThread(QThread):
     def __init__(self):
@@ -29,7 +28,6 @@ class WeaverThread(QThread):
         self.exit_message = 'ACQ thread successfully exited'
         
     def run(self):
-        # self.InitMemory()
         self.QueueOut()
         
     def QueueOut(self):
@@ -42,21 +40,13 @@ class WeaverThread(QThread):
                     self.ui.statusbar.showMessage(message)
                     # self.ui.PrintOut.append(message)
                     self.log.write(message)
-                    self.ui.RunButton.setChecked(False)
-                    self.ui.RunButton.setText('Go')
-                    self.ui.PauseButton.setChecked(False)
-                    self.ui.PauseButton.setText('Pause')
                     
                 elif self.item.action in ['SingleBline', 'SingleAline', 'SingleCscan']:
                     message = self.SingleScan(self.item.action)
                     self.ui.statusbar.showMessage(message)
                     # self.ui.PrintOut.append(message)
                     self.log.write(message)
-                    self.ui.RunButton.setChecked(False)
-                    self.ui.RunButton.setText('Go')
-                    self.ui.PauseButton.setChecked(False)
-                    self.ui.PauseButton.setText('Pause')
-                    
+
                 elif self.item.action == 'Mosaic':
                     # make directories
                     if not os.path.exists(self.ui.DIR.toPlainText()+'/aip'):
@@ -67,34 +57,15 @@ class WeaverThread(QThread):
                         os.mkdir(self.ui.DIR.toPlainText()+'/fitting')
                     # do fast pre-scan to identify tissue area
                     interrupt, status= self.PreMosaic()
-                    if interrupt == 'Stop' :#or np.abs(self.ui.ZIncrease.value()) > 0.1):
-                        status = "action aborted by user..."#" or or focusing gives large movement:"+ str(self.ui.ZIncrease.value())
-                        # if not (stopped by user or focusing gives larger than threshold z movement)
-                        # if np.abs(self.ui.ZIncrease.value()) > 0.04:
-                        #     # if focusing gives larger than threshold2 z movement, redo pre-scan
-                        #     print('redo PreMosaic')
-                        #     delta_z = self.ui.ZIncrease.value()
-                            # interrupt = self.PreMosaic(self.ui.XStartHeight.value()+ delta_z)
-                            # if not (interrupt == 'Stop' or np.abs(self.ui.ZIncrease.value()) > 0.1):
-                            #     # Mosaic will move z to XstartHeight.value()+delta_z+ZIncrease.value()
-                            #     interrupt, status = self.Mosaic(self.ui.XStartHeight.value()+delta_z)
-                            # else:
-                                # status = "action aborted by user... or focusing gives large movement:"+ str(self.ui.ZIncrease.value())
-                        # else:
-                            # Mosaic will move z to XstartHeight.value()+ZIncrease.value()
+                    if interrupt == 'Stop' :
+                        status = "action aborted by user..."
                     elif interrupt == 'Error':
                         pass
                     else:
                         interrupt, status = self.Mosaic()
-                    # reset RUN button
-                    self.ui.RunButton.setChecked(False)
-                    self.ui.RunButton.setText('Go')
-                    self.ui.PauseButton.setChecked(False)
-                    self.ui.PauseButton.setText('Pause')
-                    self.ui.statusbar.showMessage(status)
                     # self.ui.PrintOut.append(status)
                     self.log.write(status)
-                    
+
                 elif self.item.action == 'Mosaic+Cut':
                     # make directories
                     if not os.path.exists(self.ui.DIR.toPlainText()+'/aip'):
@@ -103,6 +74,7 @@ class WeaverThread(QThread):
                         os.mkdir(self.ui.DIR.toPlainText()+'/surf')
                     if not os.path.exists(self.ui.DIR.toPlainText()+'/fitting'):
                         os.mkdir(self.ui.DIR.toPlainText()+'/fitting')
+                    # disable partial vibratome settings to avoid parameter change during experiment
                     self.ui.SMPthickness.setEnabled(False)
                     self.ui.SliceZDepth.setEnabled(False)
                     # self.ui.ImageZDepth.setEnabled(False)
@@ -111,24 +83,18 @@ class WeaverThread(QThread):
                     self.ui.statusbar.showMessage(message)
                     # self.ui.PrintOut.append(message)
                     self.log.write(message)
+                    # re-enable settings
                     self.ui.SMPthickness.setEnabled(True)
                     self.ui.SliceZDepth.setEnabled(True)
                     # self.ui.ImageZDepth.setEnabled(True)
                     self.ui.SMPthickness.setEnabled(True)
-                    # reset RUN button
-                    self.ui.RunButton.setChecked(False)
-                    self.ui.RunButton.setText('Go')
-                    self.ui.PauseButton.setChecked(False)
-                    self.ui.PauseButton.setText('Pause')
+
                 elif self.item.action == 'SingleCut':
                     message = self.SingleCut(self.ui.SliceZStart.value())
                     self.ui.statusbar.showMessage(message)
                     # self.ui.PrintOut.append(message)
                     self.log.write(message)
-                    self.ui.RunButton.setChecked(False)
-                    self.ui.RunButton.setText('Go')
-                    self.ui.PauseButton.setChecked(False)
-                    self.ui.PauseButton.setText('Pause')
+
                 elif self.item.action == 'RptCut':
                     self.ui.SMPthickness.setEnabled(False)
                     self.ui.SliceZDepth.setEnabled(False)
@@ -138,76 +104,96 @@ class WeaverThread(QThread):
                     self.ui.statusbar.showMessage(message)
                     # self.ui.PrintOut.append(message)
                     self.log.write(message)
-                    # reset RUN button
-                    self.ui.RunButton.setChecked(False)
-                    self.ui.RunButton.setText('Go')
-                    self.ui.PauseButton.setChecked(False)
-                    self.ui.PauseButton.setText('Pause')
                     self.ui.SMPthickness.setEnabled(True)
                     self.ui.SliceZDepth.setEnabled(True)
                     # self.ui.ImageZDepth.setEnabled(True)
                     self.ui.SMPthickness.setEnabled(True)
                     # self.ui.statusbar.showMessage(status)
+                    
                 elif self.item.action == 'Gotozero':
                     # message = self.Gotozero()
                     # self.ui.statusbar.showMessage(message)
                     # # self.ui.PrintOut.append(message)
                     # self.log.write(message)
                     pass
+                
                 elif self.item.action == 'ZstageRepeatibility':
                     message = self.ZstageRepeatibility()
                     self.ui.statusbar.showMessage(message)
                     # self.ui.PrintOut.append(message)
                     self.log.write(message)
+                    
                 elif self.item.action == 'ZstageRepeatibility2':
                     # message = self.ZstageRepeatibility2()
                     # self.ui.statusbar.showMessage(message)
                     # # self.ui.PrintOut.append(message)
                     # self.log.write(message)
                     pass
+                
                 elif self.item.action == 'dispersion_compensation':
                     message = self.dispersion_compensation()
                     self.ui.statusbar.showMessage(message)
                     # self.ui.PrintOut.append(message)
                     self.log.write(message)
+                    
                 elif self.item.action == 'get_background':
                     message = self.get_background()
                     self.ui.statusbar.showMessage(message)
                     # self.ui.PrintOut.append(message)
                     self.log.write(message)
+                    
                 elif self.item.action == 'get_surface':
                     message = self.get_surfCurve()
                     self.ui.statusbar.showMessage(message)
                     # self.ui.PrintOut.append(message)
                     self.log.write(message)
+                    
                 else:
                     message = 'Weaver thread is doing something invalid: '+self.item.action
                     self.ui.statusbar.showMessage(message)
                     # self.ui.PrintOut.append(message)
                     self.log.write(message)
+
             except Exception as error:
                 message = "An error occurred,"+"skip the acquisition action\n"
                 self.ui.statusbar.showMessage(message)
                 # self.ui.PrintOut.append(message)
                 self.log.write(message)
                 print(traceback.format_exc())
+            # reset RUN button
+            self.ui.RunButton.setChecked(False)
+            self.ui.RunButton.setText('Go')
+            self.ui.PauseButton.setChecked(False)
+            self.ui.PauseButton.setText('Pause')
+            # wait for next command
             self.item = self.queue.get()
-            
+        # exit weaver thread
         self.ui.statusbar.showMessage(self.exit_message)
             
     def InitMemory(self):
         #################################################################
-        # init global memory
-        if self.ui.Benable_2.currentText() == 'Enable':
-            nchannels = 2
-        else:
-            nchannels = 1
+        # get number samplers per Aline
+        if self.Digitizer == 'Alazar':
+            samples = self.ui.PreSamples.value()+self.ui.PostSamples.value()
+        elif self.Digitizer == 'ART':
+            samples = self.ui.PostSamples_2.value()
+        # get channel number
+        if self.Digitizer == 'ART':
+            if self.ui.Benable_2.currentText() == 'Disable':
+                 nchannels = 1                                 
+            else:
+                nchannels = 2  
+        elif self.Digitizer == 'Alazar':
+            if self.ui.Aenable.currentText() == 'Enable':
+                if self.ui.Benable.currentText() == 'Enable':
+                    nchannels = 2
+                else:
+                    nchannels = 1
+            elif self.ui.Benable.currentText() == 'Enable':
+                nchannels = 1
             
         AlinesPerBline = self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2+self.ui.PostClock.value()
-        # from total Alines remove Galvo fly-backs. This is (Alines per bline * Aline rpt + 100) * total samples * channels
-        # usefulLength = (self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2) * self.ui.PostSamples_2.value() * nchannels
-        # for ART8912, total data point per Bline is the following:
-        sumLength = self.ui.PostSamples_2.value() * AlinesPerBline * nchannels
+        sumLength = samples * AlinesPerBline * nchannels
         for ii in range(self.memoryCount):
              if self.ui.ACQMode.currentText() in ['RptBline', 'RptAline','SingleBline', 'SingleAline']:
                  self.Memory[ii]=np.zeros([self.ui.BlineAVG.value(), sumLength], dtype = np.uint16)
@@ -254,7 +240,6 @@ class WeaverThread(QThread):
                 return mode + " got all zeros..."
             an_action = DnSAction(mode, self.data, raw=True) # data in Memory[memoryLoc]
             self.DnSQueue.put(an_action)
-
         else:
             # In other modes, do FFT first
             an_action = GPUAction(self.ui.FFTDevice.currentText(), mode, memoryLoc)
@@ -275,14 +260,14 @@ class WeaverThread(QThread):
         data_backs = 0 # count number of data backs
         ######################################################### repeat acquisition until Stop button is clicked
         while interrupt != 'Stop':
-            # start AODO for continuous measurement
+            # start AODO for one measurement
             an_action = AODOAction('StartTask')
             self.AODOQueue.put(an_action)
             self.StagebackQueue.get()
             an_action = AODOAction('StopTask')
             self.AODOQueue.put(an_action)
             
-            # start digitizer for continuous acuquqisition
+            # start digitizer for one acuquqisition
             an_action = DAction('StartAcquire')
             self.DQueue.put(an_action)
             ######################################### collect data
@@ -301,14 +286,14 @@ class WeaverThread(QThread):
                 # In other modes, do FFT first
                 an_action = GPUAction(self.ui.FFTDevice.currentText(), mode, memoryLoc)
                 self.GPUQueue.put(an_action)
-            ######################################## check if Pause button is clicked
+            ######################################## check if Pause or Stop button is clicked
             interrupt = self.check_interrupt()
         
         # close AODO
         an_action = AODOAction('CloseTask')
         self.AODOQueue.put(an_action)
         self.StagebackQueue.get() # wait for AODO CloseTask
-        # don't need to close ART8912 board
+        # digitizer will close automatically
         message = str(data_backs)+ ' data received by weaver'
         # self.ui.PrintOut.append(message)
         self.log.write(message)
@@ -488,20 +473,25 @@ class WeaverThread(QThread):
            # print(interrupt)
            ##################################### if Pause button is clicked
            if interrupt == 'Pause':
-               # self.ui.PauseButton.setChecked(True)
                # wait until unpause button or stop button is clicked
                interrupt = self.PauseQueue.get()  # never time out
                # print('queue output:',interrupt)
                # if unpause button is clicked        
                if interrupt == 'Resume':
-                   # self.ui.PauseButton.setChecked(False)
                    interrupt = None
         except:
             return interrupt
         return interrupt
         
     def PreMosaic(self):
-        self.Yds = 30 # accellaration scale for fast pre-scan
+        ######################### setting accellarated scan configs
+        Yds = 30 # Y dimension scan speed accellaration scale for fast pre-scan
+        while self.ui.Ysteps.value()%Yds:
+            Yds -= 1
+        message = '\n Y dimension scan speed accellaration scale for fast pre-scan is'+str(Yds)+'\n'
+        print(message)
+        self.log.write(message)
+        ##################
         # clear display windows
         an_action = DnSAction('Clear')
         self.DnSQueue.put(an_action)
@@ -518,38 +508,37 @@ class WeaverThread(QThread):
         FFTDevice = self.ui.FFTDevice.currentText()
         scale = self.ui.scale.value()
         # Zpos = initHeight 
-        ############
-        while Ysteps%self.Yds:
-            self.Yds -= 1
-        message = '\n fast pre-scan Yds is'+str(self.Yds)+'\n'
-        print(message)
-        self.log.write(message)
+
         # set downsampled FOV
         self.ui.Xsteps.setValue(Xsteps)
-        self.ui.Ysteps.setValue(Ysteps//self.Yds)
+        self.ui.Ysteps.setValue(Ysteps//Yds)
         self.ui.XStepSize.setValue(XStepSize)
-        self.ui.YStepSize.setValue(YStepSize*self.Yds)
+        self.ui.YStepSize.setValue(YStepSize*Yds)
         self.ui.AlineAVG.setValue(1)
         self.ui.BlineAVG.setValue(1)
         self.ui.Save.setChecked(False)
         self.ui.FFTDevice.setCurrentText('GPU')
-        self.ui.scale.setValue(5)
-        ############## adjust scale
-        while Xsteps%self.ui.scale.value() or (Ysteps//self.Yds)%self.ui.scale.value():
-            self.ui.scale.setValue(self.ui.scale.value()-1)
-        message = '\n fast pre-scan scale is'+str(self.ui.scale.value())+'\n'
+        ############## adjust mosaic display scale
+        scale_start = 5
+        while Xsteps%scale_start or (Ysteps//Yds)%scale_start:
+            scale_start -= 1
+        self.ui.scale.setValue(scale_start)
+
+        message = '\n fast pre-scan mosaic display scale is'+str(self.ui.scale.value())+'\n'
         print(message)
         self.log.write(message)
+        
+        
         self.InitMemory()
-        # load surface profile for high res imaging
+        # load surface profile
         if os.path.isfile(self.ui.Surf_DIR.text()):
             self.surfCurve = np.uint16(np.fromfile(self.ui.Surf_DIR.text(), dtype=np.uint16))
             if self.surfCurve.shape[0] != Xsteps:
-                self.surfCurve = np.zeros([Xsteps],dtype = np.uint16)
+                self.surfCurve = None
                 print('surface data not match FOV setting, using all zeros')
         else:
             print('surface data not found, using all zeros')
-            self.surfCurve = np.zeros([Xsteps],dtype = np.uint16)
+            self.surfCurve = None
 
         # configure digitizer for low res acquisition
         an_action = DAction('ConfigureBoard')
@@ -726,17 +715,20 @@ class WeaverThread(QThread):
         # remove galvo flayback data
         bscan = bscan[self.ui.PreClock.value():self.ui.PreClock.value()+self.ui.Xsteps.value()*self.ui.AlineAVG.value(),:]
         # flatten surface
-        bscan_flatten = np.zeros(bscan.shape, dtype = np.float32)
-        for xx in range(bscan_flatten.shape[0]):
+        if np.any(self.surfCurve):
+            bscan_flatten = np.zeros(bscan.shape, dtype = np.float32)
+            for xx in range(bscan_flatten.shape[0]):
                 bscan_flatten[xx,0:bscan.shape[1]-self.surfCurve[xx]] = bscan[xx,self.surfCurve[xx]:]
+            plt.figure()
+            plt.imshow(bscan_flatten)
+            plt.savefig('slice'+str(self.ui.CuSlice.value())+'surface.jpg')
+            plt.close()
+        else:
+            bscan_flatten = bscan
         # find tile surface
         ascan = bscan_flatten.mean(0)
         surfHeight = findchangept(ascan,1)
-        
-        plt.figure()
-        plt.imshow(bscan_flatten)
-        plt.savefig('slice'+str(self.ui.CuSlice.value())+'surface.jpg')
-        plt.close()
+
         ##########################################################
         self.ui.SurfHeight.setValue(surfHeight)
         message = 'tile surf is:'+str(surfHeight)
@@ -881,8 +873,7 @@ class WeaverThread(QThread):
                 #     delta_z = 0
             # else:
             #     delta_z = 0
-            if interrupt != 'Stop' and interrupt != 'Error':
-                interrupt, status = self.Mosaic()#self.ui.XStartHeight.value()+ii*self.ui.ImageZDepth.value()/1000.0 + delta_z)
+            interrupt, status = self.Mosaic()#self.ui.XStartHeight.value()+ii*self.ui.ImageZDepth.value()/1000.0 + delta_z)
             if interrupt == 'Stop':
                 return 'user stopped acquisition...'
             elif interrupt == 'Error':

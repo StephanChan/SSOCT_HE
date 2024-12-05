@@ -5,12 +5,15 @@ Created on Sun Dec 10 20:14:40 2023
 
 @author: Shuaibin Chang
 """
-
-# using QThread of PYQT to do multithreading control of acquiring, processing and saving and synchonize numerous hardwares
-# multithreading is more appropriate only when not using PyQt, in other words, not GUI applications
-# subclass QThread and overwrite run() with a while loop to wait for Queued actions
-
-# using Queue to initiate hardware actions
+############################################################################################################ SOFTWARE STRUCTURE
+# using QThread of PYQT to do multi-threading control of data acquisition, scanning, data processing, display&saving
+# using Queue to organize threads
+# spectral domain data are stored in global memory, and memory location (pointers) are shared between threads using Queue
+############################################################################################################ HARDWARE STRUCTURE
+# using swept source Aline trigger as trigger for digitizer, clock source can be external k-clock or internal clock 
+# using swept source Aline trigger as clock for Galvo&stage board, using digitizer output trigger as trigger for Galvo&stage board
+# scanning regime: X galvo scan in X dimension, Y stage scan in Y dimension. 
+# Stages are controlled with a single DIRECTIONAL digital signal (non-buffered) and an array of STEP digital signal (buffered)
 
 # Queue functions:
 # maxsize – Number of items allowed in the queue.
@@ -22,10 +25,6 @@ Created on Sun Dec 10 20:14:40 2023
 # put_nowait(item) – Put an item into the queue without blocking. If no free slot is immediately available, raise QueueFull.
 # qsize() – Return the number of items in the queue.
 
-# '__main__' using the main thread, every hardware has its own thread
-# GUI input triggers in-queue action to the specified queue
-
-# between threads, using Queue to pass variables, variables gets duplicated in memory when passed as arguments
 import sys
 import numpy as np
 from queue import Queue
@@ -37,7 +36,7 @@ from mainWindow import MainWindow
 from Actions import *
 from Generaic_functions import LOG
 import time
-# init global memory for temporary storage of generated raw data
+# init global memory for temporary storage of generated raw data, make it more than 2 for parallel acquisition and processing
 global memoryCount
 memoryCount = 5
 
@@ -48,26 +47,34 @@ Memory = list(range(memoryCount))
 global Digitizer
 Digitizer = 'ART'
 
-# simulation switch
+# simulation switch, set it to be True for simulation
 global SIM
 SIM = False
-# 3D visualization switch
+# 3D visualization switch, set it to be True for mayavi 3D visulization (may need debug, haven't used it for a while)
 global use_maya
 use_maya = False
 
-AODOQueue = Queue(maxsize = 0)
-StagebackQueue = Queue(maxsize = 0)
+# Combine threads together for specific functionality, such as Mosaic scan, that is the so-called "weaver"
 WeaverQueue = Queue(maxsize = 0)
+# Queue for scanning thread
+AODOQueue = Queue(maxsize = 0)
+# Queue for scanning thread report back to weaver
+StagebackQueue = Queue(maxsize = 0)
+# Queue for display and saving thread
 DnSQueue = Queue(maxsize = 0)
-PauseQueue = Queue(maxsize = 0)
+# Queue for FFT thread
 GPUQueue = Queue(maxsize = 0)
-DQueue = Queue(maxsize = 0)
-DbackQueue = Queue(maxsize = 0)
+# Queue for FFT thread report back to weaver
 GPU2weaverQueue = Queue(maxsize = 0)
-    
+# Queue for digitizer thread
+DQueue = Queue(maxsize = 0)
+# Queue for digitizer report back to weaver
+DbackQueue = Queue(maxsize = 0)
+# Queue for pausing or stopping a task
+PauseQueue = Queue(maxsize = 0)  
 
         
-# wrap digitzer thread with queues and Memory
+# wrap digitzer thread with global queues and Memory and ui and log function
 if Digitizer == 'Alazar':
     # ATS9351 outputs 16bit data range
     AMPLIFICATION = 1*5
@@ -135,7 +142,8 @@ class GPUThread_2(GPUThread):
             self.log = log
             self.SIM = SIM
             self.AMPLIFICATION = AMPLIFICATION
-# wrap AODO thread with queue
+            
+# wrap Galvo&Stage control thread with queues
 from ThreadAODO_150mm import AODOThread
 class AODOThread_2(AODOThread):
     def __init__(self, ui, log):
@@ -147,7 +155,7 @@ class AODOThread_2(AODOThread):
         self.log = log
         self.SIM = SIM
 
-# wrap Display and save thread with queue        
+# wrap Display and save thread with queues   
 from ThreadDnS import DnSThread
 class DnSThread_2(DnSThread):
     def __init__(self, ui, log):
@@ -160,7 +168,6 @@ class DnSThread_2(DnSThread):
         
 
 # wrap MainWindow object with queues and threads   
-     
 class GUI(MainWindow):
     def __init__(self):
         super().__init__()
@@ -171,20 +178,20 @@ class GUI(MainWindow):
         self.ui.PauseButton.clicked.connect(self.Pause_task)
         self.ui.CenterGalvo.clicked.connect(self.CenterGalvo)
         
-        # change window length for FFT
+        # set window length for FFT
         self.ui.PostSamples.valueChanged.connect(self.update_Dispersion)
         self.ui.PreSamples.valueChanged.connect(self.update_Dispersion)
         self.ui.PostSamples_2.valueChanged.connect(self.update_Dispersion)
         self.ui.DelaySamples.valueChanged.connect(self.update_Dispersion)
         self.ui.TrimSamples.valueChanged.connect(self.update_Dispersion)
-        
+        # set stage boundary
         self.ui.XYmax.valueChanged.connect(self.Update_contrast_XY)
         self.ui.XYmin.valueChanged.connect(self.Update_contrast_XY)
         self.ui.XYZmax.valueChanged.connect(self.Update_contrast_XYZ)
         self.ui.XYZmin.valueChanged.connect(self.Update_contrast_XYZ)
         self.ui.Surfmax.valueChanged.connect(self.Update_contrast_Surf)
         self.ui.Surfmin.valueChanged.connect(self.Update_contrast_Surf)
-        
+        # connect buttons to functionalities
         self.ui.RedoDC.clicked.connect(self.redo_dispersion_compensation)
         self.ui.redoBG.clicked.connect(self.redo_background)
         self.ui.redoSurf.clicked.connect(self.redo_surface)
@@ -206,9 +213,10 @@ class GUI(MainWindow):
         self.ui.SliceDir.clicked.connect(self.SliceDirection)
         self.ui.VibEnabled.clicked.connect(self.Vibratome)
         self.ui.SliceN.valueChanged.connect(self.change_slice_number)
+        # Init all threads
         self.Init_allThreads()
         
-        # test buttons
+        # testing buttons
         self.ui.TestButten1.clicked.connect(self.TestButton1Func)
         self.ui.TestButten2.clicked.connect(self.TestButton2Func)
         self.ui.TestButten3.clicked.connect(self.TestButton3Func)
@@ -237,7 +245,6 @@ class GUI(MainWindow):
     def run_task(self):
         while PauseQueue.qsize()>0:
             PauseQueue.get()
-        # self.ui.PrintOut.append('Pause Queue inited...')
         # RptAline and SingleAline is for checking Aline profile, we don't need to capture each Aline, only acquire and display ~30 Alines per second
         
         # RptBline and SingleBline is for checking Bline profile, we don't need to capture each Bline, only acquire and display ~30 Blines per second.
@@ -247,9 +254,9 @@ class GUI(MainWindow):
         
         # Mosaic + Cut is for serial sectioning imaging
         
-        # SingleCut is for cut one slice only
+        # SingleCut is for cutting one slice only
         
-        # RptCut is for cut several slices as per defined in Vibratome panel
+        # RptCut is for cutting several slices as per defined in Vibratome panel
         
         if self.ui.ACQMode.currentText() in ['RptAline','RptBline','RptCscan','Mosaic','Mosaic+Cut','RptCut']:
             if self.ui.RunButton.isChecked():
@@ -268,17 +275,12 @@ class GUI(MainWindow):
                         self.ui.PauseButton.setChecked(False)
                         self.ui.PauseButton.setText('Pause')
                         print('user aborted due to stage position incorrect...')
-                        
                 else:
                     # for other actions, directly do the task
                     an_action = WeaverAction(self.ui.ACQMode.currentText())
                     WeaverQueue.put(an_action)
             else:
-                # time.sleep(0.5)
-                self.ui.RunButton.setText('Go')
                 self.Stop_task()
-                
-                # self.CenterGalvo()
         elif self.ui.ACQMode.currentText() in ['SingleAline','SingleBline','SingleCscan','SingleCut']:
             if self.ui.RunButton.isChecked():
                 self.ui.RunButton.setText('Stop')
@@ -452,11 +454,9 @@ class GUI(MainWindow):
         self.Stop_allThreads()
         settings = qc.QSettings("config.ini", qc.QSettings.IniFormat)
         self.SaveSettings()
-        if self.DnS_thread.isFinished:
-            event.accept()
-        else:
+        while not self.DnS_thread.isFinished:
             event.ignore()
-        
+        event.accept()
 
                 
 
