@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\帅斌\Documents\SSOCT_HE\SSOCT_HE\GUI.ui'
+# Form implementation generated from reading ui file 'D:\SSOCT_HE\SSOCT_HE-master\SSOCT_HE-master\GUI.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.10
 #
@@ -302,6 +302,7 @@ class Ui_MainWindow(object):
         self.Laser = QtWidgets.QComboBox(self.AcquireModeBox)
         self.Laser.setObjectName("Laser")
         self.Laser.addItem("")
+        self.Laser.addItem("")
         self.gridLayout_3.addWidget(self.Laser, 7, 1, 1, 1)
         self.Objective = QtWidgets.QComboBox(self.AcquireModeBox)
         self.Objective.setObjectName("Objective")
@@ -450,14 +451,14 @@ class Ui_MainWindow(object):
         self.gridLayout_4.addWidget(self.label_35, 2, 0, 1, 1)
         self.SaveZstart = QtWidgets.QSpinBox(self.DepthBox)
         self.SaveZstart.setMinimum(-1)
-        self.SaveZstart.setMaximum(1000)
+        self.SaveZstart.setMaximum(10000)
         self.SaveZstart.setObjectName("SaveZstart")
         self.gridLayout_4.addWidget(self.SaveZstart, 2, 1, 1, 1)
         self.label_36 = QtWidgets.QLabel(self.DepthBox)
         self.label_36.setObjectName("label_36")
         self.gridLayout_4.addWidget(self.label_36, 4, 0, 1, 1)
         self.SaveZrange = QtWidgets.QSpinBox(self.DepthBox)
-        self.SaveZrange.setMaximum(1000)
+        self.SaveZrange.setMaximum(10000)
         self.SaveZrange.setObjectName("SaveZrange")
         self.gridLayout_4.addWidget(self.SaveZrange, 4, 1, 1, 1)
         self.DepthRangeLabel = QtWidgets.QLabel(self.DepthBox)
@@ -1370,7 +1371,7 @@ class Ui_MainWindow(object):
         self.gridLayout_13.addWidget(self.TriggerType_2, 7, 1, 2, 1)
         self.PostSamples_2 = QtWidgets.QSpinBox(self.TriggerBox_2)
         self.PostSamples_2.setMaximum(10000)
-        self.PostSamples_2.setProperty("value", 2000)
+        self.PostSamples_2.setProperty("value", 2048)
         self.PostSamples_2.setObjectName("PostSamples_2")
         self.gridLayout_13.addWidget(self.PostSamples_2, 2, 3, 1, 1)
         self.SampleDelayLabel = QtWidgets.QLabel(self.TriggerBox_2)
@@ -1442,7 +1443,7 @@ class Ui_MainWindow(object):
         self.TrigDuraLable_2.setObjectName("TrigDuraLable_2")
         self.verticalLayout_14.addWidget(self.TrigDuraLable_2)
         self.TrigOutDura = QtWidgets.QSpinBox(self.AUXIObox_2)
-        self.TrigOutDura.setMaximum(5000)
+        self.TrigOutDura.setMaximum(50000)
         self.TrigOutDura.setProperty("value", 1000)
         self.TrigOutDura.setObjectName("TrigOutDura")
         self.verticalLayout_14.addWidget(self.TrigOutDura)
@@ -1751,7 +1752,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
         self.Tabs.setCurrentIndex(0)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(1)
         self.ChannelSetting.setCurrentIndex(0)
         self.TriggerSetting.setCurrentIndex(0)
         self.ChannelSetting_2.setCurrentIndex(0)
@@ -1788,6 +1789,7 @@ class Ui_MainWindow(object):
         self.ACQMode.setItemText(8, _translate("MainWindow", "RptCut"))
         self.FFTDeviceLabel.setText(_translate("MainWindow", "FFT Device"))
         self.Laser.setItemText(0, _translate("MainWindow", "Axsun100k"))
+        self.Laser.setItemText(1, _translate("MainWindow", "uvLASER10k"))
         self.Objective.setItemText(0, _translate("MainWindow", "OptoSigma5X"))
         self.Objective.setItemText(1, _translate("MainWindow", "OptoSigma10X"))
         self.Objective.setItemText(2, _translate("MainWindow", "OptoSigma20X"))
@@ -1988,8 +1990,8 @@ class Ui_MainWindow(object):
         self.label_12.setText(_translate("MainWindow", "Samp trim"))
         self.TriggerCoupling_2.setItemText(0, _translate("MainWindow", "DC coupling"))
         self.TriggerCoupling_2.setItemText(1, _translate("MainWindow", "AC coupling"))
-        self.Edge_2.setItemText(0, _translate("MainWindow", "FallingEdge"))
-        self.Edge_2.setItemText(1, _translate("MainWindow", "RisingEdge"))
+        self.Edge_2.setItemText(0, _translate("MainWindow", "RisingEdge"))
+        self.Edge_2.setItemText(1, _translate("MainWindow", "FallingEdge"))
         self.AUXIObox_2.setTitle(_translate("MainWindow", "TRIG OUT"))
         self.AUXIO_2.setItemText(0, _translate("MainWindow", "ENABLE"))
         self.AUXIO_2.setItemText(1, _translate("MainWindow", "DISABLE"))
@@ -2044,8 +2046,8 @@ class Ui_MainWindow(object):
         self.AODOboard.setHtml(_translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'SimSun\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">AODO</p></body></html>"))
+"</style></head><body style=\" font-family:\'Microsoft YaHei UI\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'SimSun\';\">AODO</span></p></body></html>"))
         self.ClockTermLabel.setText(_translate("MainWindow", "Aline Trig Terminal"))
         self.ClockTerm.setItemText(0, _translate("MainWindow", "PFI0"))
         self.ClockTerm.setItemText(1, _translate("MainWindow", "PFI1"))
