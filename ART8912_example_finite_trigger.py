@@ -151,7 +151,7 @@ class ART8912_finite_trigger():
     
         timeout = 5              # 数据读取超时时间 单位：s
         readLength = self.sumLength                        # 数据读取长度
-        
+        print(readLength)
         # wfmInfo.actualSamples = 0
         # wfmInfo.pAvailSampsPoints = 0
         print('time spent for presetting: ', time.time()-start)

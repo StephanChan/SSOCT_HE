@@ -187,7 +187,7 @@ class AODOThread(QThread):
                 _DISTANCE = self.ui.Xmm.value()
                 _STEPS = self.ui.Xdevides.value()
             DOwaveform,AOwaveform,status = GenAODO(mode=self.ui.ACQMode.currentText(), \
-                                                   Aline_frq = self.Aline_freq, \
+                                                   Aline_frq = self.Aline_frq, \
                                                    XStepSize = self.ui.XStepSize.value(), \
                                                    XSteps = self.ui.Xsteps.value(), \
                                                    AVG = self.ui.AlineAVG.value(), \
@@ -211,7 +211,7 @@ class AODOThread(QThread):
                                                   units=ni.constants.VoltageUnits.VOLTS)
             # depending on whether continuous or finite, config clock and mode
             mode =  Atype.FINITE
-            self.AOtask.timing.cfg_samp_clk_timing(rate=self.Aline_freq, \
+            self.AOtask.timing.cfg_samp_clk_timing(rate=self.Aline_frq, \
                                                    source=self.ClockTerm, \
                                                    active_edge= Edge.FALLING,\
                                                    sample_mode=mode,samps_per_chan=len(AOwaveform))
@@ -241,7 +241,7 @@ class AODOThread(QThread):
                 # config DO task
                 self.DOtask = ni.Task('DOtask')
                 self.DOtask.do_channels.add_do_chan(lines=self.StageSteps)
-                self.DOtask.timing.cfg_samp_clk_timing(rate=self.Aline_freq, \
+                self.DOtask.timing.cfg_samp_clk_timing(rate=self.Aline_frq, \
                                                        source=self.ClockTerm, \
                                                        active_edge= Edge.FALLING,\
                                                        sample_mode=mode,samps_per_chan=len(DOwaveform))
