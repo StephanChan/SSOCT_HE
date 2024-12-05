@@ -338,7 +338,14 @@ class MainWindow(QMainWindow):
                                                  bias = self.ui.XBias.value(), \
                                                  obj = self.ui.Objective.currentText(),\
                                                  preclocks = self.ui.PreClock.value(),\
-                                                 postclocks = self.ui.PostClock.value())
+                                                 postclocks = self.ui.PostClock.value(), \
+                                                 YStepSize = self.ui.YStepSize.value(), \
+                                                 YSteps =  self.ui.Ysteps.value(), \
+                                                 BVG = self.ui.BlineAVG.value(),\
+                                                 CSCAN_AXIS = 1,\
+                                                 Galvo_bias = self.ui.GalvoBias.value(),\
+                                                 DISTANCE = 2, \
+                                                 STEPS = 25000)
         # show generating waveform result
         #print(self.Xwaveform)
         # current_message = self.ui.statusbar.currentMessage()

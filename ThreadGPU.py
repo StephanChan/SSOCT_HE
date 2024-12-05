@@ -112,7 +112,7 @@ class GPUThread(QThread):
             # transfer data back to computer
             self.data_CPU = cupy.asnumpy(data_GPU)*self.AMPLIFICATION
             # display and save data, data type is float32
-            an_action = DnSAction(mode, data = self.data_CPU, args = args) # data in Memory[memoryLoc]
+            an_action = DnSAction(mode, data = self.data_CPU, raw = False, args = args) # data in Memory[memoryLoc]
             self.DnSQueue.put(an_action)
             # print('send for display')
             if self.ui.Gotozero.isChecked() and self.ui.ACQMode.currentText() == 'SingleAline':
@@ -128,7 +128,7 @@ class GPUThread(QThread):
             elif self.ui.ACQMode.currentText() in ['SingleCscan', 'Mosaic','Mosaic+Cut']:
                 self.triggerCount = self.ui.BlineAVG.value() * self.ui.Ysteps.value() * self.AlinesPerBline
             data_CPU = 100*np.random.random([self.triggerCount, Pixel_range])
-            an_action = DnSAction(mode, data = data_CPU, args = args) # data in Memory[memoryLoc]
+            an_action = DnSAction(mode, data = data_CPU, raw = False, args = args) # data in Memory[memoryLoc]
             self.DnSQueue.put(an_action)
             # print('send for display')
             if self.ui.Gotozero.isChecked() and self.ui.ACQMode.currentText() == 'SingleAline':
@@ -237,7 +237,7 @@ class GPUThread(QThread):
             
             self.data_CPU = self.data_CPU[:,Pixel_start: Pixel_start+Pixel_range ]
             # data_CPU = data_CPU.reshape([shape[0],Pixel_range * np.uint32(Alines/shape[0])])
-            an_action = DnSAction(mode, self.data_CPU, args) # data in Memory[memoryLoc]
+            an_action = DnSAction(mode, self.data_CPU, False, args) # data in Memory[memoryLoc]
             self.DnSQueue.put(an_action)
             if self.ui.Gotozero.isChecked() and self.ui.ACQMode.currentText() == 'SingleAline':
                 self.GPU2weaverQueue.put(self.data_CPU)
@@ -251,7 +251,7 @@ class GPUThread(QThread):
             elif self.ui.ACQMode.currentText() in ['SingleCscan', 'Mosaic','Mosaic+Cut']:
                 self.triggerCount = self.ui.BlineAVG.value() * self.ui.Ysteps.value() * self.AlinesPerBline
             data_CPU = 100*np.random.random([self.triggerCount, Pixel_range])
-            an_action = DnSAction(mode, data = data_CPU, args = args) # data in Memory[memoryLoc]
+            an_action = DnSAction(mode, data = data_CPU, raw = False, args = args) # data in Memory[memoryLoc]
             self.DnSQueue.put(an_action)
             # print('send for display')
             if self.ui.Gotozero.isChecked() and self.ui.ACQMode.currentText() == 'SingleAline':

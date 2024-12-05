@@ -213,14 +213,10 @@ class AODOThread(QThread):
             mode =  Atype.FINITE
             self.AOtask.timing.cfg_samp_clk_timing(rate=self.Aline_frq, \
                                                    source=self.ClockTerm, \
-                                                   active_edge= Edge.FALLING,\
+                                                   active_edge= Edge.RISING,\
                                                    sample_mode=mode,samps_per_chan=len(AOwaveform))
             # Config start mode
-            if self.Digitizer == 'Alazar':      
-                self.AOtask.triggers.sync_type.MASTER = True
-            elif self.Digitizer == 'ART':
-                # pass
-                self.AOtask.triggers.start_trigger.cfg_dig_edge_start_trig(self.AODOTrig)
+            self.AOtask.triggers.start_trigger.cfg_dig_edge_start_trig(self.AODOTrig)
             # write waveform and start
             self.AOtask.write(AOwaveform, auto_start = False)
             # self.AOtask.start()
@@ -243,7 +239,7 @@ class AODOThread(QThread):
                 self.DOtask.do_channels.add_do_chan(lines=self.StageSteps)
                 self.DOtask.timing.cfg_samp_clk_timing(rate=self.Aline_frq, \
                                                        source=self.ClockTerm, \
-                                                       active_edge= Edge.FALLING,\
+                                                       active_edge= Edge.RISING,\
                                                        sample_mode=mode,samps_per_chan=len(DOwaveform))
                
 
@@ -262,7 +258,7 @@ class AODOThread(QThread):
     def StartTask(self):
         if not (SIM or self.SIM):
             self.AOtask.start()
-            if self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut'] or self.Digitizer == 'Alazar':
+            if self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut']:
                 self.DOtask.start()
         self.StagebackQueue.put(0)
             
@@ -274,7 +270,7 @@ class AODOThread(QThread):
             self.AOtask.stop()
             # self.AOtask.close()
             # print(self.ui.ACQMode.currentText())
-            if self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut'] or self.Digitizer == 'Alazar':
+            if self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut']:
                 self.DOtask.stop()
                 # self.DOtask.close()
                 # settingtask.write(XDISABLE+ YDISABLE+ ZDISABLE, auto_start = True)
@@ -289,7 +285,7 @@ class AODOThread(QThread):
     def CloseTask(self):
         if not (SIM or self.SIM):
             self.AOtask.close()
-            if self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut'] or self.Digitizer == 'Alazar':
+            if self.ui.ACQMode.currentText() in ['SingleCscan','Mosaic','Mosaic+Cut']:
                 self.DOtask.close()
             message = 'cscan X :'+str(round(self.ui.Xcurrent.value(),2))+' Y :'+str(round(self.ui.Ycurrent.value(),2))+' Z :'+str(round(self.ui.Zcurrent.value(),3))
             print(message)
