@@ -172,7 +172,10 @@ def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, A
         AOwaveform, status = GenGalvoWave(XStepSize, XSteps, AVG, bias, obj, preclocks, postclocks, Galvo_bias)
         CscanAO = np.tile(AOwaveform, YSteps*BVG)
             
-        stagewave = GenStageWave_ramp(YSteps * YStepSize/1000, (XSteps*AVG + 2 * preclocks + postclocks)* YSteps * BVG, DISTANCE, STEPS)
+        if YStepSize == 0:
+            stagewave = np.zeros(len(AOwaveform))
+        else:
+            stagewave = GenStageWave_ramp(YSteps * YStepSize/1000, (XSteps*AVG + 2 * preclocks + postclocks)* YSteps * BVG, DISTANCE, STEPS)
         # append preclocks and postclocks
         stagewave = CSCAN_AXIS*stagewave
         # print('distance per Cscan: ',np.sum(stagewaveform)/STEPS*DISTANCE*1000/pow(2,CSCAN_AXIS),'um')
