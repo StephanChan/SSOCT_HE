@@ -61,10 +61,11 @@ class GPUThread(QThread):
         # do interpolation
         for ii in np.arange(start, end_, stride):
             xt = self.xp[ii]
-            while self.xt>self.x[start]:
+            while xt>self.x[start]:
                 start=start+stride
             self.indice[ii,0] = start-stride
             self.indice[ii,1] = start
+        # print(self.indice[0,:], intDk)
     
     def definterp(self):
         if not (SIM or self.SIM):
@@ -417,4 +418,4 @@ class GPUThread(QThread):
         self.FFT_actions = 0
         
     def update_intDk(self):
-        self.indice = self.find_interp_indice(self.ui.intDk.value())
+        self.indice = self.find_interp_indice()

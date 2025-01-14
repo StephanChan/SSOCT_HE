@@ -236,7 +236,7 @@ class MainWindow(QMainWindow):
         self.ui.LoadDarkField.clicked.connect(self.chooseDarkFieldFile)
         self.ui.LoadFlatField.clicked.connect(self.chooseFlatFieldFile)
         
-        self.ui.intDkSlider.valueChanged.connect(self.update_intDk)
+        # self.ui.intDkSlider.valueChanged.connect(self.update_intDk)
 
     def chooseSurfaceFile(self):
         fileName_choose, filetype = QFileDialog.getOpenFileName(self,  

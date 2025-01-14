@@ -213,6 +213,7 @@ class GUI(MainWindow):
         self.ui.SliceDir.clicked.connect(self.SliceDirection)
         self.ui.VibEnabled.clicked.connect(self.Vibratome)
         self.ui.SliceN.valueChanged.connect(self.change_slice_number)
+        self.ui.intDkSlider.valueChanged.connect(self.update_intDk)
         # Init all threads
         self.Init_allThreads()
         
@@ -430,6 +431,11 @@ class GUI(MainWindow):
     def redo_surface(self):
         an_action = WeaverAction('get_surface')
         WeaverQueue.put(an_action)
+        
+    def update_intDk(self):
+        self.ui.intDk.setValue(self.ui.intDkSlider.value()/100)
+        an_action = GPUAction('update_intDk')
+        GPUQueue.put(an_action)
         
     def UninitBoard(self):
         an_action = DAction('UninitBoard')
