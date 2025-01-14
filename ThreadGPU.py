@@ -104,9 +104,13 @@ class GPUThread(QThread):
             data_GPU  = cupy.array(self.data_CPU)
             dispersion_GPU = cupy.array(self.dispersion)
             # window function and dispersion compensation
+            t = time.time()
             data_GPU = self.winfunc(data_GPU, dispersion_GPU)
+            print('windowing takes ', time.time()-t)
             # FFT
+            t = time.time()
             data_GPU = cupy.fft.fft(data_GPU, axis=fftAxis)/samples
+            print('fft takes ', time.time()-t)
             # calculate absolute value and only keep depth range specified
             data_GPU = cupy.absolute(data_GPU[:,Pixel_start:Pixel_start+Pixel_range])
             # transfer data back to computer
