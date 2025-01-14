@@ -314,7 +314,7 @@ def ImagePlot(matrix, m=0, M=1):
         im = qpy.gray2qimage(data)
         pixmap = QPixmap(im)
     except:
-        print(data.shape)
+        # print(data.shape)
         pixmap = QPixmap(qpy.gray2qimage(np.zeros(1000,1000)))
     return pixmap
     
