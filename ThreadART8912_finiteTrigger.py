@@ -245,17 +245,17 @@ class ART8912_finiteTrigger(QThread):
     def simData(self):
         self.AlinesPerBline = self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2+self.ui.PostClock.value()
         if self.ui.ACQMode.currentText() in ['SingleBline', 'SingleAline','RptBline', 'RptAline']:
-            self.triggerCount = self.ui.BlineAVG.value() * self.AlinesPerBline
+            self.Ysteps = self.ui.BlineAVG.value()
         elif self.ui.ACQMode.currentText() in ['SingleCscan', 'Mosaic','Mosaic+Cut']:
-            self.triggerCount = self.ui.BlineAVG.value() * self.ui.Ysteps.value() * self.AlinesPerBline
+            self.Ysteps = self.ui.BlineAVG.value() * self.ui.Ysteps.value()
         # all samples in all Alines, include galvo fly-backs
-        readLength = self.ui.PostSamples_2.value()  * 1 * self.triggerCount # 数据读取长度
+        readLength = self.ui.PostSamples_2.value()  * 1 * self.AlinesPerBline # 数据读取长度
         
         # print('D using memory loc: ',self.MemoryLoc)
         # print(self.Memory[self.MemoryLoc].shape)
 
-        self.Memory[self.MemoryLoc] = np.random.random(readLength)
-        time.sleep(self.triggerCount/100000)
+        self.Memory[self.MemoryLoc] = np.random.random([self.Ysteps, readLength])
+        time.sleep(self.Ysteps/100)
         an_action = DbackAction(self.MemoryLoc)
         self.DbackQueue.put(an_action)
         self.MemoryLoc = (self.MemoryLoc+1) % self.memoryCount

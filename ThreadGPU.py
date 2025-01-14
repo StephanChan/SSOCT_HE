@@ -11,6 +11,7 @@ SIM = False
 
 try:
     import cupy
+    SIM = True
 except:
     SIM = True
 import numpy as np
@@ -33,39 +34,6 @@ class GPUThread(QThread):
                 'complex64 z',
                 'z=x*y',
                 'winfunc')
-    
-    # read interpolation configs
-    def find_interp_indice(self):
-        intDk = self.ui.intDk.value()
-        k = np.linspace(1+intDk/2, 1-intDk/2, self.ui.PostSamples_2.value());
-        self.x = 1./np.fliplr(k.reshape(1,self.ui.PostSamples_2.value()))
-        self.x=self.x.reshape(self.ui.PostSamples_2.value())
-        self.x=self.x.astype(np.float32)
-        self.xp = np.linspace(np.min(self.x), np.max(self.x),self.ui.PostSamples_2.value()).astype(np.float32)
-        self.indice=np.zeros([len(self.x),2], dtype = np.uint16)
-        # for x that is ramping up, interpolate from first to last element of xp
-        if self.x[-1]>self.x[0]:
-            start = 0
-            stride = 1
-            end_= len(self.x)
-        # for x that is ramping down, interpolate from last to first element of xp
-        else:
-            start=len(self.x)-1
-            stride = -1
-            end_= 0
-        # if the first x value is unchanged
-        if self.xp[start]<=self.x[start]:
-            self.indice[start,0] = start+stride
-            self.indice[start,1] = start
-            start = start+stride
-        # do interpolation
-        for ii in np.arange(start, end_, stride):
-            xt = self.xp[ii]
-            while xt>self.x[start]:
-                start=start+stride
-            self.indice[ii,0] = start-stride
-            self.indice[ii,1] = start
-        # print(self.indice[0,:], intDk)
     
     def definterp(self):
         if not (SIM or self.SIM):
@@ -287,45 +255,95 @@ class GPUThread(QThread):
             Alines =self.data_CPU.shape[0]*self.data_CPU.shape[1]//samples
             self.data_CPU=self.data_CPU.reshape([Alines, samples])
             
-        t1=time.time()
-        # y=y0-np.mean(y0,0)
-        self.data_CPU = self.data_CPU-np.mean(self.data_CPU,0)
-        self.data_CPU = self.data_CPU.reshape(Alines * samples)
-
-        x_gpu  = cupy.array(self.x)
-        xp_gpu  = cupy.array(self.xp)
-        y_gpu  = cupy.array(self.data_CPU)
-        indice1 = cupy.array(self.indice[:,0])
-        indice2 = cupy.array(self.indice[:,1])
-        yp_gpu = cupy.zeros(self.data_CPU.shape, dtype = cupy.float32)
-        print('data to gpu takes ', round(time.time()-t1,3))
-
-        # interpolation
-        t2 = time.time() 
-        self.interp_kernel((8,8),(16,16), (Alines, samples, x_gpu, xp_gpu, y_gpu, indice1, indice2, yp_gpu))
-        print('time for interpolation: ', round(time.time()-t2,5))
-        # yp = cp.asnumpy(yp_gpu)
-        # yp_gpu=yp_gpu.reshape([Alines, samples])
-        # plt.figure()
-        # plt.plot(x,y[0:nSamp],xp,yp[0,:])
-        ################################################################################# FFT
-        t3=time.time()
-        data_gpu  = cupy.fft.fft(cupy.reshape(yp_gpu,[Alines, samples]), axis=1)
-        data_gpu = cupy.absolute(data_gpu[:,self.ui.DepthStart.value():self.ui.DepthStart.value() + self.ui.DepthRange.value()])
-        self.data_CPU = cupy.asnumpy(data_gpu)*self.AMPLIFICATION
-        print('time for FFT: ', round(time.time()-t3,5))
-        # yp = cp.asnumpy(data_gpu)
-        print('total time: ', round(time.time()-t1,5))
-        
-        # display and save data, data type is float32
-        an_action = DnSAction(mode, data = self.data_CPU, raw = False, args = args) # data in Memory[memoryLoc]
-        self.DnSQueue.put(an_action)
-        # print('send for display')
-        if self.ui.Gotozero.isChecked() and self.ui.ACQMode.currentText() == 'SingleAline':
-            self.GPU2weaverQueue.put(self.data_CPU)
-        if self.ui.DSing.isChecked():
-            self.GPU2weaverQueue.put(self.data_CPU)
-            # print('GPU data to weaver')
+            t1=time.time()
+            # y=y0-np.mean(y0,0)
+            self.data_CPU = self.data_CPU-np.mean(self.data_CPU,0)
+            self.data_CPU = self.data_CPU.reshape(Alines * samples)
+    
+            x_gpu  = cupy.array(self.x)
+            xp_gpu  = cupy.array(self.xp)
+            y_gpu  = cupy.array(self.data_CPU)
+            indice1 = cupy.array(self.indice[:,0])
+            indice2 = cupy.array(self.indice[:,1])
+            yp_gpu = cupy.zeros(self.data_CPU.shape, dtype = cupy.float32)
+            print('data to gpu takes ', round(time.time()-t1,3))
+    
+            # interpolation
+            t2 = time.time() 
+            self.interp_kernel((8,8),(16,16), (Alines, samples, x_gpu, xp_gpu, y_gpu, indice1, indice2, yp_gpu))
+            print('time for interpolation: ', round(time.time()-t2,5))
+            # yp = cp.asnumpy(yp_gpu)
+            # yp_gpu=yp_gpu.reshape([Alines, samples])
+            # plt.figure()
+            # plt.plot(x,y[0:nSamp],xp,yp[0,:])
+            ################################################################################# FFT
+            t3=time.time()
+            data_gpu  = cupy.fft.fft(cupy.reshape(yp_gpu,[Alines, samples]), axis=1)
+            data_gpu = cupy.absolute(data_gpu[:,self.ui.DepthStart.value():self.ui.DepthStart.value() + self.ui.DepthRange.value()])
+            self.data_CPU = cupy.asnumpy(data_gpu)*self.AMPLIFICATION
+            print('time for FFT: ', round(time.time()-t3,5))
+            # yp = cp.asnumpy(data_gpu)
+            print('total time: ', round(time.time()-t1,5))
+            
+            # display and save data, data type is float32
+            an_action = DnSAction(mode, data = self.data_CPU, raw = False, args = args) # data in Memory[memoryLoc]
+            self.DnSQueue.put(an_action)
+            # print('send for display')
+            if self.ui.Gotozero.isChecked() and self.ui.ACQMode.currentText() == 'SingleAline':
+                self.GPU2weaverQueue.put(self.data_CPU)
+            if self.ui.DSing.isChecked():
+                self.GPU2weaverQueue.put(self.data_CPU)
+                # print('GPU data to weaver')
+        else:
+            self.AlinesPerBline = self.ui.AlineAVG.value()*self.ui.Xsteps.value()+self.ui.PreClock.value()*2+self.ui.PostClock.value()
+            if self.ui.ACQMode.currentText() in ['SingleBline', 'SingleAline','RptBline', 'RptAline']:
+                self.triggerCount = self.ui.BlineAVG.value() * self.AlinesPerBline
+            elif self.ui.ACQMode.currentText() in ['SingleCscan', 'Mosaic','Mosaic+Cut']:
+                self.triggerCount = self.ui.BlineAVG.value() * self.ui.Ysteps.value() * self.AlinesPerBline
+            data_CPU = 100*np.random.random([self.triggerCount, Pixel_range])
+            an_action = DnSAction(mode, data = data_CPU, raw = False, args = args) # data in Memory[memoryLoc]
+            self.DnSQueue.put(an_action)
+            # print('send for display')
+            if self.ui.Gotozero.isChecked() and self.ui.ACQMode.currentText() == 'SingleAline':
+                self.GPU2weaverQueue.put(data_CPU)
+            # print(self.ui.DSing.isChecked())
+            if self.ui.DSing.isChecked():
+                self.GPU2weaverQueue.put(data_CPU)
+                # print('GPU data to weaver')
+            # print('GPU finish')
+    # read interpolation configs
+    def find_interp_indice(self):
+        intDk = self.ui.intDk.value()
+        k = np.linspace(1+intDk/2, 1-intDk/2, self.ui.PostSamples_2.value());
+        self.x = 1./np.fliplr(k.reshape(1,self.ui.PostSamples_2.value()))
+        self.x=self.x.reshape(self.ui.PostSamples_2.value())
+        self.x=self.x.astype(np.float32)
+        self.indice=np.zeros([len(self.x),2], dtype = np.uint16)
+        # for x that is ramping up, interpolate from first to last element of xp
+        if self.x[-1]>self.x[0]:
+            self.xp = np.linspace(np.min(self.x), np.max(self.x),self.ui.PostSamples_2.value()).astype(np.float32)
+            start = 0
+            stride = 1
+            end_= len(self.x)
+        # for x that is ramping down, interpolate from last to first element of xp
+        else:
+            self.xp = np.linspace(np.max(self.x), np.min(self.x),self.ui.PostSamples_2.value()).astype(np.float32)
+            start=len(self.x)-1
+            stride = -1
+            end_= 0
+        # if the first x value is unchanged
+        if self.xp[start]<=self.x[start]:
+            self.indice[start,0] = start+stride
+            self.indice[start,1] = start
+            start = start+stride
+        # do interpolation
+        for ii in np.arange(start, end_, stride):
+            xt = self.xp[ii]
+            while xt>self.x[start]:
+                start=start+stride
+            self.indice[ii,0] = start-stride
+            self.indice[ii,1] = start
+        print('interpolation indices generated using intDk: ', intDk)
             
     def update_Dispersion(self):
         if self.Digitizer == 'Alazar':
@@ -418,4 +436,4 @@ class GPUThread(QThread):
         self.FFT_actions = 0
         
     def update_intDk(self):
-        self.indice = self.find_interp_indice()
+        self.find_interp_indice()

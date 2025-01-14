@@ -168,6 +168,19 @@ class MainWindow(QMainWindow):
                     self.ui.__getattribute__(ii).setChecked(status)
                 except:
                     print(ii, ' setting missing, using default...')
+            elif type(self.ui.__getattribute__(ii))  == QW.QScrollBar:
+                try:
+                    self.ui.__getattribute__(ii).setValue(settings.value(ii))
+                except:
+                    print(ii, ' setting missing, using default...')
+            elif type(self.ui.__getattribute__(ii))  == QW.QCheckBox:
+                try:
+                    self.ui.__getattribute__(ii).setChecked(settings.value(ii))
+                except:
+                    print(ii, ' setting missing, using default...')
+                
+            # else:
+            #     print(type(self.ui.__getattribute__(ii)) ,ii,settings.value(ii))
                 
     def SaveSettings(self):
         settings = qc.QSettings("config.ini", qc.QSettings.IniFormat)
@@ -183,6 +196,10 @@ class MainWindow(QMainWindow):
             elif type(self.ui.__getattribute__(ii)) == QW.QLineEdit:
                 settings.setValue(ii,self.ui.__getattribute__(ii).text())
             elif type(self.ui.__getattribute__(ii)) == QW.QPushButton:
+                settings.setValue(ii,self.ui.__getattribute__(ii).isChecked())
+            elif type(self.ui.__getattribute__(ii))  == QW.QScrollBar:
+                settings.setValue(ii,self.ui.__getattribute__(ii).value())
+            elif type(self.ui.__getattribute__(ii))  == QW.QCheckBox:
                 settings.setValue(ii,self.ui.__getattribute__(ii).isChecked())
             
     def connectActions(self):
