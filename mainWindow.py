@@ -235,6 +235,8 @@ class MainWindow(QMainWindow):
         self.ui.LoadSurface.clicked.connect(self.chooseSurfaceFile)
         self.ui.LoadDarkField.clicked.connect(self.chooseDarkFieldFile)
         self.ui.LoadFlatField.clicked.connect(self.chooseFlatFieldFile)
+        
+        self.ui.intDkSlider.valueChanged.connect(self.update_intDk)
 
     def chooseSurfaceFile(self):
         fileName_choose, filetype = QFileDialog.getOpenFileName(self,  
@@ -427,5 +429,6 @@ class MainWindow(QMainWindow):
         else:
             self.ui.statusbar.showMessage('Laser invalid!!!')
     
-        
+    def update_intDk(self):
+        self.ui.intDk.setValue(self.ui.intDkSlider.value()/100)
         

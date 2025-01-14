@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1658</width>
-    <height>907</height>
+    <height>946</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -1321,6 +1321,306 @@
           </item>
          </layout>
         </widget>
+        <widget class="QWidget" name="Dispersiontab">
+         <attribute name="title">
+          <string>Image improvement</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_20">
+          <item row="0" column="2">
+           <widget class="QPushButton" name="redoSurf">
+            <property name="text">
+             <string>DO Surface</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QPushButton" name="LoadSurface">
+            <property name="text">
+             <string>Load surface</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="3">
+           <widget class="QLineEdit" name="DarkField_DIR">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>100</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QLineEdit" name="Surf_DIR">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>100</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0" rowspan="4">
+           <widget class="QTabWidget" name="tabWidget_2">
+            <property name="minimumSize">
+             <size>
+              <width>200</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>400</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="currentIndex">
+             <number>1</number>
+            </property>
+            <widget class="QWidget" name="tab">
+             <attribute name="title">
+              <string>Dispersion1</string>
+             </attribute>
+             <layout class="QGridLayout" name="gridLayout_21">
+              <item row="4" column="0">
+               <widget class="QLabel" name="label_32">
+                <property name="text">
+                 <string>Half window size:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QPushButton" name="LoadDispersion">
+                <property name="text">
+                 <string>Load Compensation</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QPushButton" name="RedoDC">
+                <property name="text">
+                 <string>DO Compensation </string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QSpinBox" name="PeakWindow">
+                <property name="maximum">
+                 <number>200</number>
+                </property>
+                <property name="value">
+                 <number>75</number>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLineEdit" name="Disp_DIR">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>100</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1" rowspan="3">
+               <widget class="QLabel" name="label_59">
+                <property name="font">
+                 <font>
+                  <pointsize>13</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>This method for dispersion compensation uses pre-measured phase data. This is not preferred.</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+                <property name="wordWrap">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="tab_2">
+             <attribute name="title">
+              <string>Dispersion2</string>
+             </attribute>
+             <layout class="QGridLayout" name="gridLayout_22">
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_58">
+                <property name="text">
+                 <string>IntDk:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QDoubleSpinBox" name="intDk">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="minimum">
+                 <double>-1.000000000000000</double>
+                </property>
+                <property name="maximum">
+                 <double>1.000000000000000</double>
+                </property>
+                <property name="singleStep">
+                 <double>0.010000000000000</double>
+                </property>
+                <property name="value">
+                 <double>-0.310000000000000</double>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0" colspan="2">
+               <widget class="QLabel" name="label_62">
+                <property name="text">
+                 <string>This method for dispersion compensation uses interpolation. This is the preferred method.</string>
+                </property>
+                <property name="wordWrap">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QScrollBar" name="intDkSlider">
+                <property name="minimumSize">
+                 <size>
+                  <width>250</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <property name="minimum">
+                 <number>-100</number>
+                </property>
+                <property name="maximum">
+                 <number>100</number>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </widget>
+          </item>
+          <item row="0" column="1" rowspan="4">
+           <widget class="QTabWidget" name="tabWidget_3">
+            <property name="maximumSize">
+             <size>
+              <width>300</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="currentIndex">
+             <number>1</number>
+            </property>
+            <widget class="QWidget" name="tab_3">
+             <attribute name="title">
+              <string>Background1</string>
+             </attribute>
+             <layout class="QGridLayout" name="gridLayout_23">
+              <item row="2" column="0">
+               <widget class="QLineEdit" name="BG_DIR">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>100</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QPushButton" name="redoBG">
+                <property name="text">
+                 <string>DO background</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QPushButton" name="LoadBG">
+                <property name="text">
+                 <string>Load Background</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QCheckBox" name="auto_background">
+                <property name="text">
+                 <string>AUTO re-do background?</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1" rowspan="3">
+               <widget class="QLabel" name="label_61">
+                <property name="text">
+                 <string>This method uses pre-measured background data. Not suggested.</string>
+                </property>
+                <property name="wordWrap">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="tab_4">
+             <attribute name="title">
+              <string>Background2</string>
+             </attribute>
+             <layout class="QGridLayout" name="gridLayout_24">
+              <item row="1" column="0">
+               <widget class="QCheckBox" name="UseSDOCTbackground">
+                <property name="text">
+                 <string>Enable</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_60">
+                <property name="text">
+                 <string>This method for background subtraction uses averaged real data. This is preferred.</string>
+                </property>
+                <property name="wordWrap">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </widget>
+          </item>
+          <item row="3" column="3">
+           <widget class="QLineEdit" name="FlatField_DIR">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>100</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <widget class="QPushButton" name="LoadDarkField">
+            <property name="text">
+             <string>Load DarkField</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="3">
+           <widget class="QPushButton" name="LoadFlatField">
+            <property name="text">
+             <string>Load FlatField</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
         <widget class="QWidget" name="MosaicTab">
          <attribute name="title">
           <string>Mosaic</string>
@@ -2423,56 +2723,6 @@
           <string>Save</string>
          </attribute>
          <layout class="QGridLayout" name="gridLayout_10">
-          <item row="1" column="3">
-           <widget class="QPushButton" name="redoBG">
-            <property name="text">
-             <string>DO background</string>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="2">
-           <widget class="QLineEdit" name="Disp_DIR">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>100</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="3">
-           <widget class="QLineEdit" name="BG_DIR">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>100</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="1">
-           <widget class="QSpinBox" name="SliceN">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>50</height>
-             </size>
-            </property>
-            <property name="minimum">
-             <number>1</number>
-            </property>
-            <property name="maximum">
-             <number>10000</number>
-            </property>
-           </widget>
-          </item>
-          <item row="6" column="3">
-           <widget class="QPushButton" name="LoadBG">
-            <property name="text">
-             <string>Load Background</string>
-            </property>
-           </widget>
-          </item>
           <item row="6" column="1">
            <widget class="QLabel" name="label_28">
             <property name="text">
@@ -2480,17 +2730,10 @@
             </property>
            </widget>
           </item>
-          <item row="6" column="4">
-           <widget class="QPushButton" name="LoadSurface">
+          <item row="1" column="1">
+           <widget class="QLabel" name="label_23">
             <property name="text">
-             <string>Load surface</string>
-            </property>
-           </widget>
-          </item>
-          <item row="6" column="5">
-           <widget class="QPushButton" name="LoadDarkField">
-            <property name="text">
-             <string>Load DarkField</string>
+             <string>Start Slice#:</string>
             </property>
            </widget>
           </item>
@@ -2515,60 +2758,6 @@
             </property>
            </widget>
           </item>
-          <item row="5" column="0">
-           <widget class="QTextEdit" name="DIR">
-            <property name="enabled">
-             <bool>true</bool>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>400</width>
-              <height>16777215</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="6" column="2">
-           <widget class="QPushButton" name="LoadDispersion">
-            <property name="text">
-             <string>Load Compensation</string>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="5">
-           <widget class="QLineEdit" name="DarkField_DIR">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>100</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="4">
-           <widget class="QLineEdit" name="Surf_DIR">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>100</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QPushButton" name="RedoDC">
-            <property name="text">
-             <string>DO Compensation </string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QLabel" name="label_23">
-            <property name="text">
-             <string>Start Slice#:</string>
-            </property>
-           </widget>
-          </item>
           <item row="7" column="1">
            <widget class="QSpinBox" name="CuSlice">
             <property name="enabled">
@@ -2582,27 +2771,32 @@
             </property>
            </widget>
           </item>
-          <item row="6" column="6">
-           <widget class="QPushButton" name="LoadFlatField">
-            <property name="text">
-             <string>Load FlatField</string>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="6">
-           <widget class="QLineEdit" name="FlatField_DIR">
+          <item row="5" column="1">
+           <widget class="QSpinBox" name="SliceN">
             <property name="minimumSize">
              <size>
               <width>0</width>
-              <height>100</height>
+              <height>50</height>
              </size>
+            </property>
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>10000</number>
             </property>
            </widget>
           </item>
-          <item row="1" column="4">
-           <widget class="QPushButton" name="redoSurf">
-            <property name="text">
-             <string>DO Surface</string>
+          <item row="5" column="0">
+           <widget class="QTextEdit" name="DIR">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>400</width>
+              <height>16777215</height>
+             </size>
             </property>
            </widget>
           </item>
@@ -2610,33 +2804,6 @@
            <widget class="QCheckBox" name="MUS">
             <property name="text">
              <string>Calculate mus?</string>
-            </property>
-           </widget>
-          </item>
-          <item row="7" column="5">
-           <widget class="QSpinBox" name="PeakWindow">
-            <property name="maximum">
-             <number>200</number>
-            </property>
-            <property name="value">
-             <number>75</number>
-            </property>
-           </widget>
-          </item>
-          <item row="7" column="4">
-           <widget class="QLabel" name="label_32">
-            <property name="text">
-             <string>Dispersion compenstaion window half size:</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="7" column="3">
-           <widget class="QCheckBox" name="auto_background">
-            <property name="text">
-             <string>AUTO re-measure background?</string>
             </property>
            </widget>
           </item>
@@ -4029,8 +4196,8 @@
                 <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Microsoft YaHei UI'; font-size:15pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'SimSun';&quot;&gt;AODO&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'SimSun'; font-size:15pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;AODO&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
               </widget>
              </item>
