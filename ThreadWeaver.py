@@ -335,7 +335,6 @@ class WeaverThread(QThread):
         # save the PreMosaic tile identification to disk
         an_action = DnSAction('WriteAgar', data = self.tile_flag, args = [ CscansPerStripe, total_stripes])
         self.DnSQueue.put(an_action)
-        
         # init sample surface plot window
         args = [[0, 0], [CscansPerStripe, self.totalTiles]]
         an_action = DnSAction('Init_Mosaic', data = None, args = args) # data in Memory[memoryLoc]
