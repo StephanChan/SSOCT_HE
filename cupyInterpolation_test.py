@@ -69,7 +69,7 @@ void interp1d(long long NAlines, long long NSamples, float* x, float* xp, float*
 #%%
 # init X
 nSamp = 1024
-nFFT = 500*1200
+nFFT = 100*1200
 intDk = -0.31
 # init raw data
 k = np.linspace(1+intDk/2, 1-intDk/2, nSamp);
