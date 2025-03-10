@@ -192,7 +192,6 @@ class MainWindow(QMainWindow):
         self.ui.Ysteps.valueChanged.connect(self.update_galvoXwaveform)
         self.ui.YStepSize.valueChanged.connect(self.update_galvoXwaveform)
         self.ui.BlineAVG.valueChanged.connect(self.update_galvoXwaveform)
-        self.ui.XBias.valueChanged.connect(self.update_galvoXwaveform)
         self.ui.Objective.currentTextChanged.connect(self.update_galvoXwaveform)
         self.ui.PreClock.valueChanged.connect(self.update_galvoXwaveform)
         self.ui.PostClock.valueChanged.connect(self.update_galvoXwaveform)
@@ -221,8 +220,8 @@ class MainWindow(QMainWindow):
         # update laser model
         self.ui.Laser.currentIndexChanged.connect(self.Update_laser)
         self.ui.Save.clicked.connect(self.chooseDir)
-        self.ui.LoadDispersion.clicked.connect(self.chooseCompenstaion)
-        self.ui.LoadBG.clicked.connect(self.chooseBackground)
+        self.ui.LoadInD.clicked.connect(self.chooseInD)
+        # self.ui.LoadBG.clicked.connect(self.chooseBackground)
         self.ui.ConfigButton.clicked.connect(self.LoadConfig)
 
         self.ui.Xmax.valueChanged.connect(self.setStageMinMax)
@@ -233,8 +232,8 @@ class MainWindow(QMainWindow):
         self.ui.Zmax.valueChanged.connect(self.setStageMinMax)
         
         self.ui.LoadSurface.clicked.connect(self.chooseSurfaceFile)
-        self.ui.LoadDarkField.clicked.connect(self.chooseDarkFieldFile)
-        self.ui.LoadFlatField.clicked.connect(self.chooseFlatFieldFile)
+        # self.ui.LoadDarkField.clicked.connect(self.chooseDarkFieldFile)
+        # self.ui.LoadFlatField.clicked.connect(self.chooseFlatFieldFile)
 
     def chooseSurfaceFile(self):
         fileName_choose, filetype = QFileDialog.getOpenFileName(self,  
@@ -297,18 +296,15 @@ class MainWindow(QMainWindow):
             print('settings reload failed, using default settings')
             print(traceback.format_exc())
         
-    def chooseCompenstaion(self):
-         fileName_choose, filetype = QFileDialog.getOpenFileName(self,  
-                                    "select dispersion file",  
-                                    os.getcwd(), # 起始路径 
-                                    "All Files (*);;Text Files (*.txt)")   # 设置文件扩展名过滤,用双分号间隔
+    def chooseInD(self):
+         dir_choose = QFileDialog.getExistingDirectory(self,  
+                                     "select saving directory",  
+                                     os.getcwd()) # 起始路径
 
-         if fileName_choose == "":
-            print("\n use default")
-            return
-
-         self.ui.Disp_DIR.setText(fileName_choose)
-         # self.update_Dispersion()
+         if dir_choose == "":
+             print("\n use default")
+             return
+         self.ui.InD_DIR.setText(dir_choose)
         
     def chooseBackground(self):
         fileName_choose, filetype = QFileDialog.getOpenFileName(self,  
@@ -331,21 +327,18 @@ class MainWindow(QMainWindow):
         self.ui.YrangeLabel.setText('Y(mm): '+str(self.ui.Ysteps.value()*self.ui.YStepSize.value()/1000))
         # generate waveform
         DOwaveform, AOwaveform, status = GenAODO(mode='RptBline', \
-                                                 Aline_frq = self.Aline_frq, \
                                                  XStepSize = self.ui.XStepSize.value(), \
                                                  XSteps = self.ui.Xsteps.value(), \
                                                  AVG = self.ui.AlineAVG.value(), \
-                                                 bias = self.ui.XBias.value(), \
                                                  obj = self.ui.Objective.currentText(),\
                                                  preclocks = self.ui.PreClock.value(),\
                                                  postclocks = self.ui.PostClock.value(), \
                                                  YStepSize = self.ui.YStepSize.value(), \
                                                  YSteps =  self.ui.Ysteps.value(), \
                                                  BVG = self.ui.BlineAVG.value(),\
-                                                 CSCAN_AXIS = 1,\
                                                  Galvo_bias = self.ui.GalvoBias.value(),\
-                                                 DISTANCE = 2, \
-                                                 STEPS = 25000)
+                                                 DISTANCE = self.ui.Xmm.value(), \
+                                                 STEPS = self.ui.Xdevides.value())
         # show generating waveform result
         #print(self.Xwaveform)
         # current_message = self.ui.statusbar.currentMessage()

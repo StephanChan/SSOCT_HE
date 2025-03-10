@@ -63,8 +63,8 @@ class DnSThread(QThread):
                     self.Update_contrast_XY()
                 elif self.item.action == 'UpdateContrastXYZ':
                     self.Update_contrast_XYZ()
-                elif self.item.action == 'UpdateContrastSurf':
-                    self.Update_contrast_Surf()
+                # elif self.item.action == 'UpdateContrastSurf':
+                #     self.Update_contrast_Surf()
                 elif self.item.action == 'display_counts':
                     self.print_display_counts()
                 elif self.item.action == 'restart_tilenum':
@@ -156,7 +156,13 @@ class DnSThread(QThread):
         Ascan = np.float32(np.mean(data,0))
         self.Aline = Ascan
         # float32 data type
-        pixmap = LinePlot(Ascan, [], self.ui.XYmin.value()*30, self.ui.XYmax.value()*30)
+        if self.ui.FFTDevice.currentText() in ['None']:
+            m=self.ui.XYmin.value()*20
+            M=self.ui.XYmax.value()*20
+        else:
+            m=self.ui.XYmin.value()
+            M=self.ui.XYmax.value()
+        pixmap = LinePlot(Ascan, [], m, M)
         # clear content on the waveformLabel
         self.ui.XZplane.clear()
         # update iamge on the waveformLabel
@@ -290,21 +296,21 @@ class DnSThread(QThread):
         
         # load darf field for shading correction
         if not self.ui.DSing.isChecked():
-            if os.path.isfile(self.ui.DarkField_DIR.text()):
-                self.darkField = np.float32(np.fromfile(self.ui.DarkField_DIR.text(), dtype=np.float32))
-                self.darkField = self.darkField.reshape([Xpixels, Ypixels])
-                self.darkField = self.darkField.transpose()
-            else:
-                print('dark field data not found, using all zeros')
-                self.darkField = None
-            # load flat field for shading correction
-            if os.path.isfile(self.ui.FlatField_DIR.text()):
-                self.flatField = np.float32(np.fromfile(self.ui.FlatField_DIR.text(), dtype=np.float32))
-                self.flatField = self.flatField.reshape([Xpixels, Ypixels])
-                self.flatField = self.flatField.transpose()
-            else:
-                print('flat data not found, using all ones')
-                self.flatField = None
+            # if os.path.isfile(self.ui.DarkField_DIR.text()):
+            #     self.darkField = np.float32(np.fromfile(self.ui.DarkField_DIR.text(), dtype=np.float32))
+            #     self.darkField = self.darkField.reshape([Xpixels, Ypixels])
+            #     self.darkField = self.darkField.transpose()
+            # else:
+            #     print('dark field data not found, using all zeros')
+            #     self.darkField = None
+            # # load flat field for shading correction
+            # if os.path.isfile(self.ui.FlatField_DIR.text()):
+            #     self.flatField = np.float32(np.fromfile(self.ui.FlatField_DIR.text(), dtype=np.float32))
+            #     self.flatField = self.flatField.reshape([Xpixels, Ypixels])
+            #     self.flatField = self.flatField.transpose()
+            # else:
+            #     print('flat data not found, using all ones')
+            #     self.flatField = None
             
             self.first_tile = True
             #######################################
@@ -315,13 +321,6 @@ class DnSThread(QThread):
             message = '\nslice '+str(self.sliceNum)+' zmax scale is '+str(self.zmax_scale)+'\n'
             print(message)
             self.log.write(message)
-            self.surfZMAX = np.zeros([ surfX*(Ypixels//self.zmax_scale),surfY*(Xpixels//self.zmax_scale)],dtype = np.float32)
-            if self.ui.MUS.isChecked():
-                pixmap = ImagePlot(self.surfZMAX, self.ui.XYZmin.value(), self.ui.XYZmax.value())
-                # clear content on the waveformLabel
-                self.ui.MUS_mosaic.clear()
-                # update iamge on the waveformLabel
-                self.ui.MUS_mosaic.setPixmap(pixmap)
 
             
     def Process_Mosaic(self, data, raw = False, args = []):
@@ -373,24 +372,24 @@ class DnSThread(QThread):
             if not self.ui.DSing.isChecked():
                 # calculate data_focus and data_ds
                 data_focus = data_flatten[:,:,start_pixel:start_pixel + thickness]
-                data_ds = data_flatten.reshape([Ypixels//self.zmax_scale, self.zmax_scale, Xpixels//self.zmax_scale, self.zmax_scale, Zpixels]).mean(-2).mean(1) #################### zmax set to use 3x3 downsampling
+                # data_ds = data_flatten.reshape([Ypixels//self.zmax_scale, self.zmax_scale, Xpixels//self.zmax_scale, self.zmax_scale, Zpixels]).mean(-2).mean(1) #################### zmax set to use 3x3 downsampling
                 data_ds2 = data_flatten.reshape([Ypixels//20, 20, Xpixels//20, 20, Zpixels]).mean(-2).mean(1) #################### surfProfile set to use 10x10 downsampling
                 ###############################################################
                 # for odd strips, need to flip data in Y dimension and also the sequence
                 start0 = time.time()
                 if np.mod(fileY,2)==1:
-                    data_ds = np.flip(data_ds,0)
+                    # data_ds = np.flip(data_ds,0)
                     data_focus = np.flip(data_focus,0)
                     data_ds2 = np.flip(data_ds2,0)
-                self.Cscan = data_ds
+                self.Cscan = data_focus
                 if time.time()-start0 > 2:
                     print('time to flip data: ', round(time.time()-start0,3))
                 ########################################
                 # calculate AIP
                 AIP = np.mean(data_focus,2)
                 # shading correction
-                if np.any(self.darkField) and np.any(self.flatField):
-                    AIP = (AIP-self.darkField)/self.flatField
+                # if np.any(self.darkField) and np.any(self.flatField):
+                #     AIP = (AIP-self.darkField)/self.flatField
                 # calculate surface
                 start0 = time.time()
                 surfProfile = np.zeros([data_ds2.shape[0], data_ds2.shape[1]])
@@ -400,11 +399,7 @@ class DnSThread(QThread):
                 if time.time()-start0 > 2:
                     print('calculate surface', round(time.time()-start0,3))
                 
-                # calculate  zmax
-                if self.ui.MUS.isChecked():
-                    kernel = np.ones([1,1,5])/5 # kernel size hard coded to be 5 in z dimension
-                    zmax = self.ui.DepthRange.value()-np.argmax(ndimage.convolve(data_ds,kernel,mode = 'reflect'),2)
-                
+
                 ######################################### save processed result
                 # check if this is the first tile
                 if self.first_tile:
@@ -416,9 +411,7 @@ class DnSThread(QThread):
                 if self.ui.Save.isChecked():
                     self.writeTiff(self.ui.DIR.toPlainText()+'/aip/vol'+str(self.sliceNum)+'/AIP.tif', AIP, mode)
                     self.writeTiff(self.ui.DIR.toPlainText()+'/surf/vol'+str(self.sliceNum)+'/SURF.tif', surfProfile, mode)
-                    if self.ui.MUS.isChecked():
-                        self.writeTiff(self.ui.DIR.toPlainText()+'/fitting/vol'+str(self.sliceNum)+'/MAX.tif', zmax, mode)
-                
+
             ##########################################################################
             else:
                 # for fast pre-scan imaging
@@ -431,7 +424,7 @@ class DnSThread(QThread):
                 
             ############################### ###############
             # display Bline
-            plane = np.transpose(data_ds[0,:,:]).copy()
+            plane = np.transpose(data_focus[0,:,:]).copy()
             pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
             # clear content on the waveformLabel
             self.ui.XZplane.clear()
@@ -456,10 +449,6 @@ class DnSThread(QThread):
             self.surf[Ypixels//scale*fileX:Ypixels//scale*(fileX+1),\
                       Xpixels//scale*(fileY):Xpixels//scale*(fileY+1)] = AIP[::scale,::scale]
                 
-            if self.ui.MUS.isChecked() and not self.ui.DSing.isChecked(): 
-                self.surfZMAX[Ypixels//self.zmax_scale*fileX:Ypixels//self.zmax_scale*(fileX+1),\
-                          Xpixels//self.zmax_scale*(fileY):Xpixels//self.zmax_scale*(fileY+1)] = zmax
-            
         else:
             #######################################
             # for raw data, no display is available
@@ -487,13 +476,6 @@ class DnSThread(QThread):
         self.ui.SampleMosaic.clear()
         self.ui.SampleMosaic.setPixmap(pixmap)
         
-        if not self.ui.DSing.isChecked():
-            if self.ui.MUS.isChecked():
-                pixmap = ImagePlot(self.surfZMAX, self.ui.XYZmin.value(), self.ui.XYZmax.value())
-                # clear content on the waveformLabel
-                self.ui.MUS_mosaic.clear()
-                # update iamge on the waveformLabel
-                self.ui.MUS_mosaic.setPixmap(pixmap)
 
         
     def Save_mosaic(self):
@@ -501,11 +483,6 @@ class DnSThread(QThread):
             tif = TIFF.open(self.ui.DIR.toPlainText()+'/aip/slice'+str(self.sliceNum)+'coase.tif', mode='w')
             tif.write_image(self.surf)
             tif.close()
-            if not self.ui.DSing.isChecked():
-                if self.ui.MUS.isChecked():
-                    tif = TIFF.open(self.ui.DIR.toPlainText()+'/fitting/slice'+str(self.sliceNum)+'coase.tif', mode='w')
-                    tif.write_image(self.surfZMAX)
-                    tif.close()
             
         
     def Update_contrast_XY(self):
@@ -514,7 +491,13 @@ class DnSThread(QThread):
                 data = self.Aline
                 # if self.ui.LOG.currentText() == '10log10':
                 #     data=10*np.log10(data+0.000001)
-                pixmap = LinePlot(data, [], self.ui.XYmin.value()*30, self.ui.XYmax.value()*30)
+                if self.ui.FFTDevice.currentText() in ['None']:
+                    m=self.ui.XYmin.value()*20
+                    M=self.ui.XYmax.value()*20
+                else:
+                    m=self.ui.XYmin.value()
+                    M=self.ui.XYmax.value()
+                pixmap = LinePlot(data, [], m, M)
                 # clear content on the waveformLabel
                 self.ui.XZplane.clear()
                 # update iamge on the waveformLabel
@@ -566,18 +549,6 @@ class DnSThread(QThread):
             self.ui.SampleMosaic.clear()
             # update iamge on the waveformLabel
             self.ui.SampleMosaic.setPixmap(pixmap)
-        except:
-            pass
-            
-    def Update_contrast_XYZ(self):
-        try:
-            # if self.use_maya:
-            #     self.ui.mayavi_widget.visualization.update_contrast(self.ui.XYZmin.value(), self.ui.XYZmax.value())
-            pixmap = ImagePlot(self.surfZMAX, self.ui.XYZmin.value(), self.ui.XYZmax.value())
-            # clear content on the waveformLabel
-            self.ui.MUS_mosaic.clear()
-            # update iamge on the waveformLabel
-            self.ui.MUS_mosaic.setPixmap(pixmap)
         except:
             pass
     

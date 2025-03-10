@@ -20,19 +20,6 @@
       <property name="verticalSpacing">
        <number>6</number>
       </property>
-      <item row="0" column="14">
-       <spacer name="horizontalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
       <item row="0" column="10">
        <widget class="QLabel" name="label_31">
         <property name="enabled">
@@ -48,89 +35,24 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="15">
-       <widget class="QPushButton" name="PauseButton">
-        <property name="minimumSize">
-         <size>
-          <width>200</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>100</width>
-          <height>100</height>
-         </size>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>20</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Pause</string>
-        </property>
-        <property name="checkable">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="5">
-       <widget class="QLabel" name="label_25">
-        <property name="font">
-         <font>
-          <pointsize>10</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>AIP Threshold</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="4">
-       <widget class="QDoubleSpinBox" name="tileMean">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
+      <item row="0" column="6">
+       <widget class="QDoubleSpinBox" name="AgarValue">
         <property name="minimumSize">
          <size>
           <width>100</width>
           <height>0</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>100</width>
-          <height>16777215</height>
          </size>
         </property>
         <property name="decimals">
          <number>1</number>
         </property>
+        <property name="minimum">
+         <double>-1.000000000000000</double>
+        </property>
         <property name="maximum">
          <double>1000.000000000000000</double>
         </property>
        </widget>
-      </item>
-      <item row="0" column="8">
-       <widget class="QCheckBox" name="TissueRadio">
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <spacer name="horizontalSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
       </item>
       <item row="0" column="3">
        <widget class="QLabel" name="label_26">
@@ -150,6 +72,19 @@
         </property>
        </widget>
       </item>
+      <item row="0" column="2">
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
       <item row="1" column="0" colspan="17">
        <layout class="QHBoxLayout" name="horizontalLayout">
         <property name="spacing">
@@ -158,82 +93,92 @@
         <item>
          <layout class="QVBoxLayout" name="verticalLayout">
           <item>
-           <widget class="QLabel" name="XYplane">
-            <property name="enabled">
-             <bool>true</bool>
-            </property>
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>150</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>600</width>
-              <height>150</height>
-             </size>
-            </property>
-            <property name="font">
-             <font>
-              <pointsize>25</pointsize>
-             </font>
-            </property>
-            <property name="autoFillBackground">
-             <bool>true</bool>
-            </property>
-            <property name="text">
-             <string>AIP</string>
-            </property>
-            <property name="scaledContents">
-             <bool>true</bool>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="XZplane">
-            <property name="minimumSize">
-             <size>
-              <width>300</width>
-              <height>200</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>600</width>
-              <height>400</height>
-             </size>
-            </property>
-            <property name="font">
-             <font>
-              <pointsize>25</pointsize>
-             </font>
-            </property>
-            <property name="autoFillBackground">
-             <bool>true</bool>
-            </property>
-            <property name="text">
-             <string>Bline</string>
-            </property>
-            <property name="scaledContents">
-             <bool>true</bool>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
-            </property>
-           </widget>
+           <layout class="QHBoxLayout" name="horizontalLayout_8">
+            <item>
+             <widget class="QLabel" name="XYplane">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>150</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>600</width>
+                <height>500</height>
+               </size>
+              </property>
+              <property name="font">
+               <font>
+                <pointsize>25</pointsize>
+               </font>
+              </property>
+              <property name="autoFillBackground">
+               <bool>true</bool>
+              </property>
+              <property name="text">
+               <string>AIP</string>
+              </property>
+              <property name="scaledContents">
+               <bool>true</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="XZplane">
+              <property name="minimumSize">
+               <size>
+                <width>300</width>
+                <height>200</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>600</width>
+                <height>500</height>
+               </size>
+              </property>
+              <property name="font">
+               <font>
+                <pointsize>25</pointsize>
+               </font>
+              </property>
+              <property name="autoFillBackground">
+               <bool>true</bool>
+              </property>
+              <property name="text">
+               <string>Bline</string>
+              </property>
+              <property name="scaledContents">
+               <bool>true</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
           <item>
            <widget class="QGroupBox" name="BCbox1">
+            <property name="minimumSize">
+             <size>
+              <width>1000</width>
+              <height>0</height>
+             </size>
+            </property>
             <property name="maximumSize">
              <size>
               <width>5000</width>
@@ -319,7 +264,7 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>2000</width>
+              <width>1000</width>
               <height>600</height>
              </size>
             </property>
@@ -414,114 +359,63 @@
           </item>
          </layout>
         </item>
-        <item>
-         <layout class="QVBoxLayout" name="verticalLayout_5">
-          <item>
-           <widget class="QLabel" name="MUS_mosaic">
-            <property name="minimumSize">
-             <size>
-              <width>300</width>
-              <height>300</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>2000</width>
-              <height>600</height>
-             </size>
-            </property>
-            <property name="font">
-             <font>
-              <pointsize>25</pointsize>
-             </font>
-            </property>
-            <property name="autoFillBackground">
-             <bool>true</bool>
-            </property>
-            <property name="text">
-             <string>Sample MUS</string>
-            </property>
-            <property name="scaledContents">
-             <bool>true</bool>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QGroupBox" name="BCbox3">
-            <property name="maximumSize">
-             <size>
-              <width>5000</width>
-              <height>90</height>
-             </size>
-            </property>
-            <property name="font">
-             <font>
-              <pointsize>11</pointsize>
-             </font>
-            </property>
-            <property name="title">
-             <string>Brightness&amp;Contrast</string>
-            </property>
-            <layout class="QVBoxLayout" name="verticalLayout_20">
-             <item>
-              <widget class="QScrollBar" name="XYZmax">
-               <property name="minimumSize">
-                <size>
-                 <width>0</width>
-                 <height>20</height>
-                </size>
-               </property>
-               <property name="maximum">
-                <number>200</number>
-               </property>
-               <property name="singleStep">
-                <number>2</number>
-               </property>
-               <property name="pageStep">
-                <number>10</number>
-               </property>
-               <property name="value">
-                <number>70</number>
-               </property>
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QScrollBar" name="XYZmin">
-               <property name="minimumSize">
-                <size>
-                 <width>0</width>
-                 <height>20</height>
-                </size>
-               </property>
-               <property name="maximum">
-                <number>300</number>
-               </property>
-               <property name="singleStep">
-                <number>2</number>
-               </property>
-               <property name="pageStep">
-                <number>10</number>
-               </property>
-               <property name="value">
-                <number>1</number>
-               </property>
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-         </layout>
-        </item>
        </layout>
+      </item>
+      <item row="0" column="9">
+       <spacer name="horizontalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="0" column="11">
+       <widget class="QDoubleSpinBox" name="SurfHeight">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>60</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="decimals">
+         <number>0</number>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="15">
+       <widget class="QPushButton" name="PauseButton">
+        <property name="minimumSize">
+         <size>
+          <width>200</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>100</width>
+          <height>100</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>20</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Pause</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+       </widget>
       </item>
       <item row="0" column="16">
        <widget class="QPushButton" name="ConfigButton">
@@ -547,37 +441,39 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="6">
-       <widget class="QDoubleSpinBox" name="AgarValue">
-        <property name="minimumSize">
-         <size>
-          <width>100</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="decimals">
-         <number>1</number>
-        </property>
-        <property name="minimum">
-         <double>-1.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>1000.000000000000000</double>
+      <item row="0" column="8">
+       <widget class="QCheckBox" name="TissueRadio">
+        <property name="text">
+         <string/>
         </property>
        </widget>
       </item>
-      <item row="0" column="9">
-       <spacer name="horizontalSpacer_3">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+      <item row="0" column="12">
+       <widget class="QLabel" name="label_34">
+        <property name="enabled">
+         <bool>false</bool>
         </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
         </property>
-       </spacer>
+        <property name="text">
+         <string>Set surface</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="5">
+       <widget class="QLabel" name="label_25">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>AIP Threshold</string>
+        </property>
+       </widget>
       </item>
       <item row="0" column="1">
        <widget class="QPushButton" name="RunButton">
@@ -606,22 +502,6 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="11">
-       <widget class="QDoubleSpinBox" name="SurfHeight">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>60</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="decimals">
-         <number>0</number>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="13">
        <widget class="QSpinBox" name="SurfSet">
         <property name="enabled">
@@ -635,20 +515,43 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="12">
-       <widget class="QLabel" name="label_34">
+      <item row="0" column="4">
+       <widget class="QDoubleSpinBox" name="tileMean">
         <property name="enabled">
          <bool>false</bool>
         </property>
-        <property name="font">
-         <font>
-          <pointsize>10</pointsize>
-         </font>
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>0</height>
+         </size>
         </property>
-        <property name="text">
-         <string>Set surface</string>
+        <property name="maximumSize">
+         <size>
+          <width>100</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="decimals">
+         <number>1</number>
+        </property>
+        <property name="maximum">
+         <double>1000.000000000000000</double>
         </property>
        </widget>
+      </item>
+      <item row="0" column="14">
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
       </item>
       <item row="0" column="7">
        <widget class="QLabel" name="label_27">
@@ -1025,26 +928,6 @@
                </property>
                <property name="maximum">
                 <number>10000</number>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="4">
-              <widget class="QLabel" name="XBiasLabel">
-               <property name="text">
-                <string>Galvo shift(mm)</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="5">
-              <widget class="QDoubleSpinBox" name="XBias">
-               <property name="minimum">
-                <double>-100.000000000000000</double>
-               </property>
-               <property name="singleStep">
-                <double>0.100000000000000</double>
-               </property>
-               <property name="value">
-                <double>-0.200000000000000</double>
                </property>
               </widget>
              </item>
@@ -2384,38 +2267,6 @@
             </layout>
            </widget>
           </item>
-          <item>
-           <widget class="QGroupBox" name="groupBox_7">
-            <property name="title">
-             <string>Repeatability</string>
-            </property>
-            <layout class="QVBoxLayout" name="verticalLayout_24">
-             <item>
-              <widget class="QPushButton" name="RepTest">
-               <property name="text">
-                <string>w/o OCT</string>
-               </property>
-               <property name="checkable">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="RepTest2">
-               <property name="enabled">
-                <bool>false</bool>
-               </property>
-               <property name="text">
-                <string>with OCT</string>
-               </property>
-               <property name="checkable">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
          </layout>
         </widget>
         <widget class="QWidget" name="Generaltab">
@@ -2423,77 +2274,6 @@
           <string>Save</string>
          </attribute>
          <layout class="QGridLayout" name="gridLayout_10">
-          <item row="1" column="3">
-           <widget class="QPushButton" name="redoBG">
-            <property name="text">
-             <string>DO background</string>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="2">
-           <widget class="QLineEdit" name="Disp_DIR">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>100</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="3">
-           <widget class="QLineEdit" name="BG_DIR">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>100</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="1">
-           <widget class="QSpinBox" name="SliceN">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>50</height>
-             </size>
-            </property>
-            <property name="minimum">
-             <number>1</number>
-            </property>
-            <property name="maximum">
-             <number>10000</number>
-            </property>
-           </widget>
-          </item>
-          <item row="6" column="3">
-           <widget class="QPushButton" name="LoadBG">
-            <property name="text">
-             <string>Load Background</string>
-            </property>
-           </widget>
-          </item>
-          <item row="6" column="1">
-           <widget class="QLabel" name="label_28">
-            <property name="text">
-             <string>Current Slice#:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="6" column="4">
-           <widget class="QPushButton" name="LoadSurface">
-            <property name="text">
-             <string>Load surface</string>
-            </property>
-           </widget>
-          </item>
-          <item row="6" column="5">
-           <widget class="QPushButton" name="LoadDarkField">
-            <property name="text">
-             <string>Load DarkField</string>
-            </property>
-           </widget>
-          </item>
           <item row="1" column="0">
            <widget class="QCheckBox" name="Save">
             <property name="font">
@@ -2515,37 +2295,7 @@
             </property>
            </widget>
           </item>
-          <item row="5" column="0">
-           <widget class="QTextEdit" name="DIR">
-            <property name="enabled">
-             <bool>true</bool>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>400</width>
-              <height>16777215</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="6" column="2">
-           <widget class="QPushButton" name="LoadDispersion">
-            <property name="text">
-             <string>Load Compensation</string>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="5">
-           <widget class="QLineEdit" name="DarkField_DIR">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>100</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="4">
+          <item row="5" column="3">
            <widget class="QLineEdit" name="Surf_DIR">
             <property name="minimumSize">
              <size>
@@ -2553,19 +2303,53 @@
               <height>100</height>
              </size>
             </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QPushButton" name="RedoDC">
-            <property name="text">
-             <string>DO Compensation </string>
+            <property name="maximumSize">
+             <size>
+              <width>200</width>
+              <height>16777215</height>
+             </size>
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
-           <widget class="QLabel" name="label_23">
+          <item row="5" column="1">
+           <widget class="QSpinBox" name="SliceN">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>50</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>200</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>10000</number>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1">
+           <widget class="QLabel" name="label_28">
             <property name="text">
-             <string>Start Slice#:</string>
+             <string>Current Slice#:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="3">
+           <widget class="QPushButton" name="redoSurf">
+            <property name="maximumSize">
+             <size>
+              <width>200</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>DO Surface</string>
             </property>
            </widget>
           </item>
@@ -2582,61 +2366,53 @@
             </property>
            </widget>
           </item>
-          <item row="6" column="6">
-           <widget class="QPushButton" name="LoadFlatField">
+          <item row="1" column="1">
+           <widget class="QLabel" name="label_23">
             <property name="text">
-             <string>Load FlatField</string>
+             <string>Start Slice#:</string>
             </property>
            </widget>
           </item>
-          <item row="5" column="6">
-           <widget class="QLineEdit" name="FlatField_DIR">
+          <item row="6" column="3">
+           <widget class="QPushButton" name="LoadSurface">
+            <property name="text">
+             <string>Load surface</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
+           <widget class="QTextEdit" name="DIR">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>400</width>
+              <height>16777215</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="2">
+           <widget class="QLineEdit" name="InD_DIR">
             <property name="minimumSize">
              <size>
               <width>0</width>
               <height>100</height>
              </size>
             </property>
+            <property name="maximumSize">
+             <size>
+              <width>300</width>
+              <height>16777215</height>
+             </size>
+            </property>
            </widget>
           </item>
-          <item row="1" column="4">
-           <widget class="QPushButton" name="redoSurf">
+          <item row="6" column="2">
+           <widget class="QPushButton" name="LoadInD">
             <property name="text">
-             <string>DO Surface</string>
-            </property>
-           </widget>
-          </item>
-          <item row="6" column="0">
-           <widget class="QCheckBox" name="MUS">
-            <property name="text">
-             <string>Calculate mus?</string>
-            </property>
-           </widget>
-          </item>
-          <item row="7" column="5">
-           <widget class="QSpinBox" name="PeakWindow">
-            <property name="maximum">
-             <number>200</number>
-            </property>
-            <property name="value">
-             <number>75</number>
-            </property>
-           </widget>
-          </item>
-          <item row="7" column="4">
-           <widget class="QLabel" name="label_32">
-            <property name="text">
-             <string>Dispersion compenstaion window half size:</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="7" column="3">
-           <widget class="QCheckBox" name="auto_background">
-            <property name="text">
-             <string>AUTO re-measure background?</string>
+             <string>Load Interpolation&amp;Disperison files</string>
             </property>
            </widget>
           </item>
@@ -3624,200 +3400,6 @@
           </item>
          </layout>
         </widget>
-        <widget class="QWidget" name="DefineZeroTab">
-         <attribute name="title">
-          <string>DefineZero</string>
-         </attribute>
-         <layout class="QHBoxLayout" name="horizontalLayout_8">
-          <item>
-           <widget class="QGroupBox" name="DefinedZerobox">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="title">
-             <string>Using OCT to calibrate Zstage height</string>
-            </property>
-            <layout class="QGridLayout" name="gridLayout_15">
-             <item row="0" column="1">
-              <widget class="QCheckBox" name="Gotozero">
-               <property name="enabled">
-                <bool>false</bool>
-               </property>
-               <property name="text">
-                <string>Go to 0</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="label_2">
-               <property name="text">
-                <string>Z pos for definedzero(mm)</string>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="1">
-              <widget class="QDoubleSpinBox" name="YdefinedZero">
-               <property name="maximum">
-                <double>50.000000000000000</double>
-               </property>
-               <property name="value">
-                <double>30.000000000000000</double>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="1">
-              <widget class="QDoubleSpinBox" name="definedZero">
-               <property name="minimum">
-                <double>2.000000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>48.000000000000000</double>
-               </property>
-               <property name="value">
-                <double>3.000000000000000</double>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="1">
-              <widget class="QDoubleSpinBox" name="XdefinedZero">
-               <property name="maximum">
-                <double>150.000000000000000</double>
-               </property>
-               <property name="value">
-                <double>30.000000000000000</double>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="0">
-              <widget class="QLabel" name="label_6">
-               <property name="text">
-                <string>X pos for definedzero(mm)</string>
-               </property>
-              </widget>
-             </item>
-             <item row="6" column="0">
-              <widget class="QLabel" name="label_5">
-               <property name="text">
-                <string>Aline peak pos range (pixels)+-</string>
-               </property>
-              </widget>
-             </item>
-             <item row="6" column="1">
-              <widget class="QSpinBox" name="DefinedZeroRange">
-               <property name="value">
-                <number>1</number>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="0">
-              <widget class="QLabel" name="label_7">
-               <property name="text">
-                <string>Y pos for definedzero(mm)</string>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="0">
-              <widget class="QLabel" name="label">
-               <property name="text">
-                <string>Aline peak pos (pixel)（from pixel 0!!!)</string>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="1">
-              <widget class="QSpinBox" name="KnownDepth">
-               <property name="maximum">
-                <number>300</number>
-               </property>
-               <property name="value">
-                <number>30</number>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-          <item>
-           <widget class="QGroupBox" name="groupBox_5">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="title">
-             <string>AlinePeakSettings</string>
-            </property>
-            <layout class="QGridLayout" name="gridLayout_11">
-             <item row="1" column="1">
-              <widget class="QSpinBox" name="AlineCleanBot">
-               <property name="maximum">
-                <number>500</number>
-               </property>
-               <property name="value">
-                <number>280</number>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QSpinBox" name="AlineCleanTop">
-               <property name="maximum">
-                <number>500</number>
-               </property>
-               <property name="value">
-                <number>50</number>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="1">
-              <widget class="QSpinBox" name="AlinePeakMax">
-               <property name="maximum">
-                <number>65535</number>
-               </property>
-               <property name="value">
-                <number>4096</number>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="label_9">
-               <property name="text">
-                <string>Aline clean bot(pxiel)</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="label_10">
-               <property name="text">
-                <string>Peak max height</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="1">
-              <widget class="QSpinBox" name="AlinePeakMin">
-               <property name="maximum">
-                <number>65535</number>
-               </property>
-               <property name="value">
-                <number>50</number>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="0">
-              <widget class="QLabel" name="label_11">
-               <property name="text">
-                <string>Peak min height</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_8">
-               <property name="text">
-                <string>Aline clean top(pxiel)</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-         </layout>
-        </widget>
         <widget class="QWidget" name="Lasertab">
          <attribute name="title">
           <string>Terminals</string>
@@ -3835,14 +3417,14 @@
              <string>GroupBox</string>
             </property>
             <layout class="QGridLayout" name="gridLayout_19">
-             <item row="1" column="10">
-              <widget class="QLabel" name="label_55">
+             <item row="5" column="7">
+              <widget class="QLabel" name="label_54">
                <property name="text">
-                <string>mm per rotation</string>
+                <string>devides</string>
                </property>
               </widget>
              </item>
-             <item row="1" column="5">
+             <item row="1" column="4">
               <spacer name="horizontalSpacer_4">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -3855,113 +3437,55 @@
                </property>
               </spacer>
              </item>
-             <item row="7" column="1">
-              <widget class="QComboBox" name="VibEnable">
-               <item>
-                <property name="text">
-                 <string>PFI2</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>PFI0</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>PFI1</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>PFI3</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>PFI4</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>PFI5</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>PFI6</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>PFI7</string>
-                </property>
-               </item>
+             <item row="3" column="2">
+              <widget class="QLabel" name="label_41">
+               <property name="text">
+                <string>Y stage: port0/line1</string>
+               </property>
               </widget>
              </item>
-             <item row="3" column="1">
-              <widget class="QComboBox" name="GalvoAO">
-               <item>
-                <property name="text">
-                 <string>ao0</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>ao1</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>ao2</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>ao3</string>
-                </property>
-               </item>
+             <item row="3" column="8">
+              <widget class="QSpinBox" name="Ydevides">
+               <property name="maximum">
+                <number>1000000</number>
+               </property>
+               <property name="value">
+                <number>25000</number>
+               </property>
               </widget>
              </item>
-             <item row="5" column="10">
-              <widget class="QLabel" name="label_57">
+             <item row="1" column="2">
+              <widget class="QLabel" name="label_40">
+               <property name="text">
+                <string>X stage: port0/line0</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="9">
+              <widget class="QLabel" name="label_55">
                <property name="text">
                 <string>mm per rotation</string>
                </property>
               </widget>
              </item>
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_44">
+             <item row="7" column="0">
+              <widget class="QLabel" name="label_39">
                <property name="text">
-                <string>Galvo/Stage board name</string>
+                <string>Vibratome Terminal</string>
                </property>
               </widget>
              </item>
-             <item row="7" column="3">
-              <widget class="QComboBox" name="YScanDIM">
-               <item>
-                <property name="text">
-                 <string>YStage</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>XStage</string>
-                </property>
-               </item>
-              </widget>
-             </item>
-             <item row="1" column="6">
-              <widget class="QLabel" name="label_49">
+             <item row="1" column="0">
+              <widget class="QLabel" name="ClockTermLabel">
                <property name="text">
-                <string>Enable: port2/line0</string>
+                <string>Aline Trig Terminal</string>
                </property>
               </widget>
              </item>
-             <item row="1" column="11">
-              <widget class="QDoubleSpinBox" name="Xmm">
-               <property name="value">
-                <double>2.000000000000000</double>
+             <item row="3" column="3">
+              <widget class="QLabel" name="label_47">
+               <property name="text">
+                <string>direction: port2/line3</string>
                </property>
               </widget>
              </item>
@@ -4009,35 +3533,10 @@
                </item>
               </widget>
              </item>
-             <item row="1" column="2">
-              <widget class="QLabel" name="label_40">
-               <property name="text">
-                <string>X stage: port0/line0</string>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="0">
-              <widget class="QLabel" name="label_13">
-               <property name="text">
-                <string>AODO Trig Terminal</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QTextEdit" name="AODOboard">
-               <property name="html">
-                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Microsoft YaHei UI'; font-size:15pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'SimSun';&quot;&gt;AODO&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="ClockTermLabel">
-               <property name="text">
-                <string>Aline Trig Terminal</string>
+             <item row="1" column="10">
+              <widget class="QDoubleSpinBox" name="Xmm">
+               <property name="value">
+                <double>2.000000000000000</double>
                </property>
               </widget>
              </item>
@@ -4086,123 +3585,40 @@ p, li { white-space: pre-wrap; }
               </widget>
              </item>
              <item row="3" column="9">
-              <widget class="QSpinBox" name="Ydevides">
-               <property name="maximum">
-                <number>1000000</number>
-               </property>
-               <property name="value">
-                <number>25000</number>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="8">
-              <widget class="QLabel" name="label_54">
+              <widget class="QLabel" name="label_56">
                <property name="text">
-                <string>devides</string>
+                <string>mm per rotation</string>
                </property>
               </widget>
              </item>
-             <item row="1" column="8">
-              <widget class="QLabel" name="label_52">
-               <property name="text">
-                <string>devides</string>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="6">
-              <widget class="QLabel" name="label_51">
-               <property name="text">
-                <string>Enable: port2/line4</string>
-               </property>
-              </widget>
-             </item>
-             <item row="7" column="0">
-              <widget class="QLabel" name="label_39">
-               <property name="text">
-                <string>Vibratome Terminal</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="6">
-              <widget class="QLabel" name="label_50">
-               <property name="text">
-                <string>Enable: port2/line2</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="8">
-              <widget class="QLabel" name="label_53">
-               <property name="text">
-                <string>devides</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="2">
-              <widget class="QLabel" name="label_41">
-               <property name="text">
-                <string>Y stage: port0/line1</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="4">
+             <item row="1" column="3">
               <widget class="QLabel" name="label_46">
                <property name="text">
                 <string>direction: port2/line1</string>
                </property>
               </widget>
              </item>
-             <item row="5" column="4">
-              <widget class="QLabel" name="label_48">
-               <property name="text">
-                <string>direction: port2/line5</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="11">
-              <widget class="QDoubleSpinBox" name="Ymm">
-               <property name="value">
-                <double>2.000000000000000</double>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="11">
-              <widget class="QDoubleSpinBox" name="Zmm">
-               <property name="value">
-                <double>1.000000000000000</double>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="9">
-              <widget class="QSpinBox" name="Zdevides">
-               <property name="maximum">
-                <number>1000000</number>
-               </property>
-               <property name="value">
-                <number>25000</number>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="0">
-              <widget class="QLabel" name="label_38">
-               <property name="text">
-                <string>Galvo Terminal</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="4">
-              <widget class="QLabel" name="label_47">
-               <property name="text">
-                <string>direction: port2/line3</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="9">
+             <item row="1" column="8">
               <widget class="QSpinBox" name="Xdevides">
                <property name="maximum">
                 <number>1000000</number>
                </property>
                <property name="value">
                 <number>25000</number>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_44">
+               <property name="text">
+                <string>Galvo/Stage board name</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="5">
+              <widget class="QLabel" name="label_51">
+               <property name="text">
+                <string>Enable: port2/line4</string>
                </property>
               </widget>
              </item>
@@ -4213,21 +3629,93 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="7" column="2">
-              <widget class="QLabel" name="label_43">
+             <item row="7" column="1">
+              <widget class="QComboBox" name="VibEnable">
+               <item>
+                <property name="text">
+                 <string>PFI2</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>PFI0</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>PFI1</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>PFI3</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>PFI4</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>PFI5</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>PFI6</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>PFI7</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item row="1" column="5">
+              <widget class="QLabel" name="label_49">
                <property name="text">
-                <string>Yscan Direction:</string>
+                <string>Enable: port2/line0</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="0">
+              <widget class="QLabel" name="label_13">
+               <property name="text">
+                <string>AODO Trig Terminal</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="5">
+              <widget class="QLabel" name="label_50">
+               <property name="text">
+                <string>Enable: port2/line2</string>
                </property>
               </widget>
              </item>
              <item row="3" column="10">
-              <widget class="QLabel" name="label_56">
+              <widget class="QDoubleSpinBox" name="Ymm">
+               <property name="value">
+                <double>2.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QLabel" name="label_38">
                <property name="text">
-                <string>mm per rotation</string>
+                <string>Galvo Terminal</string>
                </property>
               </widget>
              </item>
              <item row="1" column="7">
+              <widget class="QLabel" name="label_52">
+               <property name="text">
+                <string>devides</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="6">
               <spacer name="horizontalSpacer_5">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -4239,6 +3727,79 @@ p, li { white-space: pre-wrap; }
                 </size>
                </property>
               </spacer>
+             </item>
+             <item row="5" column="3">
+              <widget class="QLabel" name="label_48">
+               <property name="text">
+                <string>direction: port2/line5</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="10">
+              <widget class="QDoubleSpinBox" name="Zmm">
+               <property name="value">
+                <double>1.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="8">
+              <widget class="QSpinBox" name="Zdevides">
+               <property name="maximum">
+                <number>1000000</number>
+               </property>
+               <property name="value">
+                <number>25000</number>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="QComboBox" name="GalvoAO">
+               <item>
+                <property name="text">
+                 <string>ao0</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>ao1</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>ao2</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>ao3</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item row="3" column="7">
+              <widget class="QLabel" name="label_53">
+               <property name="text">
+                <string>devides</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QTextEdit" name="AODOboard">
+               <property name="html">
+                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Microsoft YaHei UI'; font-size:15pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'SimSun';&quot;&gt;AODO&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="9">
+              <widget class="QLabel" name="label_57">
+               <property name="text">
+                <string>mm per rotation</string>
+               </property>
+              </widget>
              </item>
             </layout>
            </widget>

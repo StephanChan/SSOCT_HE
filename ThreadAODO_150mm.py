@@ -178,30 +178,19 @@ class AODOThread(QThread):
     def ConfigTask(self, direction = 1):
         if not (SIM or self.SIM): # if not running simulation mode
             # Generate waveform
-            if self.ui.YScanDIM.currentText() == 'YStage':
-                ScanDIM = pow(2,1)
-                _DISTANCE = self.ui.Ymm.value()
-                _STEPS = self.ui.Ydevides.value()
-            elif self.ui.YScanDIM.currentText() == 'XStage':
-                ScanDIM = pow(2,0)
-                _DISTANCE = self.ui.Xmm.value()
-                _STEPS = self.ui.Xdevides.value()
             DOwaveform,AOwaveform,status = GenAODO(mode=self.ui.ACQMode.currentText(), \
-                                                   Aline_frq = self.Aline_frq, \
-                                                   XStepSize = self.ui.XStepSize.value(), \
-                                                   XSteps = self.ui.Xsteps.value(), \
-                                                   AVG = self.ui.AlineAVG.value(), \
-                                                   bias = self.ui.XBias.value(), \
-                                                   obj = self.ui.Objective.currentText(), \
-                                                   preclocks = self.ui.PreClock.value(), \
-                                                   postclocks = self.ui.PostClock.value(), \
-                                                   YStepSize = self.ui.YStepSize.value(), \
-                                                   YSteps =  self.ui.Ysteps.value(), \
-                                                   BVG = self.ui.BlineAVG.value(),\
-                                                   CSCAN_AXIS = ScanDIM,\
-                                                   Galvo_bias = self.ui.GalvoBias.value(),\
-                                                   DISTANCE = _DISTANCE, \
-                                                   STEPS = _STEPS)
+                                                     XStepSize = self.ui.XStepSize.value(), \
+                                                     XSteps = self.ui.Xsteps.value(), \
+                                                     AVG = self.ui.AlineAVG.value(), \
+                                                     obj = self.ui.Objective.currentText(),\
+                                                     preclocks = self.ui.PreClock.value(),\
+                                                     postclocks = self.ui.PostClock.value(), \
+                                                     YStepSize = self.ui.YStepSize.value(), \
+                                                     YSteps =  self.ui.Ysteps.value(), \
+                                                     BVG = self.ui.BlineAVG.value(),\
+                                                     Galvo_bias = self.ui.GalvoBias.value(),\
+                                                     DISTANCE = self.ui.Xmm.value(), \
+                                                     STEPS = self.ui.Xdevides.value())
             ######################################################################################
             # init AO task
             self.AOtask = ni.Task('AOtask')

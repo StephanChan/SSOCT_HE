@@ -35,7 +35,7 @@ class LOG():
         # return 0
 
 
-def GenGalvoWave(StepSize = 1, Steps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma5X', preclocks = 50, postclocks = 200, Galvo_bias = 3):
+def GenGalvoWave(StepSize = 1, Steps = 1000, AVG = 1, obj = 'OptoSigma5X', preclocks = 50, postclocks = 200, Galvo_bias = 3):
     
     # total number of steps is the product of steps and aline average number
     # use different angle to mm ratio for different objective
@@ -53,8 +53,8 @@ def GenGalvoWave(StepSize = 1, Steps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma
     Xrange = StepSize*Steps/1000
     # max voltage is converted from half of max X range plus bias divided by angle2mm ratio
     # extra division by 2 is because galvo angle change is only half of beam deviation angle
-    Vmax = (Xrange/2+bias)/angle2mmratio/2+Galvo_bias
-    Vmin = (-Xrange/2+bias)/angle2mmratio/2+Galvo_bias
+    Vmax = (Xrange/2)/angle2mmratio/2+Galvo_bias
+    Vmin = (-Xrange/2)/angle2mmratio/2+Galvo_bias
     # step size of voltage
     stepsize = (Vmax-Vmin)/Steps/AVG
     # ramping up and down time in unit of clocks, i.e., A-lines
@@ -137,7 +137,7 @@ def GenStageWave_ramp(distance, AlineTriggers, DISTANCE, STEPS):
         DOwaveform = DOwaveform[0:AlineTriggers]
     return DOwaveform
 
-def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, AVG = 1, bias = 0, obj = 'OptoSigma5X',\
+def GenAODO(mode='RptBline', XStepSize = 1, XSteps = 1000, AVG = 1, obj = 'OptoSigma5X',\
             preclocks = 50, postclocks = 200, YStepSize = 1, YSteps = 200, BVG = 1, CSCAN_AXIS = pow(2, 1), Galvo_bias = 3, DISTANCE = 2, STEPS = 25000):
     # AVG: Aline average
     # BVG: Bline average
@@ -152,7 +152,7 @@ def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, A
         # if one wants to capture each Aline, they can set X and Y step size to be 0 and capture Cscan instead
         # 33 frames per second, how many samples for each frame
         # trigger enbale waveform generation
-        CscanAO = np.ones(BVG*(preclocks + XSteps * AVG + preclocks + postclocks)) * Galvo_bias
+        CscanAO = np.ones(BVG*(XSteps * AVG)) * Galvo_bias
         status = 'waveform updated'
         return None, CscanAO, status
     
@@ -160,7 +160,7 @@ def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, A
         # RptBline is for checking Bline profile, only display 30 Blines per second
         # if one wants to capture each Bline, they can set Y stepsize to be 0 and capture Cscan instead
         # generate AO waveform for Galvo control
-        AOwaveform, status = GenGalvoWave(XStepSize, XSteps, AVG, bias, obj, preclocks, postclocks, Galvo_bias)
+        AOwaveform, status = GenGalvoWave(XStepSize, XSteps, AVG, obj, preclocks, postclocks, Galvo_bias)
         CscanAO = np.tile(AOwaveform, BVG)
         status = 'waveform updated'
         return None, CscanAO, status
@@ -169,7 +169,7 @@ def GenAODO(mode='RptBline', Aline_frq = 100000, XStepSize = 1, XSteps = 1000, A
     elif mode in ['SingleCscan','Mosaic','Mosaic+Cut']:
         # RptCscan is for acquiring Cscan at the same location repeatitively
         # generate AO waveform for Galvo control for one Bline
-        AOwaveform, status = GenGalvoWave(XStepSize, XSteps, AVG, bias, obj, preclocks, postclocks, Galvo_bias)
+        AOwaveform, status = GenGalvoWave(XStepSize, XSteps, AVG, obj, preclocks, postclocks, Galvo_bias)
         CscanAO = np.tile(AOwaveform, YSteps*BVG)
             
         if YStepSize == 0:
@@ -278,7 +278,7 @@ def LinePlot(AOwaveform, DOwaveform = None, m=2, M=4):
     if np.any(DOwaveform):
         plt.plot(range(len(DOwaveform)),DOwaveform,linewidth=2)
     # plt.ylim(np.min(AOwaveform)-0.2,np.max(AOwaveform)+0.2)
-    # plt.ylim([m,M])
+    plt.ylim([m,M])
     plt.xticks(fontsize=15)
     plt.yticks(fontsize=15)
     plt.rcParams['savefig.dpi']=150
