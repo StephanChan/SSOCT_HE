@@ -211,7 +211,6 @@ class GUI(MainWindow):
         self.ui.SliceDir.clicked.connect(self.SliceDirection)
         self.ui.VibEnabled.clicked.connect(self.Vibratome)
         self.ui.SliceN.valueChanged.connect(self.change_slice_number)
-        self.ui.intDkSlider.valueChanged.connect(self.update_intDk)
         # Init all threads
         self.Init_allThreads()
         
