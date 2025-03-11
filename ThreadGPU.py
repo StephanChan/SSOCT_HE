@@ -122,7 +122,7 @@ class GPUThread(QThread):
             if self.Digitizer == 'ART':
                 self.data_CPU = self.data_CPU[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]#-self.background
                 samples = self.ui.PostSamples_2.value() - self.ui.DelaySamples.value()-self.ui.TrimSamples.value()
-                self.data_CPU = self.data_CPU - np.mean(self.data_CPU, 0)
+            self.data_CPU = self.data_CPU - np.mean(self.data_CPU, 0)
             fftAxis = 1
             # # zero-padding data before FFT
             # if data_CPU.shape[1] != self.length_FFT:
@@ -138,8 +138,8 @@ class GPUThread(QThread):
             x_gpu  = cupy.array(self.intpX)
             xp_gpu  = cupy.array(self.intpXp)
             y_gpu  = cupy.array(self.data_CPU)
-            indice1 = cupy.array(self.indice[:,0])
-            indice2 = cupy.array(self.indice[:,1])
+            indice1 = cupy.array(self.indice[0,:])
+            indice2 = cupy.array(self.indice[1,:])
             yp_gpu = cupy.zeros(self.data_CPU.shape, dtype = cupy.float32)
             dispersion = cupy.array(self.dispersion)
             # print('data to gpu takes ', round(time.time()-t1,3))
@@ -255,10 +255,9 @@ class GPUThread(QThread):
         if os.path.isfile(dispersion_path+'/dspPhase.bin'):
             self.intpX  = np.float32(np.fromfile(dispersion_path+'/intpX.bin', dtype=np.float32))
             self.intpXp  = np.float32(np.fromfile(dispersion_path+'/intpXp.bin', dtype=np.float32))
-            self.indice = np.uint16(np.fromfile(dispersion_path+'/intpIndice.bin', dtype=np.float32)).reshape([samples,2])
-            self.dispersion = np.float32(np.fromfile(dispersion_path+'/dspPhase.bin', dtype=np.float32)).reshape([samples,1])
+            self.indice = np.uint16(np.fromfile(dispersion_path+'/intpIndice.bin', dtype=np.uint16)).reshape([2,samples])
+            self.dispersion = np.float32(np.fromfile(dispersion_path+'/dspPhase.bin', dtype=np.float32)).reshape([1, samples])
             self.dispersion = np.complex64(np.exp(1j*self.dispersion))
-            
             self.ui.statusbar.showMessage("load disperison compensation success...")
             # self.ui.PrintOut.append("load disperison compensation success...")
             self.log.write("load disperison compensation success...")

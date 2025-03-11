@@ -196,7 +196,7 @@ class GUI(MainWindow):
         # self.ui.redoBG.clicked.connect(self.redo_background)
         self.ui.redoSurf.clicked.connect(self.redo_surface)
         # self.ui.BG_DIR.textChanged.connect(self.update_background)
-        # self.ui.Disp_DIR.textChanged.connect(self.update_Dispersion)
+        self.ui.InD_DIR.textChanged.connect(self.update_Dispersion)
         self.ui.Xmove2.clicked.connect(self.Xmove2)
         self.ui.Ymove2.clicked.connect(self.Ymove2)
         self.ui.Zmove2.clicked.connect(self.Zmove2)
@@ -397,11 +397,11 @@ class GUI(MainWindow):
     def update_Dispersion(self):
         an_action = GPUAction('update_Dispersion')
         GPUQueue.put(an_action)
-        self.update_background()
+        # self.update_background()
         
-    def update_background(self):
-        an_action = GPUAction('update_background')
-        GPUQueue.put(an_action)
+    # def update_background(self):
+    #     an_action = GPUAction('update_background')
+    #     GPUQueue.put(an_action)
         
     def Update_contrast_XY(self):
         # if not self.ui.RunButton.isChecked():
