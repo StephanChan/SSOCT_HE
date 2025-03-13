@@ -146,6 +146,7 @@ class GPUThread(QThread):
             # print(self.data_CPU[0:3])
             # interpolation
             t2 = time.time() 
+            # yp_gpu = y_gpu
             self.interp_kernel((8,8),(16,16), (Alines, samples, x_gpu, xp_gpu, y_gpu, indice1, indice2, yp_gpu))
             # print('time for interpolation: ', round(time.time()-t2,5))
             yp_gpu = cupy.reshape(yp_gpu,[Alines, samples])

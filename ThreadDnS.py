@@ -33,6 +33,11 @@ class DnSThread(QThread):
         
     def run(self):
         self.sliceNum = self.ui.SliceN.value()-1
+        self.XYmax = self.ui.XYmax.value()
+        self.XYmin = self.ui.XYmin.value()
+        self.Surfmax = self.ui.Surfmax.value()
+        self.Surfmin = self.ui.Surfmin.value()
+        
         self.QueueOut()
         
     def QueueOut(self):
@@ -61,10 +66,8 @@ class DnSThread(QThread):
                     self.surf = []
                 elif self.item.action == 'UpdateContrastXY':
                     self.Update_contrast_XY()
-                elif self.item.action == 'UpdateContrastXYZ':
-                    self.Update_contrast_XYZ()
-                # elif self.item.action == 'UpdateContrastSurf':
-                #     self.Update_contrast_Surf()
+                elif self.item.action == 'UpdateContrastSurf':
+                    self.Update_contrast_Surf()
                 elif self.item.action == 'display_counts':
                     self.print_display_counts()
                 elif self.item.action == 'restart_tilenum':
@@ -486,71 +489,77 @@ class DnSThread(QThread):
             
         
     def Update_contrast_XY(self):
-        if self.ui.ACQMode.currentText() in ['SingleAline', 'RptAline']:
-            try:
-                data = self.Aline
-                # if self.ui.LOG.currentText() == '10log10':
-                #     data=10*np.log10(data+0.000001)
-                if self.ui.FFTDevice.currentText() in ['None']:
-                    m=self.ui.XYmin.value()*20
-                    M=self.ui.XYmax.value()*20
-                else:
-                    m=self.ui.XYmin.value()
-                    M=self.ui.XYmax.value()
-                pixmap = LinePlot(data, [], m, M)
-                # clear content on the waveformLabel
-                self.ui.XZplane.clear()
-                # update iamge on the waveformLabel
-                self.ui.XZplane.setPixmap(pixmap)
-            except:
-                pass
-        elif self.ui.ACQMode.currentText() in ['SingleBline', 'RptBline']:
-            try:
-                data = self.Bline
-                data = np.transpose(data).copy()
-                # data = np.flip(data, 1).copy()
-                # if self.ui.LOG.currentText() == '10log10':
-                #     data=np.float32(10*np.log10(data+0.000001))
-                pixmap = ImagePlot(data, self.ui.XYmin.value(), self.ui.XYmax.value())
-                # clear content on the waveformLabel
-                self.ui.XZplane.clear()
-                # update iamge on the waveformLabel
-                self.ui.XZplane.setPixmap(pixmap)
-            except:
-                pass
-        elif self.ui.ACQMode.currentText() in ['Mosaic','Mosaic+Cut', 'SingleCscan']:
-            try:
-                data = self.Cscan
-                
-                plane = np.transpose(data[0,:,:]).copy()# has to be first index, otherwise the memory space is not continuous
-                pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
-                # clear content on the waveformLabel
-                self.ui.XZplane.clear()
-                # update image on the waveformLabel
-                self.ui.XZplane.setPixmap(pixmap)
-                
-                tmp = self.ui.SaveZstart.value()
-                start_pixel =  np.uint16(tmp if tmp>-0.5 else self.ui.SurfHeight.value()+4)
-                thickness = self.ui.SaveZrange.value()
-                plane = np.mean(data[:,:,start_pixel:start_pixel + thickness],2)# has to be first index, otherwise the memory space is not continuous
-                pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
-                # clear content on the waveformLabel
-                self.ui.XYplane.clear()
-                # update image on the waveformLabel
-                self.ui.XYplane.setPixmap(pixmap)
-            except:
-                pass
-            
+        if self.ui.XYmin.value() != self.XYmin or self.ui.XYmax.value() != self.XYmax:
+            if self.ui.ACQMode.currentText() in ['SingleAline', 'RptAline']:
+                try:
+                    data = self.Aline
+                    # if self.ui.LOG.currentText() == '10log10':
+                    #     data=10*np.log10(data+0.000001)
+                    if self.ui.FFTDevice.currentText() in ['None']:
+                        m=self.ui.XYmin.value()*20
+                        M=self.ui.XYmax.value()*20
+                    else:
+                        m=self.ui.XYmin.value()
+                        M=self.ui.XYmax.value()
+                    pixmap = LinePlot(data, [], m, M)
+                    # clear content on the waveformLabel
+                    self.ui.XZplane.clear()
+                    # update iamge on the waveformLabel
+                    self.ui.XZplane.setPixmap(pixmap)
+                except:
+                    pass
+            elif self.ui.ACQMode.currentText() in ['SingleBline', 'RptBline']:
+                try:
+                    data = self.Bline
+                    data = np.transpose(data).copy()
+                    # data = np.flip(data, 1).copy()
+                    # if self.ui.LOG.currentText() == '10log10':
+                    #     data=np.float32(10*np.log10(data+0.000001))
+                    pixmap = ImagePlot(data, self.ui.XYmin.value(), self.ui.XYmax.value())
+                    # clear content on the waveformLabel
+                    self.ui.XZplane.clear()
+                    # update iamge on the waveformLabel
+                    self.ui.XZplane.setPixmap(pixmap)
+                except:
+                    pass
+            elif self.ui.ACQMode.currentText() in ['Mosaic','Mosaic+Cut', 'SingleCscan']:
+                try:
+                    data = self.Cscan
+                    
+                    plane = np.transpose(data[0,:,:]).copy()# has to be first index, otherwise the memory space is not continuous
+                    pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
+                    # clear content on the waveformLabel
+                    self.ui.XZplane.clear()
+                    # update image on the waveformLabel
+                    self.ui.XZplane.setPixmap(pixmap)
+                    
+                    tmp = self.ui.SaveZstart.value()
+                    start_pixel =  np.uint16(tmp if tmp>-0.5 else self.ui.SurfHeight.value()+4)
+                    thickness = self.ui.SaveZrange.value()
+                    plane = np.mean(data[:,:,start_pixel:start_pixel + thickness],2)# has to be first index, otherwise the memory space is not continuous
+                    pixmap = ImagePlot(plane, self.ui.XYmin.value(), self.ui.XYmax.value())
+                    # clear content on the waveformLabel
+                    self.ui.XYplane.clear()
+                    # update image on the waveformLabel
+                    self.ui.XYplane.setPixmap(pixmap)
+                except:
+                    pass
+                self.XYmax = self.ui.XYmax.value()
+                self.XYmin = self.ui.XYmin.value()
+
     def Update_contrast_Surf(self):
-        try:
-            # print(self.surf.shape)
-            pixmap = ImagePlot(self.surf, self.ui.Surfmin.value(), self.ui.Surfmax.value())
-            # clear content on the waveformLabel
-            self.ui.SampleMosaic.clear()
-            # update iamge on the waveformLabel
-            self.ui.SampleMosaic.setPixmap(pixmap)
-        except:
-            pass
+        if self.ui.Surfmin.value() != self.Surfmin or self.ui.Surfmax.value() != self.Surfmax:
+            try:
+                # print(self.surf.shape)
+                pixmap = ImagePlot(self.surf, self.ui.Surfmin.value(), self.ui.Surfmax.value())
+                # clear content on the waveformLabel
+                self.ui.SampleMosaic.clear()
+                # update iamge on the waveformLabel
+                self.ui.SampleMosaic.setPixmap(pixmap)
+            except:
+                pass
+            self.Surfmax = self.ui.Surfmax.value()
+            self.Surfmin = self.ui.Surfmin.value()
     
     def restart_tilenum(self):
         self.tileNum = 1
