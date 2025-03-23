@@ -203,7 +203,7 @@
                 </size>
                </property>
                <property name="maximum">
-                <number>200</number>
+                <number>2000</number>
                </property>
                <property name="singleStep">
                 <number>1</number>
@@ -212,7 +212,7 @@
                 <number>5</number>
                </property>
                <property name="value">
-                <number>100</number>
+                <number>500</number>
                </property>
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -228,7 +228,7 @@
                 </size>
                </property>
                <property name="maximum">
-                <number>200</number>
+                <number>2000</number>
                </property>
                <property name="singleStep">
                 <number>1</number>
@@ -313,7 +313,7 @@
                 </size>
                </property>
                <property name="maximum">
-                <number>200</number>
+                <number>2000</number>
                </property>
                <property name="singleStep">
                 <number>2</number>
@@ -322,7 +322,7 @@
                 <number>5</number>
                </property>
                <property name="value">
-                <number>60</number>
+                <number>500</number>
                </property>
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -338,7 +338,7 @@
                 </size>
                </property>
                <property name="maximum">
-                <number>200</number>
+                <number>2000</number>
                </property>
                <property name="singleStep">
                 <number>1</number>
@@ -387,6 +387,9 @@
         </property>
         <property name="decimals">
          <number>0</number>
+        </property>
+        <property name="maximum">
+         <double>1000.000000000000000</double>
         </property>
        </widget>
       </item>

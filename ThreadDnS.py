@@ -157,7 +157,7 @@ class DnSThread(QThread):
             data = data[:,self.ui.DelaySamples.value():self.ui.PostSamples_2.value()-self.ui.TrimSamples.value()]
 
         Ascan = np.float32(np.mean(data,0))
-        self.Aline = Ascan
+        self.Aline = data
         # float32 data type
         if self.ui.FFTDevice.currentText() in ['None']:
             m=self.ui.XYmin.value()*20
@@ -171,7 +171,7 @@ class DnSThread(QThread):
         # update iamge on the waveformLabel
         self.ui.XZplane.setPixmap(pixmap)
         
-        if self.ui.Save.isChecked() and not self.ui.Gotozero.isChecked():
+        if self.ui.Save.isChecked():
             if raw:
                 data = np.uint16(self.Aline)
             else:
@@ -372,8 +372,10 @@ class DnSThread(QThread):
             tmp = self.ui.SaveZstart.value()
             start_pixel =  np.uint16(tmp if tmp>-0.5 else self.ui.SurfHeight.value()+4) ################# focus set to start from 4 pixels below surface
             thickness = self.ui.SaveZrange.value()
+            # print(start_pixel, thickness)
             if not self.ui.DSing.isChecked():
                 # calculate data_focus and data_ds
+                # print(data_flatten.shape)
                 data_focus = data_flatten[:,:,start_pixel:start_pixel + thickness]
                 # data_ds = data_flatten.reshape([Ypixels//self.zmax_scale, self.zmax_scale, Xpixels//self.zmax_scale, self.zmax_scale, Zpixels]).mean(-2).mean(1) #################### zmax set to use 3x3 downsampling
                 data_ds2 = data_flatten.reshape([Ypixels//20, 20, Xpixels//20, 20, Zpixels]).mean(-2).mean(1) #################### surfProfile set to use 10x10 downsampling
@@ -418,11 +420,11 @@ class DnSThread(QThread):
             ##########################################################################
             else:
                 # for fast pre-scan imaging
-                data_ds = data_flatten
+                data_focus = data_flatten
                 if np.mod(fileY,2)==1:
-                    data_ds = np.flip(data_ds,0)
-                self.Cscan = data_ds
-                AIP = np.mean(data_ds[:,:,start_pixel:start_pixel + thickness],2)
+                    data_focus = np.flip(data_focus,0)
+                self.Cscan = data_focus
+                AIP = np.mean(data_focus[:,:,start_pixel:start_pixel + thickness],2)
                 
                 
             ############################### ###############
@@ -441,17 +443,15 @@ class DnSThread(QThread):
             self.ui.XYplane.clear()
             # update iamge on the waveformLabel
             self.ui.XYplane.setPixmap(pixmap)
-            
             ###################### ############
             # # plot 3D visulaization
             if self.use_maya:
-                self.ui.mayavi_widget.visualization.update_data(data_ds/500)
+                self.ui.mayavi_widget.visualization.update_data(data_focus/500)
             ###########################################
             # squeeze AIP into surface image
             scale = self.ui.scale.value()
             self.surf[Ypixels//scale*fileX:Ypixels//scale*(fileX+1),\
                       Xpixels//scale*(fileY):Xpixels//scale*(fileY+1)] = AIP[::scale,::scale]
-                
         else:
             #######################################
             # for raw data, no display is available
@@ -544,8 +544,8 @@ class DnSThread(QThread):
                     self.ui.XYplane.setPixmap(pixmap)
                 except:
                     pass
-                self.XYmax = self.ui.XYmax.value()
-                self.XYmin = self.ui.XYmin.value()
+            self.XYmax = self.ui.XYmax.value()
+            self.XYmin = self.ui.XYmin.value()
 
     def Update_contrast_Surf(self):
         if self.ui.Surfmin.value() != self.Surfmin or self.ui.Surfmax.value() != self.Surfmax:

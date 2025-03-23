@@ -726,6 +726,7 @@ class WeaverThread(QThread):
             bscan_flatten = bscan
         # find tile surface
         ascan = bscan_flatten.mean(0)
+        
         surfHeight = findchangept(ascan,1)
 
         ##########################################################
@@ -787,8 +788,8 @@ class WeaverThread(QThread):
             print(message)
             self.log.write(message)
             # remeasure background
-            if self.ui.auto_background.isChecked():
-                self.get_background()
+            # if self.ui.auto_background.isChecked():
+            #     self.get_background()
                 # time.sleep(1)
             ##################################################
             interrupt = self.check_interrupt()

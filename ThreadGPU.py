@@ -258,7 +258,7 @@ class GPUThread(QThread):
             self.intpXp  = np.float32(np.fromfile(dispersion_path+'/intpXp.bin', dtype=np.float32))
             self.indice = np.uint16(np.fromfile(dispersion_path+'/intpIndice.bin', dtype=np.uint16)).reshape([2,samples])
             self.dispersion = np.float32(np.fromfile(dispersion_path+'/dspPhase.bin', dtype=np.float32)).reshape([1, samples])
-            self.dispersion = np.complex64(np.exp(1j*self.dispersion))
+            self.dispersion = np.complex64(np.exp(-1j*self.dispersion))
             self.ui.statusbar.showMessage("load disperison compensation success...")
             # self.ui.PrintOut.append("load disperison compensation success...")
             self.log.write("load disperison compensation success...")
